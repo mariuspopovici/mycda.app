@@ -15,7 +15,7 @@ For more on R. Chung's Virtual Elevation method click [here](http://anonymous.co
 * Dark mode / light mode switching with dark mode enabled by default
 
 
-<center><img src="static/currentversion.png" width="320"></center>
+<center><img src="src/assets/currentversion.png" width="320"></center>
 
 ## TODO
 

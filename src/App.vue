@@ -6,7 +6,7 @@
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
-            <img class="d-inline-block align-top logo" alt="RhoApp" src="/static/logo.svg"> RhoApp
+            <img class="d-inline-block align-top logo" alt="RhoApp" src="./assets/logo.svg"> RhoApp
         </b-navbar-brand>
           
 
