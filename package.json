@@ -1,7 +1,7 @@
 {
   "name": "rhoapp",
   "version": "0.1.0",
-  "description": "Calculate air density (rho) based on air temperature, pressure and relative humidity (RH)",
+  "description": "Calculate air density (rho) based on air temperature, pressure and dew point.",
   "author": "Marius Popovici ",
   "private": true,
   "scripts": {
@@ -18,7 +18,6 @@
     "@mariuspopovici/rho": "^0.1.1",
     "bootstrap": "^4.2.1",
     "bootstrap-vue": "^2.0.0-rc.11",
-    "dotenv": "^6.2.0",
     "node-sass": "^4.11.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",

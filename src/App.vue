@@ -5,20 +5,19 @@
 
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
-        <b-navbar-brand href="#"><font-awesome-icon icon="wind"/> RhoApp</b-navbar-brand>
+        <b-navbar-brand href="#/">
+            <img class="d-inline-block align-top logo" alt="RhoApp" src="/static/logo.svg"> RhoApp
+        </b-navbar-brand>
+          
 
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
           
           <b-navbar-nav v-if="menuCollapsed">
-            <b-nav-item active href="#"><font-awesome-icon icon="home"/> Home</b-nav-item>
+            <b-nav-item active href="#/"><font-awesome-icon icon="home"/> Home</b-nav-item>
           </b-navbar-nav>
           
           <b-navbar-nav>
-            <b-nav-item href="#"><font-awesome-icon icon="info-circle"/> About</b-nav-item>
-          </b-navbar-nav>
-
-          <b-navbar-nav>
-            <b-nav-item href="#"><font-awesome-icon icon="envelope"/> Contact</b-nav-item>
+            <b-nav-item href="#/about"><font-awesome-icon icon="info-circle"/> About</b-nav-item>
           </b-navbar-nav>
           
           <!-- Right aligned nav items -->
@@ -34,8 +33,11 @@
         </b-collapse>
       </b-navbar>
 
-      <router-view/>
+      <router-view :theme="theme"/>
     </div>
+
+    <footer class="footer"></footer>
+    
   </div>
 </template>
 
@@ -80,11 +82,11 @@ export default {
 };
 </script>
 
-
-
 <style>
-html, body, #app {
-  height: 100%;
+
+#app .logo {
+  height: 32px;
+  max-width:64px;
 }
 
 #app {
@@ -92,10 +94,19 @@ html, body, #app {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #b1aeae;
-  margin-top: 0px;
-  display: flex;
-  flex-flow: column;
   background-color: #313131;
+  display: flex;
+  height: 100vh;
+  flex-direction: column;
 }
+
+#app .wrapper {
+  flex: 1 0 auto;
+}
+
+#app .footer {
+  flex-shrink: 0;
+}
+
 </style>
 
