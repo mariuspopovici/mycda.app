@@ -16,7 +16,9 @@ export default class Weather {
     }
 
     try {
-      const result = await rp('http://api.openweathermap.org/data/2.5/weather', options)
+      // use a proxy for CORS requests when in production mode
+      const cors = config.NODE_ENV === 'production' ? 'https://cors-anywhere.herokuapp.com/' : ''
+      const result = await rp(cors + 'http://api.openweathermap.org/data/2.5/weather', options)
       if (result) {
         const tempInCelcius = units === 'imperial' ? this.toCelcius(result.main.temp) : result.main.temp
         const dewPointInCelcius = (tempInCelcius - ((100 - result.main.humidity) / 5)).toFixed(2)

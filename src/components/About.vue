@@ -31,12 +31,7 @@ export default {
   }
 };
 </script>
-<style>
-#About .logo {
-  height: 64px;
-  max-width:64px;
-}
-</style>
+
 
 
 

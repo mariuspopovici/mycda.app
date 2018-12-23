@@ -13,7 +13,7 @@
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
           
           <b-navbar-nav v-if="menuCollapsed">
-            <b-nav-item active href="#/"><font-awesome-icon icon="home"/> Home</b-nav-item>
+            <b-nav-item href="#/"><font-awesome-icon icon="home"/> Home</b-nav-item>
           </b-navbar-nav>
           
           <b-navbar-nav>
@@ -32,12 +32,8 @@
 
         </b-collapse>
       </b-navbar>
-
       <router-view :theme="theme"/>
     </div>
-
-    <footer class="footer"></footer>
-    
   </div>
 </template>
 
@@ -96,17 +92,10 @@ export default {
   color: #b1aeae;
   background-color: #313131;
   display: flex;
-  height: 100vh;
+  min-height: 100vh;
   flex-direction: column;
 }
 
-#app .wrapper {
-  flex: 1 0 auto;
-}
-
-#app .footer {
-  flex-shrink: 0;
-}
 
 </style>
 
