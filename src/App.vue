@@ -5,19 +5,19 @@
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
-          <img class="d-inline-block align-top logo" alt="RhoApp" src="./assets/logo.svg"> RhoApp
+          <img class="d-inline-block align-top logo" alt="RhoApp" src="./assets/logo.svg">&nbsp;RhoApp
         </b-navbar-brand>
 
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
           <b-navbar-nav v-if="menuCollapsed">
             <b-nav-item href="#/">
-              <font-awesome-icon icon="home"/>Home
+              <font-awesome-icon icon="home"/>&nbsp;Home
             </b-nav-item>
           </b-navbar-nav>
 
           <b-navbar-nav>
             <b-nav-item href="#/about">
-              <font-awesome-icon icon="info-circle"/>About
+              <font-awesome-icon icon="info-circle"/>&nbsp;About
             </b-nav-item>
           </b-navbar-nav>
 
@@ -26,8 +26,9 @@
             <b-nav-form>
               <b-nav-item href="#" v-on:click="toggleTheme()" id="themeSwitcher">
                 <font-awesome-icon :icon="themeIcon"/>
+                <span v-if="menuCollapsed">&nbsp;{{themeCaption}}</span>
               </b-nav-item>
-              <b-tooltip target="themeSwitcher" title="Toggle dark theme"></b-tooltip>
+              <b-tooltip v-if="!menuCollapsed" target="themeSwitcher" title="Toggle dark theme"></b-tooltip>
             </b-nav-form>
           </b-navbar-nav>
         </b-collapse>
