@@ -7,9 +7,19 @@ import BootstrapVue from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 
-import {library} from '@fortawesome/fontawesome-svg-core'
-import {faLocationArrow, faCheck, faWind, faHome, faEnvelope, faMoon, faInfoCircle, faLightbulb} from '@fortawesome/free-solid-svg-icons'
-import {FontAwesomeIcon} from '@fortawesome/vue-fontawesome'
+import { library } from '@fortawesome/fontawesome-svg-core'
+import {
+  faLocationArrow,
+  faCheck,
+  faWind,
+  faHome,
+  faSun,
+  faEnvelope,
+  faMoon,
+  faInfoCircle,
+  faLightbulb
+} from '@fortawesome/free-solid-svg-icons'
+import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import Vuelidate from 'vuelidate'
 
 library.add(faWind)
@@ -20,6 +30,7 @@ library.add(faMoon)
 library.add(faInfoCircle)
 library.add(faLightbulb)
 library.add(faCheck)
+library.add(faSun)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 

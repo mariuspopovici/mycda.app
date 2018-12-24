@@ -112,7 +112,10 @@
           </div>
 
           <div class="form-group row" v-if="rho !== '' && units ==='metric'">
-            <label for="example-text-input" class="col-4 col-form-label">Air Density: (kg/m<sup>3</sup>)</label>
+            <label for="example-text-input" class="col-4 col-form-label">
+              Air Density: (kg/m
+              <sup>3</sup>)
+            </label>
             <div class="col-8">
               <input
                 class="form-control"
@@ -127,7 +130,10 @@
           </div>
 
           <div class="form-group row" v-if="rho !== '' && units === 'imperial'">
-            <label for="example-text-input" class="col-4 col-form-label">Air Density (lb/ft<sup>3</sup>): </label>
+            <label for="example-text-input" class="col-4 col-form-label">
+              Air Density (lb/ft
+              <sup>3</sup>):
+            </label>
             <div class="col-8">
               <input
                 class="form-control"
@@ -144,9 +150,11 @@
           <div class="form-group row">
             <div class="col col-12 text-right">
               <button class="btn btn-info" type="button" v-on:click="getLocation">
-                <font-awesome-icon icon="location-arrow"/> My Location
+                <font-awesome-icon icon="location-arrow"/>My Location
               </button>
-              <button type="submit" class="btn btn-success"><font-awesome-icon icon="check"/> Calculate</button> 
+              <button type="submit" class="btn btn-success">
+                <font-awesome-icon icon="check"/>Calculate
+              </button>
             </div>
           </div>
         </form>
@@ -156,6 +164,7 @@
 </template>
 
 <script>
+/* eslint-disable */
 import { required, decimal } from "vuelidate/lib/validators";
 import WeatherService from "../services/weather";
 

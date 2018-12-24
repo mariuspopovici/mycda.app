@@ -4,8 +4,7 @@ export default class Weather {
 
     const options = {
       method: 'GET',
-      headers: {
-      },
+      headers: {},
       qs: {
         lat: lat,
         lon: long,
@@ -17,17 +16,35 @@ export default class Weather {
 
     try {
       // use a proxy for CORS requests when in production mode
-      const cors = config.NODE_ENV === 'production' ? 'https://cors-anywhere.herokuapp.com/' : ''
-      const result = await rp(cors + 'http://api.openweathermap.org/data/2.5/weather', options)
+      const cors =
+        config.NODE_ENV === 'production'
+          ? 'https://cors-anywhere.herokuapp.com/'
+          : ''
+      const result = await rp(
+        cors + 'http://api.openweathermap.org/data/2.5/weather',
+        options
+      )
       if (result) {
-        const tempInCelcius = units === 'imperial' ? this.toCelcius(result.main.temp) : result.main.temp
-        const dewPointInCelcius = (tempInCelcius - ((100 - result.main.humidity) / 5)).toFixed(2)
+        const tempInCelcius =
+          units === 'imperial'
+            ? this.toCelcius(result.main.temp)
+            : result.main.temp
+        const dewPointInCelcius = (
+          tempInCelcius -
+          (100 - result.main.humidity) / 5
+        ).toFixed(2)
 
         return {
           temperature: result.main.temp,
           humidity: result.main.humidity,
-          dewPoint: units === 'imperial' ? this.toFahrenheit(dewPointInCelcius) : dewPointInCelcius,
-          pressure: units === 'imperial' ? this.hpaToInHg(result.main.pressure) : result.main.pressure
+          dewPoint:
+            units === 'imperial'
+              ? this.toFahrenheit(dewPointInCelcius)
+              : dewPointInCelcius,
+          pressure:
+            units === 'imperial'
+              ? this.hpaToInHg(result.main.pressure)
+              : result.main.pressure
         }
       }
     } catch (e) {
@@ -37,11 +54,11 @@ export default class Weather {
   }
 
   toFahrenheit (temp) {
-    return ((temp * 9 / 5) + 32).toFixed(2)
+    return ((temp * 9) / 5 + 32).toFixed(2)
   }
 
   toCelcius (temp) {
-    return ((temp - 32) * 5 / 9).toFixed(2)
+    return (((temp - 32) * 5) / 9).toFixed(2)
   }
 
   hpaToInHg (pressure) {
