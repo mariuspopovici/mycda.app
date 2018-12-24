@@ -42,6 +42,29 @@
 /* eslint-disable */
 export default {
   name: "App",
+  metaInfo: {
+    title: "RhoApp Air Density Calculator ",
+    // all titles will be injected into this template
+    titleTemplate: "%s | RhoApp Air Density Calculator",
+    meta: [
+      { "http-equiv": "Content-Type", content: "text/html; charset=utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      {
+        name: "description",
+        content:
+          "RhoApp is an air density calculator using air temperature, dew point and air pressure as inputs. RhoApp is location aware and supports both metric and imperial units"
+      },
+      {
+        name: "author",
+        content: "Marius Popovici"
+      },
+      {
+        name: "keywords",
+        content:
+          "air, density, calculator, rho, chung, virtual, elevation, weather, cycling"
+      }
+    ]
+  },
   data() {
     return {
       menuCollapsed: false,

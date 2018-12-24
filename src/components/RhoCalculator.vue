@@ -150,10 +150,10 @@
           <div class="form-group row">
             <div class="col col-12 text-right">
               <button class="btn btn-info" type="button" v-on:click="getLocation">
-                <font-awesome-icon icon="location-arrow"/>My Location
+                <font-awesome-icon icon="location-arrow"/>&nbsp;My Location
               </button>
               <button type="submit" class="btn btn-success">
-                <font-awesome-icon icon="check"/>Calculate
+                <font-awesome-icon icon="check"/>&nbsp;Calculate
               </button>
             </div>
           </div>
@@ -185,6 +185,10 @@ export default {
       lat: "",
       long: ""
     };
+  },
+  metaInfo: {
+    title: "Calculator",
+    links: [{ rel: "canonical", href: "https://rho.mycda.app/#/" }]
   },
   methods: {
     onSubmit: function() {

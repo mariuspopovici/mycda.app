@@ -35,6 +35,10 @@
 /* eslint-disable */
 export default {
   name: "About",
+  metaInfo: {
+    title: "About",
+    links: [{ rel: "canonical", href: "https://rho.mycda.app/#/about" }]
+  },
   data() {
     return {};
   },

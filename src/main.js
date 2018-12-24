@@ -6,6 +6,7 @@ import router from './router'
 import BootstrapVue from 'bootstrap-vue'
 import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
+import Meta from 'vue-meta'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -38,6 +39,7 @@ Vue.config.productionTip = false
 
 Vue.use(Vuelidate)
 Vue.use(BootstrapVue)
+Vue.use(Meta)
 
 /* eslint-disable no-new */
 new Vue({
