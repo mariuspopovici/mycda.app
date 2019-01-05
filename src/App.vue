@@ -43,16 +43,17 @@
 export default {
   name: "App",
   metaInfo: {
-    title: "RhoApp Air Density Calculator ",
+    title:
+      "MyCDA.app Field testing estimate of CdA (Coefficient of Drag x Frontal Area)",
     // all titles will be injected into this template
-    titleTemplate: "%s | RhoApp Air Density Calculator",
+    titleTemplate: "%s | MyCDA.app",
     meta: [
       { "http-equiv": "Content-Type", content: "text/html; charset=utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       {
         name: "description",
         content:
-          "RhoApp is an air density calculator using air temperature, dew point and air pressure as inputs. RhoApp is location aware and supports both metric and imperial units"
+          "MyCDA.app is a field testing data analysis tool used to assist in estimating cycling CdA ((Coefficient of Drag x Frontal Area)) based on power, velocity and air density data"
       },
       {
         name: "author",
@@ -61,7 +62,7 @@ export default {
       {
         name: "keywords",
         content:
-          "air, density, calculator, rho, chung, virtual, elevation, weather, cycling"
+          "coefficient of drag, virtual elevation, field testing, air, density, calculator, rho, chung, virtual, elevation, weather, cycling"
       }
     ]
   },

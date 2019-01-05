@@ -1,27 +1,18 @@
 # RhoApp
 
-Calculate air density (rho) based on air temperature, pressure and relative humidity (RH).
-
-I've built this as a fun way to brush up on Javascript, learn Vue.Js and lay the foundation for a future project dealing with computation of coeficient of drag (CdA) in cycling based on field testing data using the Chung / Virtual Elevation method with Rho (air density) being one of the inputs required to estimate CdA.
-
-For more on R. Chung's Virtual Elevation method click [here](http://anonymous.coward.free.fr/wattage/cda/indirect-cda.pdf).
+Description under construction.
 
 ## Demo
 
-See the app in action at http://rho.mycda.app
+Demo URL under construction.
 
 ## Features
 
-- Calculate Rho (air density) based on manually entered temperature, dew point and air pressure
-- Support for Imperial and Metric units and units conversion
-- Support for automatic data input based on current location combined with [OpenWeatherMap](https://home.openweathermap.org) data. This is pretty handy when field testing and processing data on site.
-- Dark mode / light mode switching with dark mode enabled by default
-
-<center><img src="src/assets/currentversion.png" width="320"></center>
+Under construction.
 
 ## TODO
 
-- Support weather data pull by Zip Code and Latitude / Longitude coordinates
+Under construction.
 
 ## Build Setup
 
@@ -52,7 +43,7 @@ In order to use the location based weather data pull you need to configure your 
 
 ## History
 
-Initial version launched on December 23, 2018.
+Under construction.
 
 ## Contributing
 
