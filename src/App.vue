@@ -44,16 +44,16 @@ export default {
   name: "App",
   metaInfo: {
     title:
-      "MyCDA.app Field testing estimate of CdA (Coefficient of Drag x Frontal Area)",
+      "MyCdA.app Field testing estimate of CdA (Coefficient of Drag x Frontal Area)",
     // all titles will be injected into this template
-    titleTemplate: "%s | MyCDA.app",
+    titleTemplate: "%s | MyCdA.app",
     meta: [
       { "http-equiv": "Content-Type", content: "text/html; charset=utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       {
         name: "description",
         content:
-          "MyCDA.app is a field testing data analysis tool used to assist in estimating cycling CdA ((Coefficient of Drag x Frontal Area)) based on power, velocity and air density data"
+          "MyCdA.app is a field testing data analysis tool used to assist in estimating cycling CdA ((Coefficient of Drag x Frontal Area)) based on power, velocity and air density data"
       },
       {
         name: "author",
