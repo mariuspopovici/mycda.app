@@ -1,8 +1,26 @@
 <template>
-  <div id="Upload">
-    <div class="container"></div>
+  <div class="container" id="Upload">
     <div id="upload">
       <vue-dropzone id="uploadDropZone" :options="dropOptions"></vue-dropzone>
+      <br>
+      <b-table
+        :dark="isDark"
+        :head-variant="theme"
+        striped
+        hover
+        stacked="sm"
+        responsive
+        :items="items"
+        :fields="fields"
+      >
+        <template slot="actions" slot-scope="row">
+          <b-button
+            size="sm"
+            variant="primary"
+            :to="{path: 'about', params: { id: row.item.id }}"
+          >Show Details</b-button>
+        </template>
+      </b-table>
     </div>
   </div>
 </template>
@@ -10,6 +28,25 @@
 <script>
 /* eslint-disable */
 import vueDropzone from "vue2-dropzone";
+
+const uploadedItems = [
+  {
+    id: 1,
+    activity_name: "Saturday Morning Ride",
+    date_time: "01/01/2019 8:00 AM",
+    distance: "2.3mi",
+    average_power: "158W",
+    average_speed: "20mph"
+  },
+  {
+    id: 2,
+    activity_name: "Monday Morning Ride",
+    date_time: "01/02/2019 8:00 AM",
+    distance: "2.4mi",
+    average_power: "358W",
+    average_speed: "28mph"
+  }
+];
 
 export default {
   name: "Upload",
@@ -25,15 +62,30 @@ export default {
         maxFiles: 10,
         chunking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: "Drop .FIT files here."
-      }
+        dictDefaultMessage: "Drop .FIT files here or click to select file."
+      },
+      fields: [
+        "activity_name",
+        "date_time",
+        "distance",
+        "average_speed",
+        "average_power",
+        "actions"
+      ],
+      items: uploadedItems,
+      isDark: this.theme === "dark"
     };
   },
   components: {
     vueDropzone
   },
   props: ["theme"],
-  methods: {}
+  methods: {},
+  watch: {
+    theme: function(value) {
+      this.isDark = value === "dark";
+    }
+  }
 };
 </script>
 
