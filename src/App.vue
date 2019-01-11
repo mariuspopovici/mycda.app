@@ -5,7 +5,7 @@
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
-          <img class="d-inline-block align-top logo" alt="RhoApp" src="./assets/logo.svg">&nbsp;RhoApp
+          <img class="d-inline-block align-top logo" alt="MyCdA.App" src="./assets/logo.svg">&nbsp;MyCdA.App
         </b-navbar-brand>
 
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
@@ -13,6 +13,14 @@
             <b-nav-item href="#/">
               <font-awesome-icon icon="home"/>&nbsp;Home
             </b-nav-item>
+          </b-navbar-nav>
+
+          <b-navbar-nav>
+            <b-nav-item href="#/upload">&nbsp;Experiments</b-nav-item>
+          </b-navbar-nav>
+
+          <b-navbar-nav>
+            <b-nav-item href="#/rho">&nbsp;Rho Calculator</b-nav-item>
           </b-navbar-nav>
 
           <b-navbar-nav>

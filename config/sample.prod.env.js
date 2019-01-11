@@ -1,5 +1,5 @@
-'use strict'
+"use strict";
 module.exports = {
-  NODE_ENV: '"production"',
-  OW_API_KEY:'"your Open Weather API key here"'
-}
+  NODE_ENV: "'production'",
+  OW_API_KEY: "'your Open Weather API key here between single quotes'"
+};

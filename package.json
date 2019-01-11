@@ -18,13 +18,16 @@
     "@mariuspopovici/rho": "^0.1.1",
     "bootstrap": "^4.2.1",
     "bootstrap-vue": "^2.0.0-rc.11",
+    "install": "^0.12.2",
     "node-sass": "^4.11.0",
+    "npm": "^6.5.0",
     "request": "^2.88.0",
     "request-promise": "^4.2.2",
     "sass-loader": "^7.1.0",
     "vue": "^2.5.2",
     "vue-meta": "^1.5.8",
     "vue-router": "^3.0.1",
+    "vue2-dropzone": "^3.5.2",
     "vuelidate": "^0.7.4"
   },
   "devDependencies": {

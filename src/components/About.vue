@@ -2,8 +2,8 @@
   <div id="About">
     <div class="container">
       <div style="margin-top: 2rem; padding-bottom: 1rem;">
-        <b-jumbotron :bg-variant="theme" header="Rho App" lead="Air Density Calculator">
-          <p>Calculate air density (rho) based on air temperature, pressure and dew point.</p>
+        <b-jumbotron :bg-variant="theme" header="MyCdA App" lead="Estimate your CdA">
+          <p>Estimate cycling coefficient of drag x frontal area (CdA) based using a power meter.</p>
           <p>
             Developer:
             <a href="mailto:marius@popovici.net">marius@popovici.net</a>
@@ -23,7 +23,7 @@
           <b-btn
             variant="primary"
             target="_blank"
-            href="https://github.com/mariuspopovici/rhoapp"
+            href="https://github.com/mariuspopovici/mycda.app"
           >More Info</b-btn>
         </b-jumbotron>
       </div>
@@ -37,7 +37,7 @@ export default {
   name: "About",
   metaInfo: {
     title: "About",
-    links: [{ rel: "canonical", href: "https://rho.mycda.app/#/about" }]
+    links: [{ rel: "canonical", href: "https://mycda.app/#/about" }]
   },
   data() {
     return {};
