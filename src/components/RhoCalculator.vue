@@ -149,9 +149,12 @@
 
           <div class="form-group row">
             <div class="col col-12 text-right">
-              <button class="btn btn-info" type="button" v-on:click="getLocation">
-                <font-awesome-icon icon="location-arrow"/>&nbsp;My Location
-              </button>
+              <LoadingButton
+                :loading="loadingLocation"
+                caption="My Location"
+                loadingCaption="Please wait..."
+                v-on:click.native="getLocation"
+              ></LoadingButton>
               <button type="submit" class="btn btn-success">
                 <font-awesome-icon icon="check"/>&nbsp;Calculate
               </button>
@@ -167,11 +170,15 @@
 /* eslint-disable */
 import { required, decimal } from "vuelidate/lib/validators";
 import WeatherService from "../services/weather";
+import LoadingButton from "./LoadingButton";
 
 const weatherService = new WeatherService();
 
 export default {
   name: "RhoCalculator",
+  components: {
+    LoadingButton
+  },
   data() {
     return {
       temperature: "",
@@ -183,7 +190,8 @@ export default {
       temperatureUnits: "°C",
       pressureUnits: "hPa",
       lat: "",
-      long: ""
+      long: "",
+      loadingLocation: false
     };
   },
   metaInfo: {
@@ -202,6 +210,7 @@ export default {
     },
     getLocation: function(event) {
       if (navigator.geolocation) {
+        this.loadingLocation = true;
         navigator.geolocation.getCurrentPosition(this.setPosition);
       } else {
         alert("Geolocation is not supported");
@@ -226,6 +235,8 @@ export default {
         }
       } catch (e) {
         alert(e);
+      } finally {
+        this.loadingLocation = false;
       }
     },
     calculate: function(event) {

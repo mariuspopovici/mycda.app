@@ -20,7 +20,8 @@ import {
   faMoon,
   faInfoCircle,
   faLightbulb,
-  faTrash
+  faTrash,
+  faSpinner
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import Vuelidate from "vuelidate";
@@ -35,6 +36,7 @@ library.add(faLightbulb);
 library.add(faCheck);
 library.add(faSun);
 library.add(faTrash);
+library.add(faSpinner);
 
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 
