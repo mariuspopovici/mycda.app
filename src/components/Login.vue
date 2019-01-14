@@ -1,6 +1,6 @@
 <template>
-  <div id="Login">
-    <div class="container">
+  <div id="parent">
+    <div class="container" id="Login">
       <h2>Sign In</h2>
       <b-alert
         variant="danger"
@@ -8,14 +8,8 @@
         :show="loginError"
         @dismissed="loginError=false"
       >{{loginMessage}}</b-alert>
-      <b-form-group
-        horizontal
-        :label-cols="2"
-        label-size="lg"
-        label="Username"
-        label-for="username"
-      >
-        <b-form-input id="username" size="lg" v-model="email"></b-form-input>
+      <b-form-group horizontal :label-cols="2" label-size="lg" label="Email" label-for="email">
+        <b-form-input id="email" size="lg" v-model="email"></b-form-input>
       </b-form-group>
       <b-form-group
         horizontal
@@ -69,4 +63,7 @@ export default {
 </script>
 
 <style scoped>
+#parent {
+  padding: 100px 0;
+}
 </style>

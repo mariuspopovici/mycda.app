@@ -59,12 +59,15 @@ let app = "";
 firebase.initializeApp(firebaseConfig);
 
 firebase.auth().onAuthStateChanged(() => {
+  // init app when the firebase auth object is ready
   if (!app) {
     /* eslint-disable no-new */
     app = new Vue({
-      router,
-      render: h => h(App)
-    }).$mount("#app");
+      el: "#app",
+      template: "<App/>",
+      components: { App },
+      router
+    });
   }
 });
 
