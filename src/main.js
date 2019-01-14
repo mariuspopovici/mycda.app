@@ -8,6 +8,7 @@ import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap-vue/dist/bootstrap-vue.css";
 import Meta from "vue-meta";
 import "vue2-dropzone/dist/vue2Dropzone.css";
+import firebase from "firebase";
 
 import { library } from "@fortawesome/fontawesome-svg-core";
 import {
@@ -21,7 +22,8 @@ import {
   faInfoCircle,
   faLightbulb,
   faTrash,
-  faSpinner
+  faSpinner,
+  faSignOutAlt
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import Vuelidate from "vuelidate";
@@ -37,19 +39,35 @@ library.add(faCheck);
 library.add(faSun);
 library.add(faTrash);
 library.add(faSpinner);
+library.add(faSignOutAlt);
 
 Vue.component("font-awesome-icon", FontAwesomeIcon);
 
 Vue.config.productionTip = false;
 
+const firebaseConfig = {
+  apiKey: process.env.FB_API_KEY,
+  authDomain: process.env.FB_AUTH_DOMAIN,
+  databaseURL: process.env.FB_DATABASE_URL,
+  projectId: process.env.FB_PROJECT_ID,
+  storageBucket: process.env.FB_STORAGE_BUCKET,
+  messagingSenderId: process.envFB_MSG_SENDER_ID
+};
+
+let app = "";
+
+firebase.initializeApp(firebaseConfig);
+
+firebase.auth().onAuthStateChanged(() => {
+  if (!app) {
+    /* eslint-disable no-new */
+    app = new Vue({
+      router,
+      render: h => h(App)
+    }).$mount("#app");
+  }
+});
+
 Vue.use(Vuelidate);
 Vue.use(BootstrapVue);
 Vue.use(Meta);
-
-/* eslint-disable no-new */
-new Vue({
-  el: "#app",
-  router,
-  components: { App },
-  template: "<App/>"
-});

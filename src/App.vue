@@ -32,15 +32,25 @@
           <!-- Right aligned nav items -->
           <b-navbar-nav class="ml-auto">
             <b-nav-form>
-              <b-nav-item href="#" v-on:click="toggleTheme()" id="themeSwitcher">
-                <font-awesome-icon :icon="themeIcon"/>
-                <span v-if="menuCollapsed">&nbsp;{{themeCaption}}</span>
-              </b-nav-item>
-              <b-tooltip v-if="!menuCollapsed" target="themeSwitcher" title="Toggle dark theme"></b-tooltip>
+              <b-navbar-nav>
+                <b-nav-item v-if="user" v-on:click="signOut" href="#" id="Sign Out">
+                  <font-awesome-icon icon="sign-out-alt"/>&nbsp;Sign Out
+                </b-nav-item>
+              </b-navbar-nav>
+            </b-nav-form>
+            <b-nav-form>
+              <b-navbar-nav>
+                <b-nav-item href="#" v-on:click="toggleTheme()" id="themeSwitcher">
+                  <font-awesome-icon :icon="themeIcon"/>
+                  <span v-if="menuCollapsed">&nbsp;{{themeCaption}}</span>
+                </b-nav-item>
+                <b-tooltip v-if="!menuCollapsed" target="themeSwitcher" title="Toggle dark theme"></b-tooltip>
+              </b-navbar-nav>
             </b-nav-form>
           </b-navbar-nav>
         </b-collapse>
       </b-navbar>
+
       <router-view :theme="theme"/>
     </div>
   </div>
@@ -48,8 +58,17 @@
 
 <script>
 /* eslint-disable */
+import firebase from "firebase";
+
 export default {
   name: "App",
+  beforeCreate() {
+    firebase.auth().onAuthStateChanged(user => {
+      if (user) {
+        this.user = user;
+      }
+    });
+  },
   metaInfo: {
     title:
       "MyCdA.app Field testing estimate of CdA (Coefficient of Drag x Frontal Area)",
@@ -82,10 +101,16 @@ export default {
       themeCaption: "Go Light",
       themeStyle: {
         backgroundColor: "#313131"
-      }
+      },
+      user: null
     };
   },
   methods: {
+    async signOut() {
+      firebase.auth().signOut();
+      this.user = null;
+      this.$router.replace("login");
+    },
     toggleTheme() {
       if (this.theme === "dark") {
         this.theme = "light";
