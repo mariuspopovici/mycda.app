@@ -21,7 +21,15 @@ const router = new Router({
     },
     {
       path: "/",
-      redirect: "/login"
+      redirect: "/landing"
+    },
+    {
+      path: "/landing",
+      name: "Landing",
+      component: Landing,
+      meta: {
+        requiresAuth: false
+      }
     },
     {
       path: "/home",

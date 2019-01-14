@@ -1,7 +1,7 @@
 <template>
   <div id="Landing">
     <div class="container">
-      <h2>Landing page!</h2>
+      <h2>Welcome to MyCDA</h2>
     </div>
   </div>
 </template>
