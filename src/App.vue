@@ -10,7 +10,7 @@
 
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
           <b-navbar-nav v-if="menuCollapsed">
-            <b-nav-item href="#/">
+            <b-nav-item href="#/home">
               <font-awesome-icon icon="home"/>&nbsp;Home
             </b-nav-item>
           </b-navbar-nav>
