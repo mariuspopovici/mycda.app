@@ -66,4 +66,7 @@ export default {
 #parent {
   padding: 100px 0;
 }
+#Login {
+  max-width: 700px;
+}
 </style>
