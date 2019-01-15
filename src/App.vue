@@ -84,83 +84,82 @@
 </template>
 
 <script>
-/* eslint-disable */
-import firebase from "firebase";
+import firebase from 'firebase'
 
 export default {
-  name: "App",
-  beforeCreate() {
+  name: 'App',
+  beforeCreate () {
     firebase.auth().onAuthStateChanged(user => {
       if (user) {
-        this.user = user;
+        this.user = user
       }
-    });
+    })
   },
   metaInfo: {
     title:
-      "MyCdA.app Field testing estimate of CdA (Coefficient of Drag x Frontal Area)",
+      'MyCdA.app Field testing estimate of CdA (Coefficient of Drag x Frontal Area)',
     // all titles will be injected into this template
-    titleTemplate: "%s | MyCdA.app",
+    titleTemplate: '%s | MyCdA.app',
     meta: [
-      { "http-equiv": "Content-Type", content: "text/html; charset=utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { 'http-equiv': 'Content-Type', content: 'text/html; charset=utf-8' },
+      { name: 'viewport', content: 'width=device-width, initial-scale=1' },
       {
-        name: "description",
+        name: 'description',
         content:
-          "MyCdA.app is a field testing data analysis tool used to assist in estimating cycling CdA ((Coefficient of Drag x Frontal Area)) based on power, velocity and air density data"
+          'MyCdA.app is a field testing data analysis tool used to assist in estimating cycling CdA ((Coefficient of Drag x Frontal Area)) based on power, velocity and air density data'
       },
       {
-        name: "author",
-        content: "Marius Popovici"
+        name: 'author',
+        content: 'Marius Popovici'
       },
       {
-        name: "keywords",
+        name: 'keywords',
         content:
-          "coefficient of drag, virtual elevation, field testing, air, density, calculator, rho, chung, virtual, elevation, weather, cycling"
+          'coefficient of drag, virtual elevation, field testing, air, density, calculator, rho, chung, virtual, elevation, weather, cycling'
       }
     ]
   },
-  data() {
+  data () {
     return {
       menuCollapsed: false,
-      theme: "dark",
-      themeIcon: "sun",
-      themeCaption: "Go Light",
+      theme: 'dark',
+      themeIcon: 'sun',
+      themeCaption: 'Go Light',
       themeStyle: {
-        backgroundColor: "#313131"
+        backgroundColor: '#313131'
       },
       user: null
-    };
+    }
   },
   methods: {
-    async signOut() {
-      firebase.auth().signOut();
-      this.user = null;
-      this.$router.replace("login");
+    async signOut () {
+      firebase.auth().signOut()
+      this.user = null
+      this.$router.replace('login')
     },
-    toggleTheme() {
-      if (this.theme === "dark") {
-        this.theme = "light";
-        this.themeIcon = "moon";
-        this.color = "#000000";
-        this.themeCaption = "Go Dark";
+    toggleTheme () {
+      if (this.theme === 'dark') {
+        this.theme = 'light'
+        this.themeIcon = 'moon'
+        this.color = '#000000'
+        this.themeCaption = 'Go Dark'
         this.themeStyle = {
-          color: "#3b3b3b",
-          backgroundColor: "#FFFFFF"
-        };
+          color: '#3b3b3b',
+          backgroundColor: '#FFFFFF'
+        }
       } else {
-        this.theme = "dark";
-        this.color = "#b1aeae";
-        this.themeIcon = "sun";
-        this.themeCaption = "Go Light";
+        this.theme = 'dark'
+        this.color = '#b1aeae'
+        this.themeIcon = 'sun'
+        this.themeCaption = 'Go Light'
         this.themeStyle = {
-          color: "#b1aeae",
-          backgroundColor: "#313131"
-        };
+          color: '#b1aeae',
+          backgroundColor: '#313131'
+        }
       }
     }
   }
-};
+}
 </script>
 
 <style>
@@ -180,4 +179,3 @@ export default {
   flex-direction: column;
 }
 </style>
-

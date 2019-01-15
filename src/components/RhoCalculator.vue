@@ -167,58 +167,56 @@
 </template>
 
 <script>
-/* eslint-disable */
-import { required, decimal } from "vuelidate/lib/validators";
-import WeatherService from "../services/weather";
-import LoadingButton from "./LoadingButton";
+import { required, decimal } from 'vuelidate/lib/validators'
+import WeatherService from '../services/weather'
+import LoadingButton from './LoadingButton'
 
-const weatherService = new WeatherService();
+const weatherService = new WeatherService()
 
 export default {
-  name: "RhoCalculator",
+  name: 'RhoCalculator',
   components: {
     LoadingButton
   },
-  data() {
+  data () {
     return {
-      temperature: "",
-      dewpoint: "",
-      pressure: "",
-      rho: "",
-      rho_lbcuft: "",
-      units: "metric",
-      temperatureUnits: "°C",
-      pressureUnits: "hPa",
-      lat: "",
-      long: "",
+      temperature: '',
+      dewpoint: '',
+      pressure: '',
+      rho: '',
+      rho_lbcuft: '',
+      units: 'metric',
+      temperatureUnits: '°C',
+      pressureUnits: 'hPa',
+      lat: '',
+      long: '',
       loadingLocation: false
-    };
+    }
   },
   metaInfo: {
-    title: "Calculator",
-    links: [{ rel: "canonical", href: "https://rho.mycda.app/#/" }]
+    title: 'Calculator',
+    links: [{ rel: 'canonical', href: 'https://rho.mycda.app/#/' }]
   },
   methods: {
-    onSubmit: function() {
-      this.$v.$touch();
+    onSubmit: function () {
+      this.$v.$touch()
       if (this.$v.$invalid) {
-        rho = "";
-        return;
+        this.rho = ''
       } else {
-        this.calculate();
+        this.calculate()
       }
     },
-    getLocation: function(event) {
+    getLocation: function (event) {
       if (navigator.geolocation) {
-        this.loadingLocation = true;
-        navigator.geolocation.getCurrentPosition(this.setPosition);
+        this.loadingLocation = true
+        navigator.geolocation.getCurrentPosition(this.setPosition)
       } else {
-        alert("Geolocation is not supported");
+        alert('Geolocation is not supported')
       }
     },
-    setPosition: async function(position) {
-      this.lat = position.coords.latitude;
-      this.long = position.coords.longitude;
+    setPosition: async function (position) {
+      this.lat = position.coords.latitude
+      this.long = position.coords.longitude
 
       try {
         const weatherData = await weatherService.sendRequest(
@@ -226,32 +224,32 @@ export default {
           this.long,
           this.units,
           process.env
-        );
+        )
         if (weatherData) {
-          this.temperature = weatherData.temperature;
-          this.dewpoint = weatherData.dewPoint;
-          this.pressure = weatherData.pressure;
-          this.calculate();
+          this.temperature = weatherData.temperature
+          this.dewpoint = weatherData.dewPoint
+          this.pressure = weatherData.pressure
+          this.calculate()
         }
       } catch (e) {
-        alert(e);
+        alert(e)
       } finally {
-        this.loadingLocation = false;
+        this.loadingLocation = false
       }
     },
-    calculate: function(event) {
-      const rhoCalc = require("@mariuspopovici/rho");
+    calculate: function (event) {
+      const rhoCalc = require('@mariuspopovici/rho')
       try {
         const rho = rhoCalc(
           parseFloat(this.temperature),
           parseFloat(this.pressure),
           parseFloat(this.dewpoint),
           this.units
-        );
-        this.rho = rho.toFixed(4);
-        this.rho_lbcuft = rho.toPoundsPerCubicFeet().toFixed(4);
+        )
+        this.rho = rho.toFixed(4)
+        this.rho_lbcuft = rho.toPoundsPerCubicFeet().toFixed(4)
       } catch (e) {
-        alert(e);
+        alert(e)
       }
     }
   },
@@ -270,40 +268,36 @@ export default {
     }
   },
   watch: {
-    units: function(val, oldVal) {
+    units: function (val, oldVal) {
       // when units change
       switch (val) {
-        case "imperial":
+        case 'imperial':
           // set placeholders
-          this.temperatureUnits = "°F";
-          this.pressureUnits = "inHg";
+          this.temperatureUnits = '°F'
+          this.pressureUnits = 'inHg'
           if (oldVal !== val) {
             // convert units to imperial from metric
-            this.temperature = weatherService.toFahrenheit(this.temperature);
-            this.dewpoint = weatherService.toFahrenheit(this.dewpoint);
-            this.pressure = weatherService.hpaToInHg(this.pressure);
+            this.temperature = weatherService.toFahrenheit(this.temperature)
+            this.dewpoint = weatherService.toFahrenheit(this.dewpoint)
+            this.pressure = weatherService.hpaToInHg(this.pressure)
           }
-          break;
-        case "metric":
+          break
+        case 'metric':
           // set placeholders
-          this.temperatureUnits = "°C";
-          this.pressureUnits = "hPa";
+          this.temperatureUnits = '°C'
+          this.pressureUnits = 'hPa'
           if (oldVal !== val) {
             // convert units to metric from imperial
-            this.temperature = weatherService.toCelcius(this.temperature);
-            this.dewpoint = weatherService.toCelcius(this.dewpoint);
-            this.pressure = weatherService.inHgToC(this.pressure);
+            this.temperature = weatherService.toCelcius(this.temperature)
+            this.dewpoint = weatherService.toCelcius(this.dewpoint)
+            this.pressure = weatherService.inHgToC(this.pressure)
           }
-          break;
+          break
         default:
-          this.temperatureUnits = "°C";
-          this.pressureUnits = "hPa";
+          this.temperatureUnits = '°C'
+          this.pressureUnits = 'hPa'
       }
     }
   }
-};
+}
 </script>
-
-
-
-

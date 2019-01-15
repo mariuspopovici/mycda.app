@@ -29,67 +29,68 @@
 </template>
 
 <script>
-/* eslint-disable */
-import vueDropzone from "vue2-dropzone";
+import vueDropzone from 'vue2-dropzone'
+import firebase from 'firebase'
+import { db } from '../main'
 
 const uploadedItems = [
   {
     id: 1,
-    activity_name: "Saturday Morning Ride",
-    date_time: "01/01/2019 8:00 AM",
-    distance: "2.3mi",
-    average_power: "158W",
-    average_speed: "20mph"
+    activity_name: 'Saturday Morning Ride',
+    date_time: '01/01/2019 8:00 AM',
+    distance: '2.3mi',
+    average_power: '158W',
+    average_speed: '20mph'
   },
   {
     id: 2,
-    activity_name: "Monday Morning Ride",
-    date_time: "01/02/2019 8:00 AM",
-    distance: "2.4mi",
-    average_power: "358W",
-    average_speed: "28mph"
+    activity_name: 'Monday Morning Ride',
+    date_time: '01/02/2019 8:00 AM',
+    distance: '2.4mi',
+    average_power: '358W',
+    average_speed: '28mph'
   }
-];
+]
 
 export default {
-  name: "Upload",
+  name: 'Upload',
   metaInfo: {
-    title: "Upload",
-    links: [{ rel: "canonical", href: "https://mycda.app/#/upload" }]
+    title: 'Upload',
+    links: [{ rel: 'canonical', href: 'https://mycda.app/#/upload' }]
   },
-  data() {
+  data () {
     return {
       dropOptions: {
-        url: "https://httpbin.org/post",
+        url: 'https://httpbin.org/post',
         maxFileSize: 4, // MB
         maxFiles: 10,
         chunking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: "Drop .FIT files here or click to select file."
+        dictDefaultMessage: 'Drop .FIT files here or click to select file.'
       },
       fields: [
-        "activity_name",
-        "date_time",
-        "distance",
-        "average_speed",
-        "average_power",
-        "actions"
+        'activity_name',
+        'date_time',
+        'distance',
+        'average_speed',
+        'average_power',
+        'actions'
       ],
       items: uploadedItems,
-      isDark: this.theme === "dark"
-    };
+      isDark: this.theme === 'dark'
+    }
   },
   components: {
     vueDropzone
   },
-  props: ["theme"],
+  props: ['theme'],
   methods: {},
   watch: {
-    theme: function(value) {
-      this.isDark = value === "dark";
+    theme: function (value) {
+      this.isDark = value === 'dark'
     }
   }
-};
+}
 </script>
 
 <style>

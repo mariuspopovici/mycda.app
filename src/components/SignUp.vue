@@ -36,37 +36,37 @@
 </template>
 
 <script>
-import firebase from "firebase";
+import firebase from 'firebase'
 export default {
-  name: "signUp",
-  data() {
+  name: 'signUp',
+  data () {
     return {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
       signUpError: false,
-      signUpMessage: "",
+      signUpMessage: '',
       signUpSuccess: false
-    };
+    }
   },
   methods: {
-    signUp: async function() {
+    signUp: async function () {
       try {
         await firebase
           .auth()
-          .createUserWithEmailAndPassword(this.email, this.password);
-        this.signUpMessage = "Your account has been created.";
-        this.signUpError = false;
-        this.signUpSuccess = true;
+          .createUserWithEmailAndPassword(this.email, this.password)
+        this.signUpMessage = 'Your account has been created.'
+        this.signUpError = false
+        this.signUpSuccess = true
         // clear the form
-        this.email = "";
-        this.password = "";
+        this.email = ''
+        this.password = ''
       } catch (e) {
-        this.signUpMessage = e.message;
-        this.signUpError = true;
+        this.signUpMessage = e.message
+        this.signUpError = true
       }
     }
   }
-};
+}
 </script>
 
 <style scoped>

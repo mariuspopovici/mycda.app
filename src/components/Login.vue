@@ -33,33 +33,33 @@
 </template>
 
 <script>
-import firebase from "firebase";
+import firebase from 'firebase'
 
 export default {
-  name: "login",
-  data() {
+  name: 'login',
+  data () {
     return {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
       loginError: false,
-      loginMessage: ""
-    };
+      loginMessage: ''
+    }
   },
   methods: {
-    login: async function() {
+    login: async function () {
       try {
-        this.loginError = false;
+        this.loginError = false
         await firebase
           .auth()
-          .signInWithEmailAndPassword(this.email, this.password);
-        this.$router.replace("home");
+          .signInWithEmailAndPassword(this.email, this.password)
+        this.$router.replace('home')
       } catch (e) {
-        this.loginError = true;
-        this.loginMessage = e.message;
+        this.loginError = true
+        this.loginMessage = e.message
       }
     }
   }
-};
+}
 </script>
 
 <style scoped>

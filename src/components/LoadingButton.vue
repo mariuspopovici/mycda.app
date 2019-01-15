@@ -18,5 +18,5 @@ export default {
     caption: { type: String },
     loadingCaption: { type: String }
   }
-};
+}
 </script>
