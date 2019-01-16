@@ -37,7 +37,7 @@
 <script>
 import vueDropzone from 'vue2-dropzone'
 import firebase from 'firebase'
-import { db } from '../main'
+// import { db } from '../main'
 
 const uploadedItems = [
   {
@@ -76,7 +76,8 @@ export default {
         chunking: true,
         forceChuncking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: 'Drop .FIT files here or click to select file.'
+        dictDefaultMessage: 'Drop .FIT files here or click to select file.',
+        acceptedFiles: '.fit'
       },
       fields: [
         'activity_name',
@@ -132,9 +133,9 @@ function uploadToStorage (file, data, dz, callback, onErrorCallback) {
   // this is the dropzone's file preview progressbar, we're going to use this to let the user know how firebase upload is doing
   let dzProgressBar = file.previewElement.children[2]
 
-  // create a unique id for the file to be uploaded
+  // create a unique id for the file to be uploaded - this will be the activity id from now on
   var uuidString = uuid()
-  let path = 'userdata/' + firebase.auth().currentUser.uid + '/activities/_' + uuidString + '_' + file.name
+  let path = 'userdata/' + firebase.auth().currentUser.uid + '/activities/' + uuidString + '.fit'
 
   // get a ref to firebase storage root
   let storageRef = firebase.storage().ref()
