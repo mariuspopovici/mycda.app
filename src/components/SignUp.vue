@@ -1,6 +1,6 @@
 <template>
-  <div id="signUp">
-    <div class="container">
+  <div id="parent">
+    <div class="container" id="signUp">
       <h2>Sign Up</h2>
       <b-alert
         variant="danger"
@@ -70,4 +70,10 @@ export default {
 </script>
 
 <style scoped>
+#parent {
+  padding: 100px 0;
+}
+#signUp {
+  max-width: 700px;
+}
 </style>
