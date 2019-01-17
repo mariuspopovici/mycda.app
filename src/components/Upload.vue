@@ -120,9 +120,12 @@ export default {
                 name: 'New Activity',
                 distance: '',
                 averageSpeed: '',
-                averagePower: ''
+                averagePower: '',
+                fit: ''
               }
-              activities.doc(uuidString).set(doc)
+              activities.doc(uuidString).set(doc).then(() => {
+                console.log('added new activity document' + JSON.stringify(doc))
+              }).catch(error => console.log(error))
             },
             // on error
             function (error) {
