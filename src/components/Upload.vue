@@ -1,8 +1,10 @@
 <template>
   <div class="container" id="Upload">
     <div id="upload">
-      <h2>Experiments</h2>
-      <h3>Start an experiment by uploading a new .FIT activity file.</h3>
+      <div id="head">
+        <h2>Experiments</h2>
+        <h3>Start an experiment by uploading a new .FIT activity file.</h3>
+      </div>
       <b-alert
         variant="danger"
         dismissible
@@ -98,6 +100,7 @@ export default {
   methods: {
     fileAdded: function (file) {
       let dz = this.$refs.uploadDropZone.dropzone
+      console.log(dz)
       this.uploadError = false
 
       if (dz.files.length <= dz.options.maxFiles) {
@@ -130,6 +133,7 @@ export default {
               // the cloud function will retrieve the activity, set the activity data parsed from
               // file and then fetchData() below will get notified and refresh the screen - Magic!
               console.log('uploaded to: ' + downloadURL)
+              dz.removeAllFiles()
             },
             // on error
             function (error) {
