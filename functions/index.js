@@ -33,7 +33,7 @@ exports.processActivityFile = functions.storage.object().onFinalize((object) => 
   const bucket = admin.storage().bucket(fileBucket);
   const tempFilePath = path.join(os.tmpdir(), fileName);
   
-  // here we go... 
+  // here we go... I'd really like to convert this to async/await
   return bucket.file(filePath).download({destination: tempFilePath})
   .then(() => {
     console.log('Downloaded activity .fit file locally in ' + tempFilePath);

@@ -94,6 +94,7 @@ export default {
 
       if (dz.files.length <= dz.options.maxFiles) {
         let reader = new FileReader()
+        const _this = this
         reader.onload = function (event) {
           let uuidString = uuid()
           uploadToStorage(uuidString, file, event.target.result, dz,
@@ -113,6 +114,7 @@ export default {
                 averagePower: '',
                 fit: ''
               }
+              _this.activities.push(doc)
               activities.doc(uuidString).set(doc).then(() => {
                 console.info('Added new activity document to store.' + JSON.stringify(doc))
               }).catch(error => console.log(error))
@@ -129,7 +131,6 @@ export default {
       }
     },
     fetchData: function () {
-      this.activities = []
       let activitiesRef = db.collection('activities')
       let _this = this
 
@@ -138,44 +139,23 @@ export default {
         .where('status', '==', 'Processed')
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
+          this.activities = []
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
             let docFITData = JSON.parse(docData.fit)
+            console.log(docFITData)
             let session = docFITData.activity.sessions[0]
             _this.activities.push({
               id: 2,
               name: 'New Activity',
-              timestamp: docData.timestamp,
-              distance: session.total_distance,
-              averagePower: session.avg_power,
-              averageSpeed: session.avg_speed,
+              timestamp: new Date(docFITData.activity.timestamp).toLocaleString(),
+              distance: parseFloat(session.total_distance).toFixed(1),
+              averagePower: parseInt(session.avg_power),
+              averageSpeed: parseFloat(session.avg_speed).toFixed(2),
               status: docData.status
             })
           })
         })
-
-      /* activitiesRef
-        .where('uid', '==', firebase.auth().currentUser.uid)
-        .where('status', '==', 'Processed')
-        .orderBy('timestamp', 'desc')
-        .get()
-        .then((documents) => {
-          documents.forEach(function (doc) {
-            let docData = doc.data()
-            let docFITData = JSON.parse(docData.fit)
-            let session = docFITData.activity.sessions[0]
-            _this.activities.push({
-              id: 2,
-              name: 'New Activity',
-              timestamp: docData.timestamp,
-              distance: session.total_distance,
-              averagePower: session.avg_power,
-              averageSpeed: session.avg_speed,
-              status: docData.status
-            })
-          })
-        })
-        .catch(error => console.error('Failed to get activities. ' + error)) */
     }
   }
 }
