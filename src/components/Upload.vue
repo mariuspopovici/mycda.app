@@ -19,7 +19,7 @@
         hover
         stacked="sm"
         responsive
-        :items="items"
+        :items="activities"
         :fields="fields"
       >
         <template slot="actions" slot-scope="row">
@@ -38,25 +38,6 @@
 import vueDropzone from 'vue2-dropzone'
 import firebase from 'firebase'
 import { db } from '../main'
-
-const uploadedItems = [
-  {
-    id: 1,
-    activity_name: 'Saturday Morning Ride',
-    date_time: '01/01/2019 8:00 AM',
-    distance: '2.3mi',
-    average_power: '158W',
-    average_speed: '20mph'
-  },
-  {
-    id: 2,
-    activity_name: 'Monday Morning Ride',
-    date_time: '01/02/2019 8:00 AM',
-    distance: '2.4mi',
-    average_power: '358W',
-    average_speed: '28mph'
-  }
-]
 
 export default {
   name: 'Upload',
@@ -80,17 +61,26 @@ export default {
         acceptedFiles: '.fit'
       },
       fields: [
-        'activity_name',
-        'date_time',
+        'status',
+        'name',
+        'timestamp',
         'distance',
-        'average_speed',
-        'average_power',
+        'averageSpeed',
+        'averagePower',
         'actions'
       ],
-      items: uploadedItems,
       isDark: this.theme === 'dark',
       uploadError: false,
-      uploadMessage: ''
+      uploadMessage: '',
+      activities: []
+    }
+  },
+  created: function () {
+    this.fetchData()
+  },
+  watch: {
+    theme: function (value) {
+      this.isDark = value === 'dark'
     }
   },
   components: {
@@ -124,7 +114,7 @@ export default {
                 fit: ''
               }
               activities.doc(uuidString).set(doc).then(() => {
-                console.log('added new activity document' + JSON.stringify(doc))
+                console.info('Added new activity document to store.' + JSON.stringify(doc))
               }).catch(error => console.log(error))
             },
             // on error
@@ -137,11 +127,55 @@ export default {
 
         reader.readAsDataURL(file)
       }
-    }
-  },
-  watch: {
-    theme: function (value) {
-      this.isDark = value === 'dark'
+    },
+    fetchData: function () {
+      this.activities = []
+      let activitiesRef = db.collection('activities')
+      let _this = this
+
+      activitiesRef
+        .where('uid', '==', firebase.auth().currentUser.uid)
+        .where('status', '==', 'Processed')
+        .orderBy('timestamp', 'desc')
+        .onSnapshot(function (querySnapshot) {
+          querySnapshot.forEach(function (doc) {
+            let docData = doc.data()
+            let docFITData = JSON.parse(docData.fit)
+            let session = docFITData.activity.sessions[0]
+            _this.activities.push({
+              id: 2,
+              name: 'New Activity',
+              timestamp: docData.timestamp,
+              distance: session.total_distance,
+              averagePower: session.avg_power,
+              averageSpeed: session.avg_speed,
+              status: docData.status
+            })
+          })
+        })
+
+      /* activitiesRef
+        .where('uid', '==', firebase.auth().currentUser.uid)
+        .where('status', '==', 'Processed')
+        .orderBy('timestamp', 'desc')
+        .get()
+        .then((documents) => {
+          documents.forEach(function (doc) {
+            let docData = doc.data()
+            let docFITData = JSON.parse(docData.fit)
+            let session = docFITData.activity.sessions[0]
+            _this.activities.push({
+              id: 2,
+              name: 'New Activity',
+              timestamp: docData.timestamp,
+              distance: session.total_distance,
+              averagePower: session.avg_power,
+              averageSpeed: session.avg_speed,
+              status: docData.status
+            })
+          })
+        })
+        .catch(error => console.error('Failed to get activities. ' + error)) */
     }
   }
 }
