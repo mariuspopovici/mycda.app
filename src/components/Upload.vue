@@ -126,6 +126,9 @@ export default {
           uploadToStorage(uuidString, file, event.target.result, dz,
             // on success
             function (downloadURL) {
+              // processing is handled by a firestore cloud function triggered by a storage add event
+              // the cloud function will retrieve the activity, set the activity data parsed from
+              // file and then fetchData() below will get notified and refresh the screen - Magic!
               console.log('uploaded to: ' + downloadURL)
             },
             // on error
@@ -152,7 +155,6 @@ export default {
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
             let docFITData = JSON.parse(docData.fit)
-            console.log(docFITData)
             let session = docFITData.activity.sessions[0]
             _this.activities.push({
               id: 2,
