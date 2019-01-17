@@ -22,6 +22,14 @@
         :items="activities"
         :fields="fields"
       >
+        <template slot="status" slot-scope="data">
+          <div id='newStatus' v-if="data.value === 'New'">
+            <span><font-awesome-icon icon="spinner" spin/>&nbsp;New</span>
+          </div>
+          <div id='newStatus' v-if="data.value === 'Processed'">
+            <span>{{data.value}}</span>
+          </div>
+        </template>
         <template slot="actions" slot-scope="row">
           <b-button
             size="sm"
@@ -97,27 +105,28 @@ export default {
         const _this = this
         reader.onload = function (event) {
           let uuidString = uuid()
+          // create a new item in my activities collection
+          let activities = db.collection('activities')
+          let doc = {
+            uid: firebase.auth().currentUser.uid,
+            fitURL: '',
+            status: 'New',
+            timestamp: new Date(),
+            name: 'New Activity',
+            distance: '',
+            averageSpeed: '',
+            averagePower: '',
+            fit: ''
+          }
+          _this.activities.unshift(doc)
+          activities.doc(uuidString).set(doc).then(() => {
+            console.info('Added new activity document to store.' + JSON.stringify(doc))
+          }).catch(error => console.log(error))
+
           uploadToStorage(uuidString, file, event.target.result, dz,
             // on success
             function (downloadURL) {
               console.log('uploaded to: ' + downloadURL)
-              // create a new item in my activities collection
-              let activities = db.collection('activities')
-              let doc = {
-                uid: firebase.auth().currentUser.uid,
-                fitURL: downloadURL,
-                status: 'New',
-                timestamp: new Date(),
-                name: 'New Activity',
-                distance: '',
-                averageSpeed: '',
-                averagePower: '',
-                fit: ''
-              }
-              _this.activities.push(doc)
-              activities.doc(uuidString).set(doc).then(() => {
-                console.info('Added new activity document to store.' + JSON.stringify(doc))
-              }).catch(error => console.log(error))
             },
             // on error
             function (error) {
@@ -139,7 +148,7 @@ export default {
         .where('status', '==', 'Processed')
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
-          this.activities = []
+          _this.activities = []
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
             let docFITData = JSON.parse(docData.fit)
