@@ -37,7 +37,7 @@
 <script>
 import vueDropzone from 'vue2-dropzone'
 import firebase from 'firebase'
-// import { db } from '../main'
+import { db } from '../main'
 
 const uploadedItems = [
   {
@@ -105,10 +105,24 @@ export default {
       if (dz.files.length <= dz.options.maxFiles) {
         let reader = new FileReader()
         reader.onload = function (event) {
-          uploadToStorage(file, event.target.result, dz,
+          let uuidString = uuid()
+          uploadToStorage(uuidString, file, event.target.result, dz,
             // on success
             function (downloadURL) {
               console.log('uploaded to: ' + downloadURL)
+              // create a new item in my activities collection
+              let activities = db.collection('activities')
+              let doc = {
+                uid: firebase.auth().currentUser.uid,
+                fitURL: downloadURL,
+                status: 'New',
+                timestamp: new Date(),
+                name: 'New Activity',
+                distance: '',
+                averageSpeed: '',
+                averagePower: ''
+              }
+              activities.doc(uuidString).set(doc)
             },
             // on error
             function (error) {
@@ -129,12 +143,11 @@ export default {
   }
 }
 
-function uploadToStorage (file, data, dz, callback, onErrorCallback) {
+function uploadToStorage (uuidString, file, data, dz, callback, onErrorCallback) {
   // this is the dropzone's file preview progressbar, we're going to use this to let the user know how firebase upload is doing
   let dzProgressBar = file.previewElement.children[2]
 
   // create a unique id for the file to be uploaded - this will be the activity id from now on
-  var uuidString = uuid()
   let path = 'userdata/' + firebase.auth().currentUser.uid + '/activities/' + uuidString + '.fit'
 
   // get a ref to firebase storage root
