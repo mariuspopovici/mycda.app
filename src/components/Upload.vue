@@ -67,7 +67,7 @@ export default {
         chunking: true,
         forceChuncking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: 'Drop .FIT files here or click to select file.',
+        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop .FIT file here or click to select file.`,
         acceptedFiles: '.fit'
       },
       fields: [
@@ -229,6 +229,7 @@ function uuid () {
 </script>
 
 <style>
+
 #uploadDropZone {
   height: 200px;
   padding: 40px;

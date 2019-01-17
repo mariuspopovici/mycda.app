@@ -23,7 +23,8 @@ import {
   faLightbulb,
   faTrash,
   faSpinner,
-  faSignOutAlt
+  faSignOutAlt,
+  faCloud
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 import Vuelidate from 'vuelidate'
@@ -40,6 +41,7 @@ library.add(faSun)
 library.add(faTrash)
 library.add(faSpinner)
 library.add(faSignOutAlt)
+library.add(faCloud)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 
