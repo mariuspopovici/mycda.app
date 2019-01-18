@@ -7,7 +7,8 @@ import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
 import Home from '@/components/Home'
 import Landing from '@/components/Landing'
-import firebase from 'firebase'
+import firebase from 'firebase/app'
+import 'firebase/auth'
 
 Vue.config.productionTip = false
 
@@ -73,9 +74,6 @@ const router = new Router({
 router.beforeEach((to, from, next) => {
   const currentUser = firebase.auth().currentUser
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
-
-  console.log('Logged out: ' + (currentUser === null))
-  console.log('Needs auth:' + requiresAuth)
 
   if (requiresAuth && !currentUser) {
     next('login')

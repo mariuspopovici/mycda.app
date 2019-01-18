@@ -8,7 +8,9 @@ import 'bootstrap/dist/css/bootstrap.css'
 import 'bootstrap-vue/dist/bootstrap-vue.css'
 import Meta from 'vue-meta'
 import 'vue2-dropzone/dist/vue2Dropzone.css'
-import firebase from 'firebase'
+import firebase from 'firebase/app'
+import 'firebase/firestore'
+import 'firebase/auth'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {

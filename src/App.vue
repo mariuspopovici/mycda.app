@@ -1,7 +1,7 @@
 <template>
   <div id="app" v-bind:style="themeStyle">
     <div class="wrapper">
-      <b-navbar toggleable="md" :type="theme" :variant="theme" fixed="top" sticky="false">
+      <b-navbar toggleable="md" :type="theme" :variant="theme" :fixed="'top'" :sticky="false">
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
@@ -51,7 +51,10 @@
         </b-collapse>
       </b-navbar>
 
-      <router-view :theme="theme"/>
+      <div id="component">
+        <router-view :theme="theme"/>
+      </div>
+
     </div>
     <!-- Footer -->
     <footer class="footer">
@@ -84,7 +87,8 @@
 </template>
 
 <script>
-import firebase from 'firebase'
+import firebase from 'firebase/app'
+import 'firebase/auth'
 
 export default {
   name: 'App',
@@ -179,5 +183,9 @@ export default {
   display: flex;
   min-height: 100vh;
   flex-direction: column;
+}
+
+#component {
+  margin-top: 80px;
 }
 </style>

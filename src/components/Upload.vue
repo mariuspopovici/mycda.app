@@ -46,7 +46,11 @@
 
 <script>
 import vueDropzone from 'vue2-dropzone'
-import firebase from 'firebase'
+import firebase from 'firebase/app'
+import 'firebase/auth'
+import 'firebase/firestore'
+import 'firebase/storage'
+
 import { db } from '../main'
 
 export default {
@@ -100,7 +104,6 @@ export default {
   methods: {
     fileAdded: function (file) {
       let dz = this.$refs.uploadDropZone.dropzone
-      console.log(dz)
       this.uploadError = false
 
       if (dz.files.length <= dz.options.maxFiles) {
@@ -133,7 +136,6 @@ export default {
               // processing is handled by a firestore cloud function triggered by a storage add event
               // the cloud function will retrieve the activity, set the activity data parsed from
               // file and then fetchData() below will get notified and refresh the screen - Magic!
-              console.log('uploaded to: ' + downloadURL)
               dz.removeAllFiles()
             },
             // on error
@@ -228,8 +230,8 @@ function uuid () {
 <style>
 
 #uploadDropZone {
-  height: 200px;
-  padding: 40px;
+  height: 150px;
+  padding: 10px;
   color: white;
   background: #313131;
   box-sizing: border-box;
