@@ -20,6 +20,30 @@ const cors = require('cors')({
   origin: true,
 });
 
+/**
+ * Takes activity ID as a parameter and extracts power, speed, cadence, altitude etc. from .fit file 
+ * associated with the activity. Returns it all nicely wrapped in a JSON object with the following structure:
+ * {
+ *   start_time, 
+ *   total_elapsed_time, 
+ *   avg_speed, 
+ *   avg_cadence, 
+ *   avg_power, 
+ *   lap_count, 
+ *   total_ascent,
+ *   total_descent,
+ *   total_distance,
+ *   points: [{
+ *      lap, 
+ *      timestamp,
+ *      distance,
+ *      power,
+ *      altitude,
+ *      speed,
+ *      cadence
+ *   }]
+ * }
+ */
 exports.activity = functions.https.onRequest((req, res) => {
   if (req.method === 'PUT') {
     return res.status(403).send('Forbidden!');
@@ -69,6 +93,7 @@ exports.activity = functions.https.onRequest((req, res) => {
         avg_cadence: session.avg_cadence,
         avg_power: session.avg_power,
         lap_count: session.laps.length,
+        total_distance: session.total_distance,
         total_ascent: session.total_ascent,
         total_descent: session.total_descent,
         points: []
