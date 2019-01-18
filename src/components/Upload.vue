@@ -107,7 +107,7 @@ export default {
         let reader = new FileReader()
         const _this = this
         reader.onload = async function (event) {
-          let uuidString = uuid()
+          let activityId = uuid()
           // create a new item in my activities collection
           let activities = db.collection('activities')
           let doc = {
@@ -125,9 +125,9 @@ export default {
           _this.activities.unshift(doc)
 
           // make sure we have an activity in firestore before the trigger is fired
-          await activities.doc(uuidString).set(doc)
+          await activities.doc(activityId).set(doc)
 
-          uploadToStorage(uuidString, file, event.target.result, dz,
+          uploadToStorage(activityId, file, event.target.result, dz,
             // on success
             function (downloadURL) {
               // processing is handled by a firestore cloud function triggered by a storage add event
@@ -176,12 +176,12 @@ export default {
   }
 }
 
-function uploadToStorage (uuidString, file, data, dz, callback, onErrorCallback) {
+function uploadToStorage (activityId, file, data, dz, callback, onErrorCallback) {
   // this is the dropzone's file preview progressbar, we're going to use this to let the user know how firebase upload is doing
   let dzProgressBar = file.previewElement.children[2]
 
   // create a unique id for the file to be uploaded - this will be the activity id from now on
-  let path = 'userdata/' + firebase.auth().currentUser.uid + '/activities/' + uuidString + '.fit'
+  let path = 'userdata/' + firebase.auth().currentUser.uid + '/activities/' + activityId + '.fit'
 
   // get a ref to firebase storage root
   let storageRef = firebase.storage().ref()
