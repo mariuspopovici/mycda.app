@@ -106,7 +106,7 @@ export default {
       if (dz.files.length <= dz.options.maxFiles) {
         let reader = new FileReader()
         const _this = this
-        reader.onload = function (event) {
+        reader.onload = async function (event) {
           let uuidString = uuid()
           // create a new item in my activities collection
           let activities = db.collection('activities')
@@ -114,17 +114,18 @@ export default {
             uid: firebase.auth().currentUser.uid,
             fitURL: '',
             status: 'New',
-            timestamp: new Date(),
+            timestamp: '-',
             name: 'New Activity',
-            distance: '',
-            averageSpeed: '',
-            averagePower: '',
+            distance: '-',
+            averageSpeed: '-',
+            averagePower: '-',
             fit: ''
           }
+          // show a placeholder activity while the server parses the .fit file
           _this.activities.unshift(doc)
-          activities.doc(uuidString).set(doc).then(() => {
-            console.info('Added new activity document to store.' + JSON.stringify(doc))
-          }).catch(error => console.log(error))
+
+          // make sure we have an activity in firestore before the trigger is fired
+          await activities.doc(uuidString).set(doc)
 
           uploadToStorage(uuidString, file, event.target.result, dz,
             // on success
@@ -199,20 +200,16 @@ function uploadToStorage (uuidString, file, data, dz, callback, onErrorCallback)
       let progressString = (snapshot.bytesTransferred / snapshot.totalBytes) * 100
       dzProgressBar.children[0].style.width = progressString + '%'
     },
-
     // handle upload errors
     function (error) {
       onErrorCallback(error)
     },
-
     // handle success
     function () {
       // get a download URL and return it to the caller
       task.snapshot.ref.getDownloadURL().then(function (downloadURL) {
         callback(downloadURL)
       })
-
-      console.log(dzProgressBar)
       // hiding the progress bar
       dzProgressBar.opacity = 0
     }
