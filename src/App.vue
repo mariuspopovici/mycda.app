@@ -137,7 +137,7 @@ export default {
   },
   methods: {
     async signOut () {
-      firebase.auth().signOut()
+      await firebase.auth().signOut()
       this.user = null
       this.$router.replace('login')
     },
