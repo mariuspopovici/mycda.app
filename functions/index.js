@@ -15,6 +15,89 @@ const db = admin.firestore();
 const settings = { timestampsInSnapshots: true };
 db.settings(settings);
 
+// CORS Express middleware to enable CORS Requests.
+const cors = require('cors')({
+  origin: true,
+});
+
+exports.activity = functions.https.onRequest((req, res) => {
+  if (req.method === 'PUT') {
+    return res.status(403).send('Forbidden!');
+  }
+
+  return cors(req, res, async () => {
+    
+    let activity = req.query.activity;
+    if (!activity) {
+      activity = req.body.activity;
+      if (!activity) {
+        return res.status(400).send('Missing parameters!');
+      }
+    }
+
+    // get the activity document which this file belongs to and attach it while setting status to 'Processed'
+    let docRef = db.collection("activities").doc(activity);
+    let doc = await docRef.get();
+    if (!doc.exists) {
+      return res.status(404).send('No such activity exists!');
+    }
+
+    const fitFile = doc.data().fitFile;
+    console.log('Downloading file', fitFile);
+
+    // download the .fit file to a temporary location, read it and extract the data we need
+    const bucket = admin.storage().bucket();
+    const tempLocalFile = path.normalize(path.format({dir: os.tmpdir, name: activity, ext: '.json'}));
+
+    try {
+      await bucket.file(fitFile).download({destination: tempLocalFile});
+      console.log('Downloaded activity .fit file locally in ' + tempLocalFile);  
+      
+      const readFile = util.promisify(fs.readFile);
+      let content = await readFile(tempLocalFile);
+      fs.unlinkSync(tempLocalFile);
+
+      let fit = JSON.parse(content);
+      console.log('Read and parsed contents.');  
+
+      let session = fit.activity.sessions[0];
+
+      let data = {
+        start_time: session.start_time,
+        total_elapsed_time: session.total_elapsed_time,
+        avg_speed: session.avg_speed,
+        avg_cadence: session.avg_cadence,
+        avg_power: session.avg_power,
+        lap_count: session.laps.length,
+        total_ascent: session.total_ascent,
+        total_descent: session.total_descent,
+        points: []
+      }
+
+      session.laps.forEach((lap, i) => {
+        session.laps[i].records.forEach((record) => {
+          data.points.push({
+            lap: i + 1,
+            timestamp: record.timestamp,
+            distance: record.distance,
+            power: record.power,
+            altitude: record.altitude,
+            speed: record.speed,
+            cadence: record.cadence
+          })
+        });
+      });
+      
+      console.log('Prepared response.');  
+
+      return res.status(200).json(data);
+    } catch (error) {
+      console.log(error);
+      return res.status(500).send('An error occurred.');
+    }
+  });
+});
+
 /**
  * This gets raised every time a file gets uploaded in storage
  * - downloads the .FIT file from storage
