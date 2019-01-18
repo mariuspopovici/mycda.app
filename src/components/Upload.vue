@@ -115,14 +115,12 @@ export default {
           let activities = db.collection('activities')
           let doc = {
             uid: firebase.auth().currentUser.uid,
-            fitURL: '',
             status: 'New',
             timestamp: '-',
             name: 'New Activity',
             distance: '-',
             averageSpeed: '-',
-            averagePower: '-',
-            fit: ''
+            averagePower: '-'
           }
           // show a placeholder activity while the server parses the .fit file
           _this.activities.unshift(doc)
@@ -161,15 +159,13 @@ export default {
           _this.activities = []
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
-            let docFITData = JSON.parse(docData.fit)
-            let session = docFITData.activity.sessions[0]
+            console.log(docData)
             _this.activities.push({
-              id: 2,
               name: 'New Activity',
-              timestamp: new Date(docFITData.activity.timestamp).toLocaleString(),
-              distance: parseFloat(session.total_distance).toFixed(1),
-              averagePower: parseInt(session.avg_power),
-              averageSpeed: parseFloat(session.avg_speed).toFixed(2),
+              timestamp: docData.timestamp.toDate().toLocaleString(),
+              distance: parseFloat(docData.distance).toFixed(1),
+              averagePower: parseInt(docData.averagePower),
+              averageSpeed: parseFloat(docData.averageSpeed).toFixed(2),
               status: docData.status
             })
           })
