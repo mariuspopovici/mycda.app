@@ -10,6 +10,7 @@ const fs = require('fs');
 const os = require('os');
 const util = require('util');
 const mkdirp = require('mkdirp-promise');
+const {gzip, ungzip} = require('node-gzip');
 
 const db = admin.firestore();
 const settings = { timestampsInSnapshots: true };
@@ -59,6 +60,8 @@ exports.getActivityData = functions.https.onCall( async (data, context) => {
         'while authenticated.');
   }
 
+  console.time('Get document from firestore.')
+
   // get the activity document which this file belongs to and attach it while setting status to 'Processed'
   let docRef = db.collection("activities").doc(activity);
   let doc = await docRef.get();
@@ -66,19 +69,29 @@ exports.getActivityData = functions.https.onCall( async (data, context) => {
     throw new functions.https.HttpsError('not-found', 'The requested activity does not exist.');
   }
 
+  console.timeEnd('Get document from firestore.')
+
   const fitFile = doc.data().fitFile;
   console.log('Downloading file', fitFile);
 
   // download the .fit file to a temporary location, read it and extract the data we need
   const bucket = admin.storage().bucket();
-  const tempLocalFile = path.normalize(path.format({dir: os.tmpdir, name: activity, ext: '.json'}));
+  const tempLocalFile = path.normalize(path.format({dir: os.tmpdir, name: activity, ext: '.json.gz'}));
 
   try {
+    console.time('Downloading document from storage.')
     await bucket.file(fitFile).download({destination: tempLocalFile});
     console.log('Downloaded activity .fit file locally in ' + tempLocalFile);  
+    console.timeEnd('Downloading document from storage.')
+
+    console.time('Reading .json file.')
     
     const readFile = util.promisify(fs.readFile);
     let content = await readFile(tempLocalFile);
+    content = await ungzip(content);
+    
+    console.timeEnd('Reading .json file.')
+    
     fs.unlinkSync(tempLocalFile);
 
     let fit = JSON.parse(content);
@@ -99,6 +112,7 @@ exports.getActivityData = functions.https.onCall( async (data, context) => {
       points: []
     }
 
+    console.time('Extracting from .json object.')
     session.laps.forEach((lap, i) => {
       session.laps[i].records.forEach((record) => {
         data.points.push({
@@ -107,13 +121,14 @@ exports.getActivityData = functions.https.onCall( async (data, context) => {
           distance: record.distance,
           power: record.power,
           altitude: record.altitude,
-          speed: record.speed,
-          cadence: record.cadence
+          speed: record.speed
         })
       });
     });
-    
+    console.timeEnd('Extracting from .json object.')
     console.log('Prepared response.');  
+
+    
 
     // return data to caller as JSON
     return data;
@@ -151,7 +166,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
   const fileDir = path.dirname(filePath);
   
   // this is the .json converted file 
-  const jsonFilePath = path.normalize(path.format({dir: fileDir, name: baseFileName, ext: '.json'}));
+  const jsonFilePath = path.normalize(path.format({dir: fileDir, name: baseFileName, ext: '.json.gz'}));
   const tempLocalFile = path.join(os.tmpdir(), filePath);
   const tempLocalDir = path.dirname(tempLocalFile);
   const tempLocalJsonFile = path.join(os.tmpdir(), jsonFilePath);
@@ -201,8 +216,10 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     // we will however keep some metadata in the activity document in firestore for convenience
     
     let dataAsString = JSON.stringify(data);
+    const compressed = await gzip(dataAsString);
+
     const writeFile = util.promisify(fs.writeFile);
-    await writeFile(tempLocalJsonFile, dataAsString, 'utf-8');
+    await writeFile(tempLocalJsonFile, compressed, 'utf-8');
     console.log('Converted to .json file at', tempLocalJsonFile);
 
     // store the .json file in storage

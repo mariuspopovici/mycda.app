@@ -168,7 +168,7 @@ export default {
 
 <style>
 @import url("https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css");
-
+@import url('https://fonts.googleapis.com/css?family=Roboto');
 #app .logo {
   height: 32px;
   max-width: 64px;
