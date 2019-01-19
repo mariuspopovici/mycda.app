@@ -26,6 +26,7 @@
     "request-promise": "^4.2.2",
     "sass-loader": "^7.1.0",
     "vue": "^2.5.2",
+    "vue-google-charts": "^0.3.2",
     "vue-meta": "^1.5.8",
     "vue-router": "^3.0.1",
     "vue2-dropzone": "^3.5.2",

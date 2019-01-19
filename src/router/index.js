@@ -7,6 +7,8 @@ import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
 import Home from '@/components/Home'
 import Landing from '@/components/Landing'
+import Activity from '@/components/Activity'
+
 import firebase from 'firebase/app'
 import 'firebase/auth'
 
@@ -44,6 +46,14 @@ const router = new Router({
       path: '/upload',
       name: 'Upload',
       component: Upload,
+      meta: {
+        requiresAuth: true
+      }
+    },
+    {
+      path: '/activity/:id',
+      name: 'Activity',
+      component: Activity,
       meta: {
         requiresAuth: true
       }

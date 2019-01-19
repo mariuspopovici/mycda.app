@@ -36,7 +36,7 @@
           <b-button
             size="sm"
             variant="primary"
-            :to="{path: 'about', params: { id: row.item.id }}"
+            :to="{name: 'Activity', params: { id: row.item.id }}"
           >Show Details</b-button>
         </template>
       </b-table>
@@ -159,8 +159,8 @@ export default {
           _this.activities = []
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
-            console.log(docData)
             _this.activities.push({
+              id: doc.id,
               name: 'New Activity',
               timestamp: docData.timestamp.toDate().toLocaleString(),
               distance: parseFloat(docData.distance).toFixed(1),

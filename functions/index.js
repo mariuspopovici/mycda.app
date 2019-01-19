@@ -44,84 +44,86 @@ const cors = require('cors')({
  *   }]
  * }
  */
-exports.activity = functions.https.onRequest((req, res) => {
-  if (req.method === 'PUT') {
-    return res.status(403).send('Forbidden!');
+exports.getActivityData = functions.https.onCall( async (data, context) => {
+  const activity = data.activity;
+  if (!(typeof activity === 'string') || activity.length === 0) {
+    // throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('invalid-argument', 'The function must be called with ' +
+        'one argument "activity" containing the activity id for which the data should be fetched.');
+  }  
+
+  // Checking that the user is authenticated.
+  if (!context.auth) {
+    // Throwing an HttpsError so that the client gets the error details.
+    throw new functions.https.HttpsError('failed-precondition', 'The function must be called ' +
+        'while authenticated.');
   }
 
-  return cors(req, res, async () => {
+  // get the activity document which this file belongs to and attach it while setting status to 'Processed'
+  let docRef = db.collection("activities").doc(activity);
+  let doc = await docRef.get();
+  if (!doc.exists) {
+    throw new functions.https.HttpsError('not-found', 'The requested activity does not exist.');
+  }
+
+  const fitFile = doc.data().fitFile;
+  console.log('Downloading file', fitFile);
+
+  // download the .fit file to a temporary location, read it and extract the data we need
+  const bucket = admin.storage().bucket();
+  const tempLocalFile = path.normalize(path.format({dir: os.tmpdir, name: activity, ext: '.json'}));
+
+  try {
+    await bucket.file(fitFile).download({destination: tempLocalFile});
+    console.log('Downloaded activity .fit file locally in ' + tempLocalFile);  
     
-    let activity = req.query.activity;
-    if (!activity) {
-      activity = req.body.activity;
-      if (!activity) {
-        return res.status(400).send('Missing parameters!');
-      }
+    const readFile = util.promisify(fs.readFile);
+    let content = await readFile(tempLocalFile);
+    fs.unlinkSync(tempLocalFile);
+
+    let fit = JSON.parse(content);
+    console.log('Read and parsed contents.');  
+
+    let session = fit.activity.sessions[0];
+
+    let data = {
+      start_time: session.start_time,
+      total_elapsed_time: session.total_elapsed_time,
+      avg_speed: session.avg_speed,
+      avg_cadence: session.avg_cadence,
+      avg_power: session.avg_power,
+      lap_count: session.laps.length,
+      total_distance: session.total_distance,
+      total_ascent: session.total_ascent,
+      total_descent: session.total_descent,
+      points: []
     }
 
-    // get the activity document which this file belongs to and attach it while setting status to 'Processed'
-    let docRef = db.collection("activities").doc(activity);
-    let doc = await docRef.get();
-    if (!doc.exists) {
-      return res.status(404).send('No such activity exists!');
-    }
-
-    const fitFile = doc.data().fitFile;
-    console.log('Downloading file', fitFile);
-
-    // download the .fit file to a temporary location, read it and extract the data we need
-    const bucket = admin.storage().bucket();
-    const tempLocalFile = path.normalize(path.format({dir: os.tmpdir, name: activity, ext: '.json'}));
-
-    try {
-      await bucket.file(fitFile).download({destination: tempLocalFile});
-      console.log('Downloaded activity .fit file locally in ' + tempLocalFile);  
-      
-      const readFile = util.promisify(fs.readFile);
-      let content = await readFile(tempLocalFile);
-      fs.unlinkSync(tempLocalFile);
-
-      let fit = JSON.parse(content);
-      console.log('Read and parsed contents.');  
-
-      let session = fit.activity.sessions[0];
-
-      let data = {
-        start_time: session.start_time,
-        total_elapsed_time: session.total_elapsed_time,
-        avg_speed: session.avg_speed,
-        avg_cadence: session.avg_cadence,
-        avg_power: session.avg_power,
-        lap_count: session.laps.length,
-        total_distance: session.total_distance,
-        total_ascent: session.total_ascent,
-        total_descent: session.total_descent,
-        points: []
-      }
-
-      session.laps.forEach((lap, i) => {
-        session.laps[i].records.forEach((record) => {
-          data.points.push({
-            lap: i + 1,
-            timestamp: record.timestamp,
-            distance: record.distance,
-            power: record.power,
-            altitude: record.altitude,
-            speed: record.speed,
-            cadence: record.cadence
-          })
-        });
+    session.laps.forEach((lap, i) => {
+      session.laps[i].records.forEach((record) => {
+        data.points.push({
+          lap: i + 1,
+          timestamp: record.timestamp,
+          distance: record.distance,
+          power: record.power,
+          altitude: record.altitude,
+          speed: record.speed,
+          cadence: record.cadence
+        })
       });
-      
-      console.log('Prepared response.');  
+    });
+    
+    console.log('Prepared response.');  
 
-      return res.status(200).json(data);
-    } catch (error) {
-      console.log(error);
-      return res.status(500).send('An error occurred.');
-    }
-  });
+    // return data to caller as JSON
+    return data;
+  } catch (error) {
+    console.log(error);
+    throw new functions.https.HttpsError('error', 'An error occurred.' + error);
+  }
 });
+
+
 
 /**
  * This gets raised every time a file gets uploaded in storage

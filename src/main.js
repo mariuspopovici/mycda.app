@@ -11,6 +11,7 @@ import 'vue2-dropzone/dist/vue2Dropzone.css'
 import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
+import VueGoogleCharts from 'vue-google-charts'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -81,4 +82,5 @@ firebase.auth().onAuthStateChanged(() => {
 
 Vue.use(Vuelidate)
 Vue.use(BootstrapVue)
+Vue.use(VueGoogleCharts)
 Vue.use(Meta)
