@@ -114,6 +114,7 @@ export default {
           // create a new item in my activities collection
           let activities = db.collection('activities')
           let doc = {
+            id: -1,
             uid: firebase.auth().currentUser.uid,
             status: 'New',
             timestamp: '-',

@@ -11,15 +11,182 @@ const os = require('os');
 const util = require('util');
 const mkdirp = require('mkdirp-promise');
 const {gzip, ungzip} = require('node-gzip');
+const compression = require('compression');
+const cookieParser = require('cookie-parser')();
+const express = require('express');
+const app = express();
+const cors = require('cors')({origin: true});
 
 const db = admin.firestore();
 const settings = { timestampsInSnapshots: true };
 db.settings(settings);
 
-// CORS Express middleware to enable CORS Requests.
-const cors = require('cors')({
-  origin: true,
+
+/**
+ * Express middleware that validates Firebase ID Tokens passed in the Authorization HTTP header.
+ * The Firebase ID token needs to be passed as a Bearer token in the Authorization HTTP header like this:
+ * `Authorization: Bearer <Firebase ID Token>`.
+ * when decoded successfully, the ID Token content will be added as `req.user`.
+ * @param {*} req 
+ * @param {*} res 
+ * @param {*} next 
+ */
+const validateFirebaseIdToken = async (req, res, next) => {
+  console.log('Check if request is authorized with Firebase ID token');
+
+  if ((!req.headers.authorization || !req.headers.authorization.startsWith('Bearer ')) &&
+      !(req.cookies && req.cookies.__session)) {
+    console.error('No Firebase ID token was passed as a Bearer token in the Authorization header.',
+        'Make sure you authorize your request by providing the following HTTP header:',
+        'Authorization: Bearer <Firebase ID Token>',
+        'or by passing a "__session" cookie.');
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  let idToken;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer ')) {
+    console.log('Found "Authorization" header');
+    // Read the ID Token from the Authorization header.
+    idToken = req.headers.authorization.split('Bearer ')[1];
+  } else if(req.cookies) {
+    console.log('Found "__session" cookie');
+    // Read the ID Token from cookie.
+    idToken = req.cookies.__session;
+  } else {
+    // No cookie
+    res.status(403).send('Unauthorized');
+    return;
+  }
+
+  try {
+    const decodedIdToken = await admin.auth().verifyIdToken(idToken);
+    console.log('ID Token correctly decoded', decodedIdToken);
+    req.user = decodedIdToken;
+    next();
+    return;
+  } catch (error) {
+    console.error('Error while verifying Firebase ID token:', error);
+    res.status(403).send('Unauthorized');
+    return;
+  }
+};
+
+
+app.use(cors);
+app.use(compression());
+app.use(cookieParser);
+app.use(validateFirebaseIdToken);
+
+/**
+ * Takes activity ID as a parameter and extracts power, speed, cadence, altitude etc. from .fit file 
+ * associated with the activity. Returns it all nicely wrapped in a JSON object with the following structure:
+ * {
+ *   start_time, 
+ *   total_elapsed_time, 
+ *   avg_speed, 
+ *   avg_cadence, 
+ *   avg_power, 
+ *   lap_count, 
+ *   total_ascent,
+ *   total_descent,
+ *   total_distance,
+ *   points: [{
+ *      lap, 
+ *      timestamp,
+ *      distance,
+ *      power,
+ *      altitude,
+ *      speed,
+ *      cadence
+ *   }]
+ * }
+ */
+app.get('/:activity', async (req, res) => {
+  let activity = req.params.activity;
+  if (!activity) {
+    res.status(400).send('Missing parameters!');
+    return;
+  }
+
+  console.log('Got request for activity:', activity);
+  // get the activity document which this file belongs to and attach it while setting status to 'Processed'
+  let docRef = db.collection("activities").doc(activity);
+  let doc = await docRef.get();
+  if (!doc.exists) {
+    res.status(404).send('No such activity exists!');
+    return;
+  }
+
+  const fitFile = doc.data().fitFile;
+  console.log('Downloading file', fitFile);
+
+  // download the .fit file to a temporary location, read it and extract the data we need
+  const bucket = admin.storage().bucket();
+  const tempLocalFile = path.normalize(path.format({dir: os.tmpdir, name: activity, ext: '.json.gz'}));
+
+  try {
+    await bucket.file(fitFile).download({destination: tempLocalFile});
+    console.log('Downloaded activity .fit file locally in ' + tempLocalFile);  
+
+    const readFile = util.promisify(fs.readFile);
+    let content = await readFile(tempLocalFile);
+    
+    // content will be gzip compressed so we uncompress it
+    content = await ungzip(content);
+    fs.unlinkSync(tempLocalFile);
+
+    let fit = JSON.parse(content);
+    console.log('Read and parsed contents.');  
+
+    let session = fit.activity.sessions[0];
+
+    let data = {
+      start_time: session.start_time,
+      total_elapsed_time: session.total_elapsed_time,
+      avg_speed: session.avg_speed,
+      avg_cadence: session.avg_cadence,
+      avg_power: session.avg_power,
+      lap_count: session.laps.length,
+      total_distance: session.total_distance,
+      total_ascent: session.total_ascent,
+      total_descent: session.total_descent,
+      points: []
+    }
+
+    console.time('Extracting from .json object.')
+    session.laps.forEach((lap, i) => {
+      session.laps[i].records.forEach((record) => {
+        data.points.push({
+          lap: i + 1,
+          timestamp: record.timestamp,
+          distance: record.distance,
+          power: record.power,
+          altitude: record.altitude,
+          speed: record.speed
+        })
+      });
+    });
+
+    console.log('Prepared response.');  
+
+    res.status(200).json(data);
+    return;
+  } catch (error) {
+    console.log(error);
+    res.status(500).send('An error occurred.');
+    return;
+  }
 });
+
+
+/**
+ * This HTTPS endpoint can only be accessed by your Firebase Users.
+ * Requests need to be authorized by providing an `Authorization` HTTP header
+ * with value `Bearer <Firebase ID Token>`.
+ */
+exports.activity = functions.https.onRequest(app);
+
 
 /**
  * Takes activity ID as a parameter and extracts power, speed, cadence, altitude etc. from .fit file 
@@ -89,7 +256,7 @@ exports.getActivityData = functions.https.onCall( async (data, context) => {
     const readFile = util.promisify(fs.readFile);
     let content = await readFile(tempLocalFile);
     content = await ungzip(content);
-    
+
     console.timeEnd('Reading .json file.')
     
     fs.unlinkSync(tempLocalFile);

@@ -4,20 +4,17 @@
     <div id ='loading' v-if="loading">
       <span>Loading details, please wait...</span>
     </div>
-    <GChart
-    type="LineChart"
-    :data="chartData"
-    :options="chartOptions"
-    @ready="onChartReady"
-  />
-
+    <div id='chart' v-else>
+      <vue-plotly :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+    </div>
   </div>
 </template>
 
 <script>
 import firebase from 'firebase/app'
 import 'firebase/functions'
-import { GChart } from 'vue-google-charts'
+import VuePlotly from '@statnett/vue-plotly'
+const rp = require('request-promise')
 
 /* eslint-disable */
 export default {
@@ -30,61 +27,38 @@ export default {
       loading: true,
       activityID: this.$route.params.id,
       chartData: null,
+      chartLayout: {
+        title: '',
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+        modebar: {
+          bgcolor: 'transparent'
+        },
+        font: { family: 'Roboto', color: '#b0bec5'}, 
+        colorway: ["#f4a433","#404244","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39"],
+        hoverlabel: {
+          bgcolor: 'transparent'
+        },
+        legend: { orientation: 'h', yanchor: 'top', xanchor: 'center', y:1.1, x:0.5 },
+        yaxis: {
+          gridcolor: '#37474f',
+          showgrid: true
+        },
+        yaxis2: {
+          side: 'right',
+          showgrid: false,
+          overlaying: 'y'
+        },
+        xaxis: {
+          showgrid: false
+        }
+      },
       chartOptions: {
-        chart: {
-          title: 'New Activity'
-        },
-        height: 400,
-        series: {
-          1: {
-            targetAxisIndex:0
-          },
-          2: {
-            targetAxisIndex:1
-          }
-        },
-        vAxes: {
-          0: {title: 'Power (W)'},
-          1: {title: 'Elevation (m)'}
-        },
-        hAxes: {
-          0: {title: 'Time (mm:ss)'}
-        },
-        hAxis: { 
-          format: 'm:s',
-          titleTextStyle: {color: '#607d8b'}, 
-          gridlines: { count:0}, 
-          textStyle: { color: '#b0bec5', fontName: 'Roboto', fontSize: '12', bold: true}
-        },
-        vAxis: {
-          gridlines: {color:'#37474f'}, 
-          titleTextStyle: {color: '#607d8b'}, 
-          textStyle: { color: '#b0bec5', fontName: 'Roboto', fontSize: '12', bold: true}
-        },
-        legend: {position: 'top', alignment: 'center', textStyle: {color:'#607d8b', fontName: 'Roboto', fontSize: '12'} },
-        colors: ["#f4a433","#3f51b5","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39"],
-        areaOpacity: 0.24,
-        lineWidth: 1.5,
-        backgroundColor: 'transparent',
-        chartArea: {
-          backgroundColor: "transparent",
-          width: '80%',
-          height: '80%'
-        },
-        colorAxis: {colors: ["#3f51b5","#2196f3","#03a9f4","#00bcd4"] },
-        backgroundColor: 'transparent',
-        datalessRegionColor: '#37474f',
-        displayMode: 'regions',
-        explorer: {
-          axis: 'horizontal',
-          actions: ['dragToZoom', 'rightClickToReset'],
-          maxZoomIn: .10
-        } 
       }
     };
   },
   created: function () {
-    this.fetchData(this.activityID)
+    this.fetchDataGzip(this.activityID)
   },
   props: ["theme"],
   methods: {
@@ -103,21 +77,79 @@ export default {
         console.log(error)
       }
     },
+    fetchDataGzip: async function(id) {
+      const token = await firebase.auth().currentUser.getIdToken(true)
+      const options = {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer ' + token,
+          'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36',
+          'Accept-Encoding': 'gzip'
+        },
+        qs: {
+          activity: id
+        },
+        json: true,
+        gzip: true
+      }
+      try {
+        this.loading = true
+        console.time('gzip function call')
+        const result = await rp(
+          'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
+          options
+        ) 
+        console.timeEnd('gzip function call')
+
+        this.processData(result)
+      } catch (error) {
+        console.log(error)
+      }
+    },
     processData: function(data) {
-      let chartData = [
-        ['Time', 'Power', 'Elevation', 'Speed']
-      ]
+      let time = [];
+      let power = [];
+      let altitude = [];
+      let speed = [];
+
       data.points.forEach(function(point) { //new Date(point.timestamp).toLocaleTimeString()
-        chartData.push(
-          [new Date(point.timestamp), point.power, point.altitude*1000, point.speed,]
-        )
+        time.push(new Date(point.timestamp))
+        power.push(point.power)
+        altitude.push(point.altitude*1000)
+        speed.push(point.speed)
       })
-      this.chartData = chartData
+
+      let tracePower = {
+        x: time,
+        y: power,
+        mode: 'lines',
+        name: 'Power'
+      }
+
+      let traceAltitude = {
+        x: time,
+        y: altitude,
+        type: 'scatter',
+        fill: 'tozeroy',
+        mode: 'none',
+        name: 'Elevation',
+        yaxis: 'y2',
+      }
+
+      let traceSpeed = {
+        x: time,
+        y: speed,
+        mode: 'lines',
+        name: 'Speed'
+      }
+
+      this.chartData = [tracePower, traceAltitude, traceSpeed]
+      
       this.loading = false
     }
   },
   components: {
-    GChart
+    VuePlotly
   }
 };
 </script>
