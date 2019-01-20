@@ -42,12 +42,20 @@ export default {
         legend: { orientation: 'h', yanchor: 'top', xanchor: 'center', y:1.1, x:0.5 },
         yaxis: {
           gridcolor: '#37474f',
-          showgrid: true
+          showgrid: true,
+          tickfont: { color: '#f4a433' }
         },
         yaxis2: {
           side: 'right',
           showgrid: false,
-          overlaying: 'y'
+          overlaying: 'y',
+          tickfont: { color: '#404244' }
+        },
+        yaxis3: {
+          side: 'right',
+          showgrid: false,
+          overlaying: 'y',
+          tickfont: { color: '#2196f3' }
         },
         xaxis: {
           showgrid: false
@@ -123,7 +131,10 @@ export default {
         x: time,
         y: power,
         mode: 'lines',
-        name: 'Power'
+        name: 'Power',
+        line: {
+          width: 0.5
+        }
       }
 
       let traceAltitude = {
@@ -140,7 +151,8 @@ export default {
         x: time,
         y: speed,
         mode: 'lines',
-        name: 'Speed'
+        name: 'Speed',
+        yaxis: 'y3'
       }
 
       this.chartData = [tracePower, traceAltitude, traceSpeed]
