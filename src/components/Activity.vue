@@ -5,13 +5,13 @@
       <span>Loading activity details, please wait...</span>
     </div>
     <div id='activityDetails' v-else>
-      <vue-plotly :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+      <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
       <div role="tablist">
         <b-card no-body class="mb-1" :bg-variant="theme">
           <b-card-header header-tag="header" class="p-1" role="tab">
             <b-btn block href="#" v-b-toggle.accordion0 variant="primary">Activity Stats</b-btn>
           </b-card-header>
-          <b-collapse visible id="accordion0" accordion="stats-accordion" role="tabpanel">
+          <b-collapse v-on:shown="selectLap(-1)" visible id="accordion0" accordion="stats-accordion" role="tabpanel">
             <b-card-body :bg-variant="theme" title="Activity Stats">
               <p class="card-text"><b>Date:</b> {{timestamp}}</p>
               <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
@@ -26,7 +26,7 @@
           <b-card-header header-tag="header" class="p-1" role="tab">
             <b-btn block href="#" v-b-toggle="'accordion' + (index + 1)" variant="secondary">Lap {{index + 1}}</b-btn>
           </b-card-header>
-          <b-collapse v-bind:id="'accordion' + (index + 1)" accordion="stats-accordion" role="tabpanel">
+          <b-collapse v-on:shown="selectLap(index)" v-bind:id="'accordion' + (index + 1)" accordion="stats-accordion" role="tabpanel">
             <b-card-body :bg-variant="theme" v-bind:title="'Lap ' + (index + 1)">
               <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
               <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
@@ -108,6 +108,51 @@ export default {
   },
   props: ["theme"],
   methods: {
+    lapShape: function (index) {
+      const lap = this.laps[index]
+      let start = new Date(lap.start_time)
+      let end = new Date(start);
+      end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
+      
+      // add a new shape to the chart layout
+      let shapes = []
+      shapes.push({
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        x0: start,
+        y0: 0,
+        x1: end,
+        y1: 1,
+        fillcolor: '#ffffff',
+        opacity: 0.2,
+        line: {
+          width: 0
+        }
+      });
+
+      return shapes;
+    },
+    selectLap: function (index) { 
+      console.log(index)
+      if (index < 0) {
+        let updateLayout = {
+          shapes: [],
+          title: ''
+        } 
+        this.$refs.plotly.relayout(updateLayout)
+        return;
+      }
+
+      let shapes = this.lapShape(index)
+
+      let updateLayout = {
+        shapes: shapes,
+        title: 'Lap ' + (index + 1)
+      }
+
+      this.$refs.plotly.relayout(updateLayout)
+    },
     onChartReady: function () {
 
     },
@@ -202,7 +247,6 @@ export default {
       }
 
       this.chartData = [tracePower, traceAltitude, traceSpeed]
-      
       this.loading = false
     }
   },
