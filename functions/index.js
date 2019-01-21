@@ -152,11 +152,22 @@ app.get('/:activity', async (req, res) => {
       total_distance: session.total_distance,
       total_ascent: session.total_ascent,
       total_descent: session.total_descent,
-      points: []
+      points: [],
+      laps: []
     }
 
     console.time('Extracting from .json object.')
     session.laps.forEach((lap, i) => {
+      data.laps.push({
+        start_time: lap.start_time,
+        total_elapsed_time: lap.total_elapsed_time,
+        total_timer_time: lap.total_timer_time,
+        total_distance: lap.total_distance,
+        total_ascent: lap.total_ascent,
+        total_descent: lap.total_descent,
+        avg_power: lap.avg_power,
+        avg_speed: lap.avg_speed
+      });
       session.laps[i].records.forEach((record) => {
         data.points.push({
           lap: i + 1,

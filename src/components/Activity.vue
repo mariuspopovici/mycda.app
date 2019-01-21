@@ -5,13 +5,38 @@
       <span>Loading activity details, please wait...</span>
     </div>
     <div id='activityDetails' v-else>
-      <span>
-        <p>
-          <b>Date:</b> {{timestamp}} <b>Total Time:</b> {{totalTime}} <b>Distance:</b> {{totalDistance}} km <b>Avg Speed:</b> {{avgSpeed}} km/h
-          <b>Avg Power:</b> {{avgPower}}W
-        </p>
-      </span>
       <vue-plotly :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+      <div role="tablist">
+        <b-card no-body class="mb-1" :bg-variant="theme">
+          <b-card-header header-tag="header" class="p-1" role="tab">
+            <b-btn block href="#" v-b-toggle.accordion0 variant="primary">Activity Stats</b-btn>
+          </b-card-header>
+          <b-collapse visible id="accordion0" accordion="stats-accordion" role="tabpanel">
+            <b-card-body :bg-variant="theme" title="Activity Stats">
+              <p class="card-text"><b>Date:</b> {{timestamp}}</p>
+              <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
+              <p class="card-text"><b>Distance:</b> {{totalDistance}} km </p>
+              <p class="card-text"><b>Avg Speed:</b> {{avgSpeed}} km/h</p>
+              <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
+            </b-card-body>
+          </b-collapse>
+        </b-card>
+        <!-- Lap Stats -->
+        <b-card v-for="(lap, index) in laps" :key="index" no-body class="mb-1" :bg-variant="theme">
+          <b-card-header header-tag="header" class="p-1" role="tab">
+            <b-btn block href="#" v-b-toggle="'accordion' + (index + 1)" variant="secondary">Lap {{index + 1}}</b-btn>
+          </b-card-header>
+          <b-collapse v-bind:id="'accordion' + (index + 1)" accordion="stats-accordion" role="tabpanel">
+            <b-card-body :bg-variant="theme" v-bind:title="'Lap ' + (index + 1)">
+              <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
+              <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
+              <p class="card-text"><b>Distance:</b> {{lap.total_distance.toFixed(2)}} km </p>
+              <p class="card-text"><b>Avg Speed:</b> {{lap.avg_speed.toFixed(2)}} km/h</p>
+              <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
+            </b-card-body>
+          </b-collapse>
+        </b-card>
+      </div>
     </div>
   </div>
 </template>
@@ -38,6 +63,7 @@ export default {
       avgPower: '',
       avgCadence: '',
       timestamp: '',
+      laps: [],
       chartData: null,
       chartLayout: {
         title: '',
@@ -133,6 +159,7 @@ export default {
       this.avgCadence = parseInt(data.avg_cadence)
       this.timestamp = new Date(data.timestamp).toLocaleString()
       this.totalDistance = parseFloat(data.total_distance).toFixed(1)
+      this.laps = data.laps
 
       let time = []
       let power = []
@@ -184,6 +211,9 @@ export default {
   }
 };
 </script>
+<style scoped>
+
+</style>
 
 
 
