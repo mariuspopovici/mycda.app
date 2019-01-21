@@ -142,6 +142,7 @@ app.get('/:activity', async (req, res) => {
     let session = fit.activity.sessions[0];
 
     let data = {
+      timestamp: fit.activity.timestamp,
       start_time: session.start_time,
       total_elapsed_time: session.total_elapsed_time,
       avg_speed: session.avg_speed,

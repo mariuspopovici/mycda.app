@@ -2,9 +2,15 @@
   <div class="container" id="Activity">
     <h2>Activity Details</h2>
     <div id ='loading' v-if="loading">
-      <span>Loading details, please wait...</span>
+      <span>Loading activity details, please wait...</span>
     </div>
-    <div id='chart' v-else>
+    <div id='activityDetails' v-else>
+      <span>
+        <p>
+          <b>Date:</b> {{timestamp}} <b>Total Time:</b> {{totalTime}} <b>Distance:</b> {{totalDistance}} km <b>Avg Speed:</b> {{avgSpeed}} km/h
+          <b>Avg Power:</b> {{avgPower}}W
+        </p>
+      </span>
       <vue-plotly :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
     </div>
   </div>
@@ -20,12 +26,18 @@ const rp = require('request-promise')
 export default {
   name: "Activity",
   metaInfo: {
-    title: "Activity"
+    title: "Activity Details"
   },
   data() {
     return {
       loading: true,
       activityID: this.$route.params.id,
+      totalTime: '',
+      totalDistance: '',
+      avgSpeed: '',
+      avgPower: '',
+      avgCadence: '',
+      timestamp: '',
       chartData: null,
       chartLayout: {
         title: '',
@@ -115,10 +127,17 @@ export default {
       }
     },
     processData: function(data) {
-      let time = [];
-      let power = [];
-      let altitude = [];
-      let speed = [];
+      this.totalTime = (new Date(parseInt(data.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
+      this.avgSpeed = parseFloat(data.avg_speed).toFixed(2)
+      this.avgPower = parseInt(data.avg_power)
+      this.avgCadence = parseInt(data.avg_cadence)
+      this.timestamp = new Date(data.timestamp).toLocaleString()
+      this.totalDistance = parseFloat(data.total_distance).toFixed(1)
+
+      let time = []
+      let power = []
+      let altitude = []
+      let speed = []
 
       data.points.forEach(function(point) { //new Date(point.timestamp).toLocaleTimeString()
         time.push(new Date(point.timestamp))
