@@ -138,7 +138,7 @@ export default {
       if (index < 0) {
         let updateLayout = {
           shapes: [],
-          title: ''
+          title: 'Entire Ride'
         } 
         this.$refs.plotly.relayout(updateLayout)
         return;
@@ -246,7 +246,43 @@ export default {
         yaxis: 'y3'
       }
 
+      // let updatemenus = [{
+      //   buttons: [
+      //     {
+      //       args: [{}, {
+      //         'shapes': [],
+      //         'title': 'Entire Ride'
+      //       }],
+      //       label: 'Entire Ride',
+      //       method: 'update'
+      //     }
+      //   ],
+      //   direction: 'left',
+      //   pad: {'r': 10, 't': 10},
+      //   showactive: true,
+      //   type: 'buttons',
+      //   x: 0,
+      //   xanchor: 'left',
+      //   y: -.25,
+      //   yanchor: 'bottom'
+      // }]
+      
+      // let _this = this
+      // this.laps.forEach((lap, index) => {
+      //   updatemenus[0].buttons.push({
+      //     args: [{}, {
+      //       'shapes': this.lapShape(index),
+      //       'title': 'Lap ' + (index + 1)
+      //     }],
+      //     label: 'L ' + (index + 1),
+      //     method: 'update'
+      //   })
+      // })
+      
+      // this.chartLayout.updatemenus = updatemenus
+
       this.chartData = [tracePower, traceAltitude, traceSpeed]
+      
       this.loading = false
     }
   },
