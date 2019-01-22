@@ -4,8 +4,9 @@
     <div id ='loading' v-if="loading">
       <span>Loading activity details, please wait...</span>
     </div>
-    <div id='activityDetails' v-else>
+    <div id='activityDetails' ref="activityDetails" v-else>
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+
       <div role="tablist">
         <b-card no-body class="mb-1" :bg-variant="theme">
           <b-card-header header-tag="header" class="p-1" role="tab">
@@ -33,6 +34,8 @@
               <p class="card-text"><b>Distance:</b> {{lap.total_distance.toFixed(2)}} km </p>
               <p class="card-text"><b>Avg Speed:</b> {{lap.avg_speed.toFixed(2)}} km/h</p>
               <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
+              <b-button v-if="!lapZoomedIn" v-on:click="zoomLap(index)" variant="primary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
+              <b-button v-if="lapZoomedIn" v-on:click="zoomLap(-1)" variant="primary">Reset Zoom</b-button>
             </b-card-body>
           </b-collapse>
         </b-card>
@@ -63,7 +66,10 @@ export default {
       avgPower: '',
       avgCadence: '',
       timestamp: '',
+      lapZoomedIn: false,
       laps: [],
+      initXRangeStart: null,
+      initXRangeEnd: null,
       chartData: null,
       chartLayout: {
         title: '',
@@ -73,7 +79,7 @@ export default {
           bgcolor: 'transparent'
         },
         font: { family: 'Roboto', color: '#b0bec5'}, 
-        colorway: ["#f4a433","#404244","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39"],
+        colorway: ["#f4a433","#828893","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39"],
         hoverlabel: {
           bgcolor: 'transparent'
         },
@@ -100,14 +106,53 @@ export default {
         }
       },
       chartOptions: {
+        displayModeBar: false
       }
     };
   },
   created: function () {
-    this.fetchDataGzip(this.activityID)
+    this.fetchData(this.activityID)
   },
   props: ["theme"],
   methods: {
+    resetZoom: function() {
+      let updateLayout = {
+        xaxis: {
+          range: [this.initXRangeStart, this.initXRangeEnd]
+        }
+      }
+      const plotly = this.$refs.plotly
+      plotly.relayout(updateLayout)
+      this.lapZoomedIn = false
+    },
+    zoomLap: function(index) {
+      if (index < 0 && this.lapZoomedIn) {
+        // reset zoom
+        this.resetZoom()
+      }
+      else {
+        // calculate new range based on the selected lap
+        const lap = this.laps[index]
+        let start = new Date(lap.start_time)
+        let end = new Date(start);
+        end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
+
+        let updateLayout = {
+          xaxis: {
+            range: [start, end]
+          },
+          shapes: [],
+          title: 'Lap ' + (index + 1)
+        }
+        this.lapZoomedIn = true
+        const plotly = this.$refs.plotly
+        plotly.relayout(updateLayout)
+      }
+
+      var element = document.getElementById("activityDetails");
+      var top = element.offsetTop;
+      window.scrollTo(0, top);
+    },
     lapShape: function (index) {
       const lap = this.laps[index]
       let start = new Date(lap.start_time)
@@ -134,12 +179,15 @@ export default {
       return shapes;
     },
     selectLap: function (index) { 
-      console.log(index)
       if (index < 0) {
         let updateLayout = {
           shapes: [],
-          title: 'Entire Ride'
+          title: 'Entire Activity',
+          xaxis: {
+            range: [this.initXRangeStart, this.initXRangeEnd]
+          }
         } 
+        this.lapZoomedIn = false
         this.$refs.plotly.relayout(updateLayout)
         return;
       }
@@ -153,22 +201,7 @@ export default {
 
       this.$refs.plotly.relayout(updateLayout)
     },
-    onChartReady: function () {
-
-    },
     fetchData: async function(id) {
-      let activityFunction = firebase.functions().httpsCallable('getActivityData')
-      try {
-        this.loading = true
-        console.time('function call')
-        let result = await activityFunction({activity: id})
-        console.timeEnd('function call')
-        this.processData(result.data)
-      } catch (error) {
-        console.log(error)
-      }
-    },
-    fetchDataGzip: async function(id) {
       const token = await firebase.auth().currentUser.getIdToken(true)
       const options = {
         method: 'GET',
@@ -246,43 +279,11 @@ export default {
         yaxis: 'y3'
       }
 
-      // let updatemenus = [{
-      //   buttons: [
-      //     {
-      //       args: [{}, {
-      //         'shapes': [],
-      //         'title': 'Entire Ride'
-      //       }],
-      //       label: 'Entire Ride',
-      //       method: 'update'
-      //     }
-      //   ],
-      //   direction: 'left',
-      //   pad: {'r': 10, 't': 10},
-      //   showactive: true,
-      //   type: 'buttons',
-      //   x: 0,
-      //   xanchor: 'left',
-      //   y: -.25,
-      //   yanchor: 'bottom'
-      // }]
-      
-      // let _this = this
-      // this.laps.forEach((lap, index) => {
-      //   updatemenus[0].buttons.push({
-      //     args: [{}, {
-      //       'shapes': this.lapShape(index),
-      //       'title': 'Lap ' + (index + 1)
-      //     }],
-      //     label: 'L ' + (index + 1),
-      //     method: 'update'
-      //   })
-      // })
-      
-      // this.chartLayout.updatemenus = updatemenus
+      this.initXRangeStart = new Date(data.start_time)
+      this.initXRangeEnd = new Date(this.initXRangeStart)
+      this.initXRangeEnd.setSeconds(this.initXRangeStart.getSeconds() + parseInt(data.total_elapsed_time))
 
-      this.chartData = [tracePower, traceAltitude, traceSpeed]
-      
+      this.chartData = [tracePower, traceAltitude, traceSpeed]      
       this.loading = false
     }
   },
@@ -291,11 +292,3 @@ export default {
   }
 };
 </script>
-<style scoped>
-
-</style>
-
-
-
-
- 
