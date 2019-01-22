@@ -6,40 +6,27 @@
     </div>
     <div id='activityDetails' ref="activityDetails" v-else>
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
-
-      <div role="tablist">
-        <b-card no-body class="mb-1" :bg-variant="theme">
-          <b-card-header header-tag="header" class="p-1" role="tab">
-            <b-btn block href="#" v-b-toggle.accordion0 variant="primary">Activity Stats</b-btn>
-          </b-card-header>
-          <b-collapse v-on:shown="selectLap(-1)" visible id="accordion0" accordion="stats-accordion" role="tabpanel">
-            <b-card-body :bg-variant="theme" title="Activity Stats">
-              <p class="card-text"><b>Date:</b> {{timestamp}}</p>
-              <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
-              <p class="card-text"><b>Distance:</b> {{totalDistance}} km </p>
-              <p class="card-text"><b>Avg Speed:</b> {{avgSpeed}} km/h</p>
-              <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
-            </b-card-body>
-          </b-collapse>
-        </b-card>
-        <!-- Lap Stats -->
-        <b-card v-for="(lap, index) in laps" :key="index" no-body class="mb-1" :bg-variant="theme">
-          <b-card-header header-tag="header" class="p-1" role="tab">
-            <b-btn block href="#" v-b-toggle="'accordion' + (index + 1)" variant="secondary">Lap {{index + 1}}</b-btn>
-          </b-card-header>
-          <b-collapse v-on:shown="selectLap(index)" v-bind:id="'accordion' + (index + 1)" accordion="stats-accordion" role="tabpanel">
-            <b-card-body :bg-variant="theme" v-bind:title="'Lap ' + (index + 1)">
-              <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
-              <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
-              <p class="card-text"><b>Distance:</b> {{lap.total_distance.toFixed(2)}} km </p>
-              <p class="card-text"><b>Avg Speed:</b> {{lap.avg_speed.toFixed(2)}} km/h</p>
-              <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
-              <b-button v-if="!lapZoomedIn" v-on:click="zoomLap(index)" variant="primary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
-              <b-button v-if="lapZoomedIn" v-on:click="zoomLap(-1)" variant="primary">Reset Zoom</b-button>
-            </b-card-body>
-          </b-collapse>
-        </b-card>
-      </div>
+      <b-card no-body :bg-variant="theme">
+        <b-tabs pills card v-on:input="selectLap">
+          <b-tab title="Entire Activity" active>
+            <p class="card-text"><b>Date:</b> {{timestamp}}</p>
+            <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
+            <p class="card-text"><b>Distance:</b> {{totalDistance}} km </p>
+            <p class="card-text"><b>Avg Speed:</b> {{avgSpeed}} km/h</p>
+            <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
+          </b-tab>
+          <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
+            <b-button v-if="!lapZoomedIn" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
+            <b-button v-if="lapZoomedIn" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
+            <p>
+            <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
+            <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
+            <p class="card-text"><b>Distance:</b> {{lap.total_distance.toFixed(2)}} km </p>
+            <p class="card-text"><b>Avg Speed:</b> {{lap.avg_speed.toFixed(2)}} km/h</p>
+            <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
+          </b-tab>
+        </b-tabs>
+      </b-card>
     </div>
   </div>
 </template>
@@ -148,10 +135,6 @@ export default {
         const plotly = this.$refs.plotly
         plotly.relayout(updateLayout)
       }
-
-      var element = document.getElementById("activityDetails");
-      var top = element.offsetTop;
-      window.scrollTo(0, top);
     },
     lapShape: function (index) {
       const lap = this.laps[index]
@@ -179,7 +162,8 @@ export default {
       return shapes;
     },
     selectLap: function (index) { 
-      if (index < 0) {
+
+      if (index == 0) {
         let updateLayout = {
           shapes: [],
           title: 'Entire Activity',
@@ -192,11 +176,11 @@ export default {
         return;
       }
 
-      let shapes = this.lapShape(index)
+      let shapes = this.lapShape(index - 1)
 
       let updateLayout = {
         shapes: shapes,
-        title: 'Lap ' + (index + 1)
+        title: 'Lap ' + (index)
       }
 
       this.$refs.plotly.relayout(updateLayout)
@@ -218,13 +202,10 @@ export default {
       }
       try {
         this.loading = true
-        console.time('gzip function call')
         const result = await rp(
           'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
           options
         ) 
-        console.timeEnd('gzip function call')
-
         this.processData(result)
       } catch (error) {
         console.log(error)
@@ -257,7 +238,7 @@ export default {
         mode: 'lines',
         name: 'Power',
         line: {
-          width: 0.5
+          width: 1
         }
       }
 
