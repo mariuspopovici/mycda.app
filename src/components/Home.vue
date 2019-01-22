@@ -7,22 +7,17 @@
 </template>
 
 <script>
-/* eslint-disable */
+
 export default {
-  name: "Home",
+  name: 'Home',
   metaInfo: {
-    title: "Home",
-    links: [{ rel: "canonical", href: "https://mycda.app/#/home" }]
+    title: 'Home',
+    links: [{ rel: 'canonical', href: 'https://mycda.app/#/home' }]
   },
-  data() {
-    return {};
+  data () {
+    return {}
   },
-  props: ["theme"],
+  props: ['theme'],
   methods: {}
-};
+}
 </script>
-
-
-
-
- 

@@ -7,22 +7,17 @@
 </template>
 
 <script>
-/* eslint-disable */
+
 export default {
-  name: "Landing",
+  name: 'Landing',
   metaInfo: {
-    title: "MyCDA",
-    links: [{ rel: "canonical", href: "https://mycda.app/#/" }]
+    title: 'MyCDA',
+    links: [{ rel: 'canonical', href: 'https://mycda.app/#/' }]
   },
-  data() {
-    return {};
+  data () {
+    return {}
   },
-  props: ["theme"],
+  props: ['theme'],
   methods: {}
-};
+}
 </script>
-
-
-
-
- 

@@ -37,13 +37,12 @@ import 'firebase/functions'
 import VuePlotly from '@statnett/vue-plotly'
 const rp = require('request-promise')
 
-/* eslint-disable */
 export default {
-  name: "Activity",
+  name: 'Activity',
   metaInfo: {
-    title: "Activity Details"
+    title: 'Activity Details'
   },
-  data() {
+  data () {
     return {
       loading: true,
       activityID: this.$route.params.id,
@@ -65,12 +64,12 @@ export default {
         modebar: {
           bgcolor: 'transparent'
         },
-        font: { family: 'Roboto', color: '#b0bec5'}, 
-        colorway: ["#f4a433","#828893","#2196f3","#03a9f4","#00bcd4","#009688","#4caf50","#8bc34a","#cddc39"],
+        font: { family: 'Roboto', color: '#b0bec5' },
+        colorway: ['#f4a433', '#828893', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39'],
         hoverlabel: {
           bgcolor: 'transparent'
         },
-        legend: { orientation: 'h', yanchor: 'top', xanchor: 'center', y:1.1, x:0.5 },
+        legend: { orientation: 'h', yanchor: 'top', xanchor: 'center', y: 1.1, x: 0.5 },
         yaxis: {
           gridcolor: '#37474f',
           showgrid: true,
@@ -95,14 +94,14 @@ export default {
       chartOptions: {
         displayModeBar: false
       }
-    };
+    }
   },
   created: function () {
     this.fetchData(this.activityID)
   },
-  props: ["theme"],
+  props: ['theme'],
   methods: {
-    resetZoom: function() {
+    resetZoom: function () {
       let updateLayout = {
         xaxis: {
           range: [this.initXRangeStart, this.initXRangeEnd]
@@ -112,16 +111,15 @@ export default {
       plotly.relayout(updateLayout)
       this.lapZoomedIn = false
     },
-    zoomLap: function(index) {
+    zoomLap: function (index) {
       if (index < 0 && this.lapZoomedIn) {
         // reset zoom
         this.resetZoom()
-      }
-      else {
+      } else {
         // calculate new range based on the selected lap
         const lap = this.laps[index]
         let start = new Date(lap.start_time)
-        let end = new Date(start);
+        let end = new Date(start)
         end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
 
         let updateLayout = {
@@ -139,9 +137,9 @@ export default {
     lapShape: function (index) {
       const lap = this.laps[index]
       let start = new Date(lap.start_time)
-      let end = new Date(start);
+      let end = new Date(start)
       end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
-      
+
       // add a new shape to the chart layout
       let shapes = []
       shapes.push({
@@ -157,23 +155,22 @@ export default {
         line: {
           width: 0
         }
-      });
+      })
 
-      return shapes;
+      return shapes
     },
-    selectLap: function (index) { 
-
-      if (index == 0) {
+    selectLap: function (index) {
+      if (index === 0) {
         let updateLayout = {
           shapes: [],
           title: 'Entire Activity',
           xaxis: {
             range: [this.initXRangeStart, this.initXRangeEnd]
           }
-        } 
+        }
         this.lapZoomedIn = false
         this.$refs.plotly.relayout(updateLayout)
-        return;
+        return
       }
 
       let shapes = this.lapShape(index - 1)
@@ -185,7 +182,7 @@ export default {
 
       this.$refs.plotly.relayout(updateLayout)
     },
-    fetchData: async function(id) {
+    fetchData: async function (id) {
       const token = await firebase.auth().currentUser.getIdToken(true)
       const options = {
         method: 'GET',
@@ -205,14 +202,14 @@ export default {
         const result = await rp(
           'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
           options
-        ) 
+        )
         this.processData(result)
       } catch (error) {
         console.log(error)
       }
     },
-    processData: function(data) {
-      this.totalTime = (new Date(parseInt(data.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0];
+    processData: function (data) {
+      this.totalTime = (new Date(parseInt(data.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]
       this.avgSpeed = parseFloat(data.avg_speed).toFixed(2)
       this.avgPower = parseInt(data.avg_power)
       this.avgCadence = parseInt(data.avg_cadence)
@@ -225,10 +222,10 @@ export default {
       let altitude = []
       let speed = []
 
-      data.points.forEach(function(point) { //new Date(point.timestamp).toLocaleTimeString()
+      data.points.forEach(function (point) { // new Date(point.timestamp).toLocaleTimeString()
         time.push(new Date(point.timestamp))
         power.push(point.power)
-        altitude.push(point.altitude*1000)
+        altitude.push(point.altitude * 1000)
         speed.push(point.speed)
       })
 
@@ -249,7 +246,7 @@ export default {
         fill: 'tozeroy',
         mode: 'none',
         name: 'Elevation',
-        yaxis: 'y2',
+        yaxis: 'y2'
       }
 
       let traceSpeed = {
@@ -264,12 +261,12 @@ export default {
       this.initXRangeEnd = new Date(this.initXRangeStart)
       this.initXRangeEnd.setSeconds(this.initXRangeStart.getSeconds() + parseInt(data.total_elapsed_time))
 
-      this.chartData = [tracePower, traceAltitude, traceSpeed]      
+      this.chartData = [tracePower, traceAltitude, traceSpeed]
       this.loading = false
     }
   },
   components: {
     VuePlotly
   }
-};
+}
 </script>

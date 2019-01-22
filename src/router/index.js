@@ -8,6 +8,7 @@ import SignUp from '@/components/SignUp'
 import Home from '@/components/Home'
 import Landing from '@/components/Landing'
 import Activity from '@/components/Activity'
+import CdA from '@/components/CdA'
 
 import firebase from 'firebase/app'
 import 'firebase/auth'
@@ -56,7 +57,13 @@ const router = new Router({
       component: Activity,
       meta: {
         requiresAuth: true
-      }
+      },
+      children: [
+        {
+          path: 'cda',
+          component: CdA
+        }
+      ]
     },
     {
       path: '/about',
