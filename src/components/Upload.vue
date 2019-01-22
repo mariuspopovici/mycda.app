@@ -3,7 +3,7 @@
     <div id="upload">
       <div id="head">
         <h2>Experiments</h2>
-        <h3>Start an experiment by uploading a new .FIT activity file.</h3>
+        <h4>Start an experiment by uploading a new .FIT activity file.</h4>
       </div>
       <b-alert
         variant="danger"

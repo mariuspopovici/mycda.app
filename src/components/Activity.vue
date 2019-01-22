@@ -1,9 +1,8 @@
 <template>
   <div class="container" id="Activity">
     <h2>Activity Details</h2>
-    <div id ='loading' v-if="loading">
-      <span>Loading activity details, please wait...</span>
-    </div>
+    <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
+    <span v-if="loading">Loading activity details, please wait...</span>
     <div id='activityDetails' ref="activityDetails" v-else>
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
       <b-card no-body :bg-variant="theme">
@@ -18,6 +17,7 @@
           <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
             <b-button v-if="!lapZoomedIn" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
             <b-button v-if="lapZoomedIn" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
+            <b-button variant="primary">Analyze</b-button>
             <p>
             <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
             <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
