@@ -16,7 +16,7 @@
           </b-navbar-nav>
 
           <b-navbar-nav>
-            <b-nav-item href="#/upload">&nbsp;Experiments</b-nav-item>
+            <b-nav-item href="#/activities">&nbsp;Experiments</b-nav-item>
           </b-navbar-nav>
 
           <b-navbar-nav>

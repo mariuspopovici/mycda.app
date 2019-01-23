@@ -36,7 +36,7 @@
           <b-button
             size="sm"
             variant="primary"
-            :to="{name: 'Activity', params: { id: row.item.id }}"
+            :to="{name: 'activity.details', params: { id: row.item.id }}"
           >Show Details</b-button>
         </template>
       </b-table>

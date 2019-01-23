@@ -44,8 +44,8 @@ const router = new Router({
       }
     },
     {
-      path: '/upload',
-      name: 'Upload',
+      path: '/activities',
+      name: 'activity.list',
       component: Upload,
       meta: {
         requiresAuth: true
@@ -53,17 +53,20 @@ const router = new Router({
     },
     {
       path: '/activity/:id',
-      name: 'Activity',
+      name: 'activity.details',
       component: Activity,
       meta: {
         requiresAuth: true
-      },
-      children: [
-        {
-          path: 'cda',
-          component: CdA
-        }
-      ]
+      }
+    },
+    {
+      path: '/activity/:id/cda',
+      name: 'activity.cda',
+      component: CdA,
+      props: true,
+      meta: {
+        requiresAuth: true
+      }
     },
     {
       path: '/about',

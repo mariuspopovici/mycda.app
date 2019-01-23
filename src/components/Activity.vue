@@ -17,7 +17,7 @@
           <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
             <b-button v-if="!lapZoomedIn" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
             <b-button v-if="lapZoomedIn" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
-            <b-button variant="primary">Analyze</b-button>
+            <b-button variant="primary" :to="{name: 'activity.cda', params: { id: activityID, range: getLapRange(index), data: chartData }}">Analyze</b-button>
             <p>
             <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
             <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
@@ -110,6 +110,17 @@ export default {
       const plotly = this.$refs.plotly
       plotly.relayout(updateLayout)
       this.lapZoomedIn = false
+    },
+    getLapRange: function (index) {
+      const lap = this.laps[index]
+      let start = new Date(lap.start_time)
+      let end = new Date(start)
+      end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
+
+      return {
+        start: start,
+        end: end
+      }
     },
     zoomLap: function (index) {
       if (index < 0 && this.lapZoomedIn) {
