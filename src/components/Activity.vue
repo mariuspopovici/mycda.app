@@ -4,7 +4,7 @@
     <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
     <span v-if="loading">Loading activity details, please wait...</span>
     <div id='activityDetails' ref="activityDetails" v-else>
-      <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+      <vue-plotly id="plotly" ref="plotly" :watchShallow="false" v-on:selected="onChartSelection()" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
       <b-card no-body :bg-variant="theme">
         <b-tabs pills card v-on:input="selectLap">
           <b-tab title="Entire Activity" active>
@@ -32,6 +32,23 @@
             <p class="card-text"><b>Avg Speed:</b> {{lap.avg_speed.toFixed(2)}} km/h</p>
             <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
           </b-tab>
+          <b-tab title="Selection" v-if="selectionActive" active>
+            {{selectionActive}}
+            <b-button variant="primary" :to="{
+              name: 'activity.cda',
+              params: {
+                id: activityID,
+                range: {},
+                data: chartData,
+                description: 'Manual selection'
+              }}">Analyze Selection</b-button>
+              <p>
+            <p class="card-text"><b>Date:</b> {{timestamp}}</p>
+            <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
+            <p class="card-text"><b>Distance:</b> {{totalDistance}} km </p>
+            <p class="card-text"><b>Avg Speed:</b> {{avgSpeed}} km/h</p>
+            <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
+          </b-tab>
         </b-tabs>
       </b-card>
     </div>
@@ -51,6 +68,7 @@ export default {
   },
   data () {
     return {
+      selectionActive: false,
       loading: true,
       activityID: this.$route.params.id,
       totalTime: '',
@@ -108,6 +126,12 @@ export default {
   },
   props: ['theme'],
   methods: {
+    hover: function () {
+      console.log('hover')
+    },
+    onChartSelection: function () {
+      alert('selection on chart')
+    },
     resetZoom: function () {
       let updateLayout = {
         xaxis: {

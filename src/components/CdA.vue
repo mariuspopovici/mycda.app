@@ -171,7 +171,8 @@ export default {
           x: this.time,
           y: ve,
           mode: 'lines',
-          name: 'Virtual Elevation'
+          name: 'Virtual Elevation',
+          yaxis: 'y2'
         }
       ]
     }
