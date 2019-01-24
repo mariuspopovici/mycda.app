@@ -4,7 +4,7 @@
     <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
     <span v-if="loading">Loading activity details, please wait...</span>
     <div id='activityDetails' ref="activityDetails" v-else>
-      <vue-plotly id="plotly" ref="plotly" :watchShallow="false" v-on:selected="onChartSelection()" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+      <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true" v-on:selected="onChartSelection()"/>
       <b-card no-body :bg-variant="theme">
         <b-tabs pills card v-on:input="selectLap">
           <b-tab title="Entire Activity" active>
@@ -58,7 +58,7 @@
 <script>
 import firebase from 'firebase/app'
 import 'firebase/functions'
-import VuePlotly from '@statnett/vue-plotly'
+import VuePlotly from '@/components/Plotly'
 const rp = require('request-promise')
 
 export default {
@@ -81,7 +81,7 @@ export default {
       laps: [],
       initXRangeStart: null,
       initXRangeEnd: null,
-      chartData: null,
+      chartData: [],
       chartLayout: {
         title: '',
         paper_bgcolor: 'transparent',
