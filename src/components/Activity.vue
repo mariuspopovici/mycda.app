@@ -42,9 +42,11 @@
                 range: selectionXRange,
                 data: chartData,
                 description: 'Manual selection'
-              }}">Analyze Selection</b-button>
-              <p>{{selectionXRange.start}} - {{selectionXRange.end}}</p>
-              <p>Selection Stats</p>
+              }}">Analyze</b-button>
+              <p>
+              <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
+              <p class="card-text"><b>End Time:</b> {{selectionXRange.end.toLocaleString()}}</p>
+              <p class="card-text"><b>Duration (h:m:s):</b> {{this.secondsToHms((this.selectionXRange.end - this.selectionXRange.start) / 1000)}}</p>
           </b-tab>
         </b-tabs>
       </b-card>
@@ -128,12 +130,12 @@ export default {
     onRelayout: function (event) {
       // check if this was triggered by a drag to zoom event
       if ('xaxis.range[0]' in event && 'xaxis.range[1]' in event) {
-        console.log(event)
         this.selectionActive = true
         this.selectionXRange = {
           start: new Date(event['xaxis.range[0]']),
           end: new Date(event['xaxis.range[1]'])
         }
+        this.chartLayout.title.text = 'Manual Selection'
       }
     },
     resetZoom: function () {
@@ -302,10 +304,20 @@ export default {
 
       this.chartData = [tracePower, traceAltitude, traceSpeed]
       this.loading = false
+    },
+    secondsToHms (d) {
+      d = Number(d)
+
+      var h = Math.floor(d / 3600)
+      var m = Math.floor(d % 3600 / 60)
+      var s = Math.floor(d % 3600 % 60)
+
+      return ('0' + h).slice(-2) + ':' + ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2)
     }
   },
   components: {
     VuePlotly
   }
 }
+
 </script>

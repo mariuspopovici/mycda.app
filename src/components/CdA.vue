@@ -131,7 +131,7 @@ export default {
       let speed = []
 
       powerSeries.x.forEach((x, i) => {
-        if (x >= range.start && x <= range.end) {
+        if (x >= range.start && x <= range.end && speedSeries.y[i] !== 0 && powerSeries.y[i] !== 0) {
           time.push(x)
           power.push(powerSeries.y[i])
           altitude.push(altitudeSeries.y[i])
@@ -160,17 +160,20 @@ export default {
       // recalculate virtual elevation
       let ve = this.veService.calculateVirtualElevation(this.rho, this.mass, this.crr, this.cda)
 
+      console.log(this.time)
+      console.log(ve)
+
       this.chartData = [
         {
           x: this.time,
           y: this.altitude,
-          mode: 'lines',
+          type: 'scatter',
           name: 'Elevation'
         },
         {
           x: this.time,
           y: ve,
-          mode: 'lines',
+          type: 'scatter',
           name: 'Virtual Elevation',
           yaxis: 'y2'
         }
