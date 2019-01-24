@@ -63,8 +63,6 @@ let app = ''
 firebase.initializeApp(firebaseConfig)
 
 export const db = firebase.firestore()
-const settings = { timestampsInSnapshots: true }
-db.settings(settings)
 
 firebase.auth().onAuthStateChanged(() => {
   // init app when the firebase auth object is ready

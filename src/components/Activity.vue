@@ -4,7 +4,9 @@
     <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
     <span v-if="loading">Loading activity details, please wait...</span>
     <div id='activityDetails' ref="activityDetails" v-else>
-      <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true" v-on:selected="onChartSelection()"/>
+      <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions"
+        :autoResize="true"
+        v-on:relayout="onRelayout"/>
       <b-card no-body :bg-variant="theme">
         <b-tabs pills card v-on:input="selectLap">
           <b-tab title="Entire Activity" active>
@@ -33,21 +35,16 @@
             <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
           </b-tab>
           <b-tab title="Selection" v-if="selectionActive" active>
-            {{selectionActive}}
             <b-button variant="primary" :to="{
               name: 'activity.cda',
               params: {
                 id: activityID,
-                range: {},
+                range: selectionXRange,
                 data: chartData,
                 description: 'Manual selection'
               }}">Analyze Selection</b-button>
-              <p>
-            <p class="card-text"><b>Date:</b> {{timestamp}}</p>
-            <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
-            <p class="card-text"><b>Distance:</b> {{totalDistance}} km </p>
-            <p class="card-text"><b>Avg Speed:</b> {{avgSpeed}} km/h</p>
-            <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
+              <p>{{selectionXRange.start}} - {{selectionXRange.end}}</p>
+              <p>Selection Stats</p>
           </b-tab>
         </b-tabs>
       </b-card>
@@ -58,7 +55,7 @@
 <script>
 import firebase from 'firebase/app'
 import 'firebase/functions'
-import VuePlotly from '@/components/Plotly'
+import VuePlotly from '@statnett/vue-plotly'
 const rp = require('request-promise')
 
 export default {
@@ -81,9 +78,11 @@ export default {
       laps: [],
       initXRangeStart: null,
       initXRangeEnd: null,
+      selectionXRange: null,
       chartData: [],
       chartLayout: {
         title: '',
+        dragmode: 'zoom+select',
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
         modebar: {
@@ -126,20 +125,22 @@ export default {
   },
   props: ['theme'],
   methods: {
-    hover: function () {
-      console.log('hover')
-    },
-    onChartSelection: function () {
-      alert('selection on chart')
-    },
-    resetZoom: function () {
-      let updateLayout = {
-        xaxis: {
-          range: [this.initXRangeStart, this.initXRangeEnd]
+    onRelayout: function (event) {
+      // check if this was triggered by a drag to zoom event
+      if ('xaxis.range[0]' in event && 'xaxis.range[1]' in event) {
+        console.log(event)
+        this.selectionActive = true
+        this.selectionXRange = {
+          start: new Date(event['xaxis.range[0]']),
+          end: new Date(event['xaxis.range[1]'])
         }
       }
-      const plotly = this.$refs.plotly
-      plotly.relayout(updateLayout)
+    },
+    resetZoom: function () {
+      this.chartLayout.xaxis = {
+        showgrid: false,
+        range: [this.initXRangeStart, this.initXRangeEnd]
+      }
       this.lapZoomedIn = false
     },
     getLapRange: function (index) {
@@ -164,16 +165,13 @@ export default {
         let end = new Date(start)
         end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
 
-        let updateLayout = {
-          xaxis: {
-            range: [start, end]
-          },
-          shapes: [],
-          title: 'Lap ' + (index + 1)
+        this.chartLayout.shapes = []
+        this.chartLayout.title.text = 'Zoom Lap ' + (index + 1)
+        this.chartLayout.xaxis = {
+          showgrid: false,
+          range: [start, end]
         }
         this.lapZoomedIn = true
-        const plotly = this.$refs.plotly
-        plotly.relayout(updateLayout)
       }
     },
     lapShape: function (index) {
@@ -202,27 +200,26 @@ export default {
       return shapes
     },
     selectLap: function (index) {
-      if (index === 0) {
-        let updateLayout = {
-          shapes: [],
-          title: 'Entire Activity',
-          xaxis: {
-            range: [this.initXRangeStart, this.initXRangeEnd]
-          }
-        }
-        this.lapZoomedIn = false
-        this.$refs.plotly.relayout(updateLayout)
+      if (this.selectionActive) {
+        // don't do any of this if there's a manual selection active
         return
       }
 
-      let shapes = this.lapShape(index - 1)
+      this.resetZoom()
 
-      let updateLayout = {
-        shapes: shapes,
-        title: 'Lap ' + (index)
+      if (index === 0) {
+        this.chartLayout.shapes = []
+        this.chartLayout.title.text = 'Entire Activity'
+        this.chartLayout.xaxis = {
+          showgrid: false,
+          range: [this.initXRangeStart, this.initXRangeEnd]
+        }
+        this.lapZoomedIn = false
+        return
       }
 
-      this.$refs.plotly.relayout(updateLayout)
+      this.chartLayout.shapes = this.lapShape(index - 1)
+      this.chartLayout.title.text = 'Lap ' + (index)
     },
     fetchData: async function (id) {
       const token = await firebase.auth().currentUser.getIdToken(true)

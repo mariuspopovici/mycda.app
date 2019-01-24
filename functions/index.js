@@ -18,8 +18,7 @@ const app = express();
 const cors = require('cors')({origin: true});
 
 const db = admin.firestore();
-const settings = { timestampsInSnapshots: true };
-db.settings(settings);
+
 
 
 /**
