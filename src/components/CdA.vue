@@ -2,7 +2,7 @@
   <div id="About">
     <div class="container">
       <h2>CdA Analysis</h2>
-      <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use CdA slider to align the virtual elevation profile.</h4>
+      <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use the CdA slider to align the virtual elevation profile.</h4>
       <span v-if="loading">Loading segment details, please wait...</span>
       <div id='virtualElevation' ref="virtualElevation" v-else>
         <b-container fluid>
@@ -17,25 +17,30 @@
                     label="Rider Mass (kg)"
                     label-for="mass"
                 >
-                  <b-form-input id="mass" v-model.trim="mass"></b-form-input>
+                  <b-form-input id="mass" v-on:change="calculateCdA"
+                    min="40" max="250"
+                    v-model.trim="mass" type="number"></b-form-input>
                 </b-form-group>
                 <b-form-group
                     description="Enter air density. Use the Rho Calculator to derive the value."
                     label="Air Density (kg/m<sup>3</sup>)"
                     label-for="rho"
                 >
-                  <b-form-input id="rho" v-model.trim="rho"></b-form-input>
+                  <b-form-input v-on:change="calculateCdA" id="rho" v-model.trim="rho" type="number" step="0.001"></b-form-input>
                 </b-form-group>
                 <b-form-group
                     description="Enter tire rolling resistance (crr) value."
                     label="Tire Rolling Resistance"
                     label-for="crr"
                 >
-                  <b-form-input id="crr" v-model.trim="crr"></b-form-input>
-                </b-form-group>
+                  <b-form-input id="crr" v-on:change="calculateCdA"
+                    min="0" max="1" ref="crr"
+                    v-model.trim="crr" type="number" step="0.001"></b-form-input>
+                </b-form-group> {{crrValid}}
                 CdA
                 <vue-slider
-                  lazy
+
+                  :use-keyboard="true"
                   :min="0.150" :max="0.500"
                   :interval="0.001"
                   v-model="cda">
@@ -76,6 +81,7 @@ export default {
       mass: 85,
       cda: 0.351,
       crr: 0.005,
+      crrValid: true,
       rho: 1.1830,
       veService: null,
       invalidFeedback: '',
@@ -131,7 +137,8 @@ export default {
       let speed = []
 
       powerSeries.x.forEach((x, i) => {
-        if (x >= range.start && x <= range.end && speedSeries.y[i] !== 0 && powerSeries.y[i] !== 0) {
+        // filter out dropouts or zero speed + zero power points
+        if (x >= range.start && x <= range.end && !(speedSeries.y[i] === 0 && powerSeries.y[i] === 0)) {
           time.push(x)
           power.push(powerSeries.y[i])
           altitude.push(altitudeSeries.y[i])
@@ -159,9 +166,6 @@ export default {
     calculateCdA: function () {
       // recalculate virtual elevation
       let ve = this.veService.calculateVirtualElevation(this.rho, this.mass, this.crr, this.cda)
-
-      console.log(this.time)
-      console.log(ve)
 
       this.chartData = [
         {

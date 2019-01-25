@@ -41,7 +41,7 @@
                 id: activityID,
                 range: selectionXRange,
                 data: chartData,
-                description: 'Manual selection'
+                description: 'Manual Selection'
               }}">Analyze</b-button>
               <p>
               <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
