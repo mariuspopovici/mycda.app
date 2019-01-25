@@ -190,3 +190,7 @@ export default {
   margin-bottom: 20px;
 }
 </style>
+
+<style lang="scss">
+@import './assets/scss/bootstrap-custom.scss';
+</style>

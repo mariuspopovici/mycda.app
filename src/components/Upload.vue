@@ -1,5 +1,29 @@
 <template>
   <div class="container" id="Upload">
+    <!-- Edit Activity Name Modal Component -->
+    <b-modal id="editActivityModal" ref="editActivityModal"
+      centered title="Edit Activity"
+        v-on:ok="onEditOK"
+        v-on:shown="onShowEditActivity"
+        :header-bg-variant="modalHeaderBgVariant"
+          :header-text-variant="modalHeaderTextVariant"
+          :body-bg-variant="modalBodyBgVariant"
+          :body-text-variant="modalBodyTextVariant"
+          :footer-bg-variant="modalFooterBgVariant"
+          :footer-text-variant="modalFooterTextVariant">
+      <b-form-group
+          id="name"
+          description="Name your activity."
+          label="Activity Name"
+          label-for="activityName"
+          :invalid-feedback="invalidActivityNameFeedback"
+          :valid-feedback="validActivityNameFeedback"
+          :state="isActivityNameValid"
+          placeholder="New Activity"
+      >
+        <b-form-input ref="activityName" id="activityName" :state="isActivityNameValid" v-model.trim="activityName"></b-form-input>
+      </b-form-group>
+    </b-modal>
     <div id="upload">
       <div id="head">
         <h2>Experiments</h2>
@@ -33,14 +57,30 @@
           </div>
         </template>
         <template slot="actions" slot-scope="row">
-          <b-button
-            size="sm"
-            variant="primary"
-            :to="{name: 'activity.details', params: { id: row.item.id }}"
-          >Show Details</b-button>
+          <div align="center">
+            <b-button
+              size="sm"
+              variant="primary"
+              :to="{name: 'activity.details', params: { id: row.item.id }}"
+            >Show Details</b-button>
+            <b-btn
+              size="sm"
+              variant="secondary"
+              v-b-tooltip.hover title="Rename Activity"
+              v-b-modal.editActivityModal
+            ><i class="fa fa-edit fa-1x"></i></b-btn>
+            <b-button
+              size="sm"
+              variant="secondary"
+              v-b-tooltip.hover title="Delete Activity"
+            ><i class="fa fa-trash fa-1x"></i>
+            </b-button>
+          </div>
         </template>
       </b-table>
     </div>
+    <div>
+</div>
   </div>
 </template>
 
@@ -75,18 +115,39 @@ export default {
         acceptedFiles: '.fit'
       },
       fields: [
-        'status',
-        'name',
-        'timestamp',
-        'distance',
-        'averageSpeed',
-        'averagePower',
-        'actions'
+        {key: 'status', label: 'Status'},
+        {key: 'name', label: 'Name'},
+        {key: 'timestamp', label: 'Date Time', sortable: true, sortDirection: 'desc'},
+        {key: 'distance', label: 'Distance', class: 'text-right'},
+        {key: 'avgSpeed', label: 'Avg. Speed', class: 'text-right'},
+        {key: 'avgPower', label: 'Avg. Power', class: 'text-right'},
+        {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
       isDark: this.theme === 'dark',
       uploadError: false,
       uploadMessage: '',
-      activities: []
+      activities: [],
+      activityID: null,
+      activityName: '',
+      modalHeaderBgVariant: this.theme,
+      modalHeaderTextVariant: this.theme === 'dark' ? 'light' : 'dark',
+      modalBodyBgVariant: this.theme === 'dark' ? 'semidark' : 'light',
+      modalBodyTextVariant: 'dark',
+      modalFooterBgVariant: this.theme,
+      modalFooterTextVariant: this.theme === 'dark' ? 'light' : 'dark'
+    }
+  },
+  computed: {
+    isActivityNameValid () {
+      return this.activityName.length > 0
+    },
+    invalidActivityNameFeedback () {
+      if (this.activityName.length === 0) {
+        return 'Please enter something'
+      }
+    },
+    validActivityNameFeedback () {
+      return this.activityName !== 'New Activity' && this.isActivityNameValid === true ? 'Thank you' : ''
     }
   },
   created: function () {
@@ -102,7 +163,15 @@ export default {
   },
   props: ['theme'],
   methods: {
+    onShowEditActivity: function () {
+      this.$refs.activityName.focus()
+    },
+    onEditOK: function () {
+      alert(1)
+    },
     fileAdded: function (file) {
+      this.activityID = uuid()
+
       let dz = this.$refs.uploadDropZone.dropzone
       this.uploadError = false
 
@@ -110,7 +179,6 @@ export default {
         let reader = new FileReader()
         const _this = this
         reader.onload = async function (event) {
-          let activityId = uuid()
           // create a new item in my activities collection
           let activities = db.collection('activities')
           let doc = {
@@ -127,9 +195,9 @@ export default {
           _this.activities.unshift(doc)
 
           // make sure we have an activity in firestore before the trigger is fired
-          await activities.doc(activityId).set(doc)
+          await activities.doc(_this.activityID).set(doc)
 
-          uploadToStorage(activityId, file, event.target.result, dz,
+          uploadToStorage(_this.activityID, file, event.target.result, dz,
             // on success
             function (downloadURL) {
               // processing is handled by a firestore cloud function triggered by a storage add event
@@ -165,8 +233,8 @@ export default {
               name: 'New Activity',
               timestamp: docData.timestamp.toDate().toLocaleString(),
               distance: parseFloat(docData.distance).toFixed(1),
-              averagePower: parseInt(docData.averagePower),
-              averageSpeed: parseFloat(docData.averageSpeed).toFixed(2),
+              avgPower: parseInt(docData.averagePower),
+              avgSpeed: parseFloat(docData.averageSpeed).toFixed(2),
               status: docData.status
             })
           })

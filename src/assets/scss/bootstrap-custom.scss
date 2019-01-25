@@ -1,0 +1,10 @@
+@import "bootstrap-custom-variables";
+
+$theme-colors: (
+    semidark: $gray-200
+);
+
+
+@import "../../../node_modules/bootstrap/scss/bootstrap";
+@import "../../../node_modules/bootstrap-vue/dist/bootstrap-vue";
+
