@@ -35,7 +35,7 @@
                 >
                   <b-form-input id="crr" v-on:change="calculateCdA"
                     min="0" max="1" ref="crr"
-                    v-model.trim="crr" type="number" step="0.001"></b-form-input>
+                    v-model.trim="crr" type="number" step="0.0001"></b-form-input>
                 </b-form-group> {{crrValid}}
                 CdA
                 <vue-slider

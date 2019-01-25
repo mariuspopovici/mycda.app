@@ -8,7 +8,7 @@
         :autoResize="true"
         v-on:relayout="onRelayout"/>
       <b-card no-body :bg-variant="theme">
-        <b-tabs pills card v-on:input="selectLap">
+        <b-tabs small pills card v-on:input="selectLap">
           <b-tab title="Entire Activity" active>
             <p class="card-text"><b>Date:</b> {{timestamp}}</p>
             <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
@@ -17,9 +17,9 @@
             <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
           </b-tab>
           <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
-            <b-button v-if="!lapZoomedIn" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
-            <b-button v-if="lapZoomedIn" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
-            <b-button variant="primary" :to="{
+            <b-button v-if="!lapZoomedIn" size="sm" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
+            <b-button v-if="lapZoomedIn" size="sm" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
+            <b-button variant="success" size="sm" :to="{
               name: 'activity.cda',
               params: {
                 id: activityID,
@@ -35,7 +35,8 @@
             <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
           </b-tab>
           <b-tab title="Selection" v-if="selectionActive" active>
-            <b-button variant="primary" :to="{
+            <b-button size="sm" v-on:click="removeSelection" variant="secondary">Undo Selection</b-button>
+            <b-button variant="success" size="sm" :to="{
               name: 'activity.cda',
               params: {
                 id: activityID,
@@ -78,8 +79,7 @@ export default {
       timestamp: '',
       lapZoomedIn: false,
       laps: [],
-      initXRangeStart: null,
-      initXRangeEnd: null,
+      initXRange: null,
       selectionXRange: null,
       chartData: [],
       chartLayout: {
@@ -127,6 +127,15 @@ export default {
   },
   props: ['theme'],
   methods: {
+    removeSelection: function () {
+      this.selectionActive = false
+      this.selectionXRange = null
+      this.chartLayout.xaxis = {
+        showgrid: false,
+        range: [this.initXRange.start, this.initXRange.end]
+      }
+      this.chartLayout.title.text = 'Manual Selection'
+    },
     onRelayout: function (event) {
       // check if this was triggered by a drag to zoom event
       if ('xaxis.range[0]' in event && 'xaxis.range[1]' in event) {
@@ -141,7 +150,7 @@ export default {
     resetZoom: function () {
       this.chartLayout.xaxis = {
         showgrid: false,
-        range: [this.initXRangeStart, this.initXRangeEnd]
+        range: [this.initXRange.start, this.initXRange.end]
       }
       this.lapZoomedIn = false
     },
@@ -192,7 +201,7 @@ export default {
         y0: 0,
         x1: end,
         y1: 1,
-        fillcolor: '#ffffff',
+        fillcolor: '#82149b',
         opacity: 0.2,
         line: {
           width: 0
@@ -214,7 +223,7 @@ export default {
         this.chartLayout.title.text = 'Entire Activity'
         this.chartLayout.xaxis = {
           showgrid: false,
-          range: [this.initXRangeStart, this.initXRangeEnd]
+          range: [this.initXRange.start, this.initXRange.end]
         }
         this.lapZoomedIn = false
         return
@@ -298,9 +307,13 @@ export default {
         yaxis: 'y3'
       }
 
-      this.initXRangeStart = new Date(data.start_time)
-      this.initXRangeEnd = new Date(this.initXRangeStart)
-      this.initXRangeEnd.setSeconds(this.initXRangeStart.getSeconds() + parseInt(data.total_elapsed_time))
+      let xRangeStart = new Date(data.start_time)
+      let xRangeEnd = new Date(xRangeStart)
+      xRangeEnd.setSeconds(xRangeStart.getSeconds() + parseInt(data.total_elapsed_time))
+      this.initXRange = {
+        start: xRangeStart,
+        end: xRangeEnd
+      }
 
       this.chartData = [tracePower, traceAltitude, traceSpeed]
       this.loading = false
