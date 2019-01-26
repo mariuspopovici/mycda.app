@@ -1,6 +1,16 @@
 <template>
   <div class="container" id="Activity">
-    <h2>{{name}} Activity Details</h2>
+    <h2 @mouseleave="onTitleHover" @mouseenter="onTitleHover">
+      <span v-if="!editTitleEnabled">{{activityName}} Activity Details</span>
+      <i @click="toggleTitleEdit" v-if="!editTitleEnabled && showEditButton" class="fa fa-edit fa-1x"></i>
+      <b-input-group v-if="editTitleEnabled">
+        <b-form-input ref="editActivityTitle" v-model="activityName" @keyup.native.esc="cancelEdit" @keyup.native.enter="updateTitle"></b-form-input>
+        <b-input-group-append>
+          <b-btn variant="secondary" v-on:click="cancelEdit" v-b-tooltip.hover title="Cancel (Esc)"><i class="fa fa-undo"></i></b-btn>
+          <b-btn variant="success" v-on:click="updateTitle" v-b-tooltip.hover title="Rename Activity"><i class="fa fa-check"></i></b-btn>
+        </b-input-group-append>
+      </b-input-group>
+    </h2>
     <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
     <span v-if="loading">Loading activity details, please wait...</span>
     <div id='activityDetails' ref="activityDetails" v-else>
@@ -58,6 +68,7 @@
 <script>
 import firebase from 'firebase/app'
 import 'firebase/functions'
+import { db } from '../main'
 import VuePlotly from '@statnett/vue-plotly'
 const rp = require('request-promise')
 
@@ -66,11 +77,15 @@ export default {
   metaInfo: {
     title: 'Activity Details'
   },
+  props: ['theme'],
   data () {
     return {
+      showEditButton: false,
+      editTitleEnabled: false,
       selectionActive: false,
       loading: true,
       activityID: this.$route.params.id,
+      activityName: '',
       totalTime: '',
       totalDistance: '',
       avgSpeed: '',
@@ -125,8 +140,42 @@ export default {
   created: function () {
     this.fetchData(this.activityID)
   },
-  props: ['theme', 'name'],
   methods: {
+    updateTitle: async function () {
+      let docRef = db.collection('activities').doc(this.activityID)
+      let _this = this
+      try {
+        await docRef.update({
+          name: _this.activityName
+        })
+        this.editTitleEnabled = false
+        this.showEditButton = false
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    cancelEdit: function () {
+      // restore old activity name
+      this.activityName = this.tmpActivityName
+      this.toggleTitleEdit()
+    },
+    toggleTitleEdit: function () {
+      this.editTitleEnabled = !this.editTitleEnabled
+      if (this.editTitleEnabled) {
+        // save the initial name in case of undo / cancel edit and focus the input control
+        this.tmpActivityName = this.activityName
+        let _this = this
+        setTimeout(() => {
+          // need a short delay because the element is not visible yet
+          _this.$refs.editActivityTitle.focus()
+        }, 200)
+      } else {
+        this.tmpActivityName = ''
+      }
+    },
+    onTitleHover: function () {
+      this.showEditButton = !this.showEditButton
+    },
     removeSelection: function () {
       this.selectionActive = false
       this.selectionXRange = null
@@ -234,6 +283,8 @@ export default {
     },
     fetchData: async function (id) {
       const token = await firebase.auth().currentUser.getIdToken(true)
+      let docRef = db.collection('activities').doc(this.activityID)
+
       const options = {
         method: 'GET',
         headers: {
@@ -249,6 +300,10 @@ export default {
       }
       try {
         this.loading = true
+
+        const doc = await docRef.get()
+        this.activityName = doc.data().name
+
         const result = await rp(
           'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
           options

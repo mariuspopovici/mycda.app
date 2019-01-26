@@ -7,10 +7,10 @@
       <div id='virtualElevation' ref="virtualElevation" v-else>
         <b-container fluid>
           <b-row>
-            <b-col cols="9">
+            <b-col sm="9">
               <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
             </b-col>
-            <b-col cols="3">
+            <b-col sm="3">
               <b-card :bg-variant="theme">
                 <b-form-group
                     description="Enter rider mass including bike in kilograms."
@@ -36,16 +36,29 @@
                   <b-form-input id="crr" v-on:change="calculateCdA"
                     min="0" max="1" ref="crr"
                     v-model.trim="crr" type="number" step="0.0001"></b-form-input>
-                </b-form-group> {{crrValid}}
+                </b-form-group>
                 CdA
                 <vue-slider
-
                   :use-keyboard="true"
                   :min="0.150" :max="0.500"
                   :interval="0.001"
                   v-model="cda">
                 </vue-slider>
               </b-card>
+            </b-col>
+          </b-row>
+          <b-row>
+            <b-col cols=12>
+              <br>
+              <b-form-textarea id="textarea1"
+                placeholder="Enter description. You can record things such as weather conditions, equipment and position changes, etc."
+                :rows="3"
+                :max-rows="6">
+              </b-form-textarea>
+              <br>
+              <div align="right">
+              <b-button align="right" variant="primary">Save</b-button>
+              </div>
             </b-col>
           </b-row>
         </b-container>

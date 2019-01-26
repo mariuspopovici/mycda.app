@@ -35,7 +35,6 @@
           label="Activity Name"
           label-for="activityName"
           :invalid-feedback="invalidActivityNameFeedback"
-          :valid-feedback="validActivityNameFeedback"
           :state="isActivityNameValid"
           placeholder="New Activity"
       >
@@ -53,9 +52,13 @@
         :show="uploadError"
         @dismissed="uploadError=false"
       >{{uploadMessage}}</b-alert>
+
       <br>
+      <!-- Drop Zone -->
       <vue-dropzone ref="uploadDropZone" id="uploadDropZone" :options="dropOptions" v-on:vdropzone-file-added="fileAdded" ></vue-dropzone>
+
       <br>
+      <!-- Activities Table -->
       <b-table
         :dark="isDark"
         :head-variant="theme"
@@ -79,7 +82,7 @@
             <b-button
               size="sm"
               variant="primary"
-              :to="{name: 'activity.details', params: { id: row.item.id, name: row.item.name }}"
+              :to="{name: 'activity.details', params: { id: row.item.id }}"
             >Show Details</b-button>
             <b-btn
               size="sm"
