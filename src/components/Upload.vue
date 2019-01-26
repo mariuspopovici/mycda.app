@@ -1,16 +1,34 @@
 <template>
   <div class="container" id="Upload">
+    <!-- Delete confirmation modal -->
+    <b-modal id="confirmModal" ref="confirmDeleteModal"
+      centered title="Delete Activity"
+      ok-title="Yes" cancel-title="No"
+      v-on:ok="onConfirmDelete"
+      ok-variant="danger"
+      :header-bg-variant="modalHeaderBgVariant"
+      :header-text-variant="modalHeaderTextVariant"
+      :header-border-variant="modalHeaderBgVariant"
+      :body-bg-variant="modalBodyBgVariant"
+      :body-text-variant="modalBodyTextVariant"
+      :footer-bg-variant="modalFooterBgVariant"
+      :footer-border-variant="modalFooterBgVariant"
+      :footer-text-variant="modalFooterTextVariant">
+      <p>Delete activity '{{activityName}}'?</p>
+    </b-modal>
     <!-- Edit Activity Name Modal Component -->
     <b-modal id="editActivityModal" ref="editActivityModal"
       centered title="Edit Activity"
         v-on:ok="onEditOK"
         v-on:shown="onShowEditActivity"
         :header-bg-variant="modalHeaderBgVariant"
-          :header-text-variant="modalHeaderTextVariant"
-          :body-bg-variant="modalBodyBgVariant"
-          :body-text-variant="modalBodyTextVariant"
-          :footer-bg-variant="modalFooterBgVariant"
-          :footer-text-variant="modalFooterTextVariant">
+        :header-text-variant="modalHeaderTextVariant"
+        :header-border-variant="modalHeaderBgVariant"
+        :body-bg-variant="modalBodyBgVariant"
+        :body-text-variant="modalBodyTextVariant"
+        :footer-bg-variant="modalFooterBgVariant"
+        :footer-border-variant="modalFooterBgVariant"
+        :footer-text-variant="modalFooterTextVariant">
       <b-form-group
           id="name"
           description="Name your activity."
@@ -61,18 +79,19 @@
             <b-button
               size="sm"
               variant="primary"
-              :to="{name: 'activity.details', params: { id: row.item.id }}"
+              :to="{name: 'activity.details', params: { id: row.item.id, name: row.item.name }}"
             >Show Details</b-button>
             <b-btn
               size="sm"
               variant="secondary"
               v-b-tooltip.hover title="Rename Activity"
-              v-b-modal.editActivityModal
+              v-on:click="showEditActivity(row.item)"
             ><i class="fa fa-edit fa-1x"></i></b-btn>
             <b-button
               size="sm"
               variant="secondary"
               v-b-tooltip.hover title="Delete Activity"
+              v-on:click="showConfirmDelete(row.item)"
             ><i class="fa fa-trash fa-1x"></i>
             </b-button>
           </div>
@@ -116,7 +135,7 @@ export default {
       },
       fields: [
         {key: 'status', label: 'Status'},
-        {key: 'name', label: 'Name'},
+        {key: 'name', label: 'Name', sortable: true},
         {key: 'timestamp', label: 'Date Time', sortable: true, sortDirection: 'desc'},
         {key: 'distance', label: 'Distance', class: 'text-right'},
         {key: 'avgSpeed', label: 'Avg. Speed', class: 'text-right'},
@@ -163,11 +182,39 @@ export default {
   },
   props: ['theme'],
   methods: {
-    onShowEditActivity: function () {
+    onConfirmDelete: async function () {
+      // delete here
+      let docRef = db.collection('activities').doc(this.activityID)
+      try {
+        await docRef.delete()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    showConfirmDelete: function (item) {
+      this.activityName = item.name
+      this.activityID = item.id
+      this.$refs.confirmDeleteModal.show()
+    },
+    showEditActivity: function (item) {
+      this.activityName = item.name
+      this.activityID = item.id
+      this.$refs.editActivityModal.show()
+    },
+    onShowEditActivity: function (event) {
       this.$refs.activityName.focus()
     },
-    onEditOK: function () {
-      alert(1)
+    onEditOK: async function () {
+      // let's update the activity name
+      let docRef = db.collection('activities').doc(this.activityID)
+      let _this = this
+      try {
+        await docRef.update({
+          name: _this.activityName
+        })
+      } catch (error) {
+        console.log(error)
+      }
     },
     fileAdded: function (file) {
       this.activityID = uuid()
@@ -230,7 +277,7 @@ export default {
             let docData = doc.data()
             _this.activities.push({
               id: doc.id,
-              name: 'New Activity',
+              name: docData.name,
               timestamp: docData.timestamp.toDate().toLocaleString(),
               distance: parseFloat(docData.distance).toFixed(1),
               avgPower: parseInt(docData.averagePower),

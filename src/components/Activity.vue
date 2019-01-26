@@ -1,6 +1,6 @@
 <template>
   <div class="container" id="Activity">
-    <h2>Activity Details</h2>
+    <h2>{{name}} Activity Details</h2>
     <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
     <span v-if="loading">Loading activity details, please wait...</span>
     <div id='activityDetails' ref="activityDetails" v-else>
@@ -125,7 +125,7 @@ export default {
   created: function () {
     this.fetchData(this.activityID)
   },
-  props: ['theme'],
+  props: ['theme', 'name'],
   methods: {
     removeSelection: function () {
       this.selectionActive = false
