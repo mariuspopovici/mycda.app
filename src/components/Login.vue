@@ -18,7 +18,7 @@
         label="Password"
         label-for="password"
       >
-        <b-form-input id="password" type="password" size="lg" v-model="password"></b-form-input>
+        <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
       </b-form-group>
 
       <b-button size="lg" variant="primary" @click="login">Login</b-button>

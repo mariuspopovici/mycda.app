@@ -4,9 +4,11 @@
       <span v-if="!editTitleEnabled">{{activityName}} Activity Details</span>
       <i @click="toggleTitleEdit" v-if="!editTitleEnabled && showEditButton" class="fa fa-edit fa-1x"></i>
       <b-input-group v-if="editTitleEnabled">
-        <b-form-input ref="editActivityTitle" v-model="activityName" @keyup.native.esc="cancelEdit" @keyup.native.enter="updateTitle"></b-form-input>
+        <b-form-input ref="editActivityTitle"
+          v-model="activityName"
+          @keyup.native.esc="cancelEdit" @keyup.native.enter="updateTitle" @blur.native="cancelEdit">
+        </b-form-input>
         <b-input-group-append>
-          <b-btn variant="secondary" v-on:click="cancelEdit" v-b-tooltip.hover title="Cancel (Esc)"><i class="fa fa-undo"></i></b-btn>
           <b-btn variant="success" v-on:click="updateTitle" v-b-tooltip.hover title="Rename Activity"><i class="fa fa-check"></i></b-btn>
         </b-input-group-append>
       </b-input-group>
@@ -141,6 +143,9 @@ export default {
     this.fetchData(this.activityID)
   },
   methods: {
+    onBlur: function () {
+      alert(1)
+    },
     updateTitle: async function () {
       let docRef = db.collection('activities').doc(this.activityID)
       let _this = this
@@ -170,6 +175,7 @@ export default {
           _this.$refs.editActivityTitle.focus()
         }, 200)
       } else {
+        this.showEditButton = false
         this.tmpActivityName = ''
       }
     },

@@ -38,13 +38,17 @@
           :state="isActivityNameValid"
           placeholder="New Activity"
       >
-        <b-form-input ref="activityName" id="activityName" :state="isActivityNameValid" v-model.trim="activityName"></b-form-input>
+        <b-form-input ref="activityName" id="activityName"
+          @keydown.native="onEditEnterKey"
+          :state="isActivityNameValid"
+          v-model.trim="activityName">
+        </b-form-input>
       </b-form-group>
     </b-modal>
     <div id="upload">
       <div id="head">
-        <h2>Experiments</h2>
-        <h4>Start an experiment by uploading a new .FIT activity file.</h4>
+        <h2>Activities</h2>
+        <h4>Create a new activity by importing a .FIT file.</h4>
       </div>
       <b-alert
         variant="danger"
@@ -133,7 +137,7 @@ export default {
         chunking: true,
         forceChuncking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop .FIT file here or click to select file.`,
+        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop a .FIT file here or click to select one.`,
         acceptedFiles: '.fit'
       },
       fields: [
@@ -185,6 +189,12 @@ export default {
   },
   props: ['theme'],
   methods: {
+    onEditEnterKey: function (event) {
+      if (event.which === 13) {
+        this.onEditOK()
+        this.$refs.editActivityModal.hide()
+      }
+    },
     onConfirmDelete: async function () {
       // delete here
       let docRef = db.collection('activities').doc(this.activityID)

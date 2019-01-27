@@ -50,7 +50,7 @@
           <b-row>
             <b-col cols=12>
               <br>
-              <b-form-textarea id="textarea1"
+              <b-form-textarea id="txtDescription" v-model="analysisDescription"
                 placeholder="Enter description. You can record things such as weather conditions, equipment and position changes, etc."
                 :rows="3"
                 :max-rows="6">
@@ -86,6 +86,7 @@ export default {
     return {
       loading: true,
       activityID: this.$route.params.id,
+      analysisDescription: '',
       time: [],
       power: [],
       altitude: [],

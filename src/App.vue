@@ -16,7 +16,7 @@
           </b-navbar-nav>
 
           <b-navbar-nav>
-            <b-nav-item href="#/activities">&nbsp;Experiments</b-nav-item>
+            <b-nav-item href="#/home">&nbsp;Home</b-nav-item>
           </b-navbar-nav>
 
           <b-navbar-nav>
@@ -33,9 +33,13 @@
           <b-navbar-nav class="ml-auto">
             <b-nav-form>
               <b-navbar-nav>
-                <b-nav-item v-if="user" v-on:click="signOut" href="#" id="Sign Out">
-                  <font-awesome-icon icon="sign-out-alt"/>&nbsp;Sign Out
-                </b-nav-item>
+                <b-nav-item-dropdown v-if="user" id="navUserOptionsDD"
+                  text="<i class='fa fa-user'></i>"
+                  extra-toggle-classes="nav-link-custom" right>
+                  <b-dropdown-header>User Options</b-dropdown-header>
+                  <b-dropdown-item>My Profile</b-dropdown-item>
+                  <b-dropdown-item v-on:click="signOut"><font-awesome-icon icon="sign-out-alt"/>&nbsp;Sign Out</b-dropdown-item>
+                </b-nav-item-dropdown>
               </b-navbar-nav>
             </b-nav-form>
             <b-nav-form>
