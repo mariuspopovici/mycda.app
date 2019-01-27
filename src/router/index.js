@@ -29,7 +29,7 @@ const router = new Router({
     },
     {
       path: '/landing',
-      name: 'Landing',
+      name: 'landing',
       component: Landing,
       meta: {
         requiresAuth: false
@@ -37,10 +37,13 @@ const router = new Router({
     },
     {
       path: '/home',
-      name: 'Home',
+      name: 'home',
       component: Home,
       meta: {
-        requiresAuth: true
+        requiresAuth: true,
+        breadcrumbs: [
+          { name: 'Home' }
+        ]
       }
     },
     {
@@ -48,7 +51,11 @@ const router = new Router({
       name: 'activity.list',
       component: Upload,
       meta: {
-        requiresAuth: true
+        requiresAuth: true,
+        breadcrumbs: [
+          { name: 'Home', link: 'home' },
+          { name: 'Activities' }
+        ]
       }
     },
     {
@@ -57,7 +64,11 @@ const router = new Router({
       props: true,
       component: Activity,
       meta: {
-        requiresAuth: true
+        requiresAuth: true,
+        breadcrumbs: [
+          { name: 'Activities', link: 'activity.list' },
+          { name: 'Details' }
+        ]
       }
     },
     {
@@ -66,28 +77,52 @@ const router = new Router({
       component: CdA,
       props: true,
       meta: {
-        requiresAuth: true
+        requiresAuth: true,
+        breadcrumbs: [
+          { name: 'Activity', link: 'activity.details' },
+          { name: 'Analysis' }
+        ]
       }
     },
     {
       path: '/about',
       name: 'About',
-      component: About
+      component: About,
+      meta: {
+        breadcrumbs: [
+          { name: 'About' }
+        ]
+      }
     },
     {
       path: '/rho',
       name: 'Rho Calculator',
-      component: RhoCalculator
+      component: RhoCalculator,
+      meta: {
+        breadcrumbs: [
+          { name: 'Air Density Calculator' }
+        ]
+      }
     },
     {
       path: '/login',
       name: 'Login',
-      component: Login
+      component: Login,
+      meta: {
+        breadcrumbs: [
+          { name: 'Log In' }
+        ]
+      }
     },
     {
       path: '/signup',
       name: 'SignUp',
-      component: SignUp
+      component: SignUp,
+      meta: {
+        breadcrumbs: [
+          { name: 'Sign Up' }
+        ]
+      }
     }
   ]
 })

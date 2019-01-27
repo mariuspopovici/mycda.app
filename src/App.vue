@@ -54,11 +54,10 @@
           </b-navbar-nav>
         </b-collapse>
       </b-navbar>
-
       <div id="component">
+        <breadcrumbs :theme="theme" :crumbs="breadcrumbs"/>
         <router-view :theme="theme"/>
       </div>
-
     </div>
     <!-- Footer -->
     <footer class="footer">
@@ -93,6 +92,7 @@
 <script>
 import firebase from 'firebase/app'
 import 'firebase/auth'
+import breadcrumbs from '@/components/Breadcrumbs'
 
 export default {
   name: 'App',
@@ -136,7 +136,13 @@ export default {
       themeStyle: {
         backgroundColor: '#313131'
       },
+      breadcrumbs: null,
       user: null
+    }
+  },
+  watch: {
+    '$route' () {
+      this.breadcrumbs = this.$route.meta.breadcrumbs
     }
   },
   methods: {
@@ -166,6 +172,9 @@ export default {
         }
       }
     }
+  },
+  components: {
+    breadcrumbs
   }
 }
 </script>
@@ -190,7 +199,7 @@ export default {
 }
 
 #component {
-  margin-top: 80px;
+  margin-top: 70px;
   margin-bottom: 20px;
 }
 </style>
