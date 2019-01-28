@@ -30,7 +30,7 @@
                 </b-form-group>
                 <b-form-group
                     description="Enter tire rolling resistance (crr) value."
-                    label="Tire Rolling Resistance"
+                    label="Rolling Resistance"
                     label-for="crr"
                 >
                   <b-form-input id="crr" v-on:change="calculateCdA"

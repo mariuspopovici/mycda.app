@@ -54,7 +54,7 @@
                 id: activityID,
                 range: selectionXRange,
                 data: chartData,
-                description: 'Manual Selection'
+                description: 'Selection'
               }}">Analyze</b-button>
               <p>
               <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
@@ -189,7 +189,7 @@ export default {
         showgrid: false,
         range: [this.initXRange.start, this.initXRange.end]
       }
-      this.chartLayout.title.text = 'Manual Selection'
+      this.chartLayout.title.text = 'Selection'
     },
     onRelayout: function (event) {
       // check if this was triggered by a drag to zoom event
@@ -199,7 +199,7 @@ export default {
           start: new Date(event['xaxis.range[0]']),
           end: new Date(event['xaxis.range[1]'])
         }
-        this.chartLayout.title.text = 'Manual Selection'
+        this.chartLayout.title.text = 'Selection'
       }
     },
     resetZoom: function () {
