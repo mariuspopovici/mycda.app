@@ -9,7 +9,7 @@
                       label-class="font-weight-bold pt-0"
                       class="mb-0">
           <b-form-group horizontal
-                        label="Full Name:"
+                        label="Display Name:"
                         label-class="text-sm-right"
                         label-for="name">
             <b-form-input id="name"></b-form-input>
@@ -19,6 +19,11 @@
                         label-class="text-sm-right"
                         label-for="email">
             <b-form-input id="email"></b-form-input>
+          </b-form-group>
+          <b-form-group>
+            <div align="right">
+              <b-button align="right" variant="primary">Save</b-button>
+            </div>
           </b-form-group>
         </b-form-group>
       </b-card>
@@ -64,6 +69,11 @@
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input type="number" id="crr" step="0.0001"></b-form-input>
+          </b-form-group>
+          <b-form-group>
+            <div align="right">
+              <b-button align="right" variant="primary">Save</b-button>
+            </div>
           </b-form-group>
         </b-form-group>
       </b-card>

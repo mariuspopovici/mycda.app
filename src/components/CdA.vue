@@ -50,15 +50,36 @@
           <b-row>
             <b-col cols=12>
               <br>
-              <b-form-textarea id="txtDescription" v-model="analysisDescription"
-                placeholder="Enter description. You can record things such as weather conditions, equipment and position changes, etc."
-                :rows="3"
-                :max-rows="6">
-              </b-form-textarea>
-              <br>
-              <div align="right">
-              <b-button align="right" variant="primary">Save</b-button>
-              </div>
+              <b-card :bg-variant="theme">
+                <b-form-group horizontal
+                              breakpoint="lg"
+                              label="Notes"
+                              label-size="lg"
+                              label-class="font-weight-bold pt-0"
+                              class="mb-0">
+                  <b-form-group horizontal
+                                label="Segment Name:"
+                                label-class="text-sm-right"
+                                label-for="name">
+                    <b-form-input id="name" v-model="description"></b-form-input>
+                  </b-form-group>
+                  <b-form-group horizontal
+                                label="Description:"
+                                label-class="text-sm-right"
+                                label-for="description">
+                    <b-form-textarea id="description" v-model="analysisDescription"
+                        placeholder="Enter description. You can record things such as weather conditions, equipment and position changes, etc."
+                        :rows="3"
+                        :max-rows="6">
+                    </b-form-textarea>
+                  </b-form-group>
+                  <b-form-group>
+                    <div align="right">
+                      <b-button align="right" variant="primary">Save</b-button>
+                    </div>
+                  </b-form-group>
+                </b-form-group>
+              </b-card>
             </b-col>
           </b-row>
         </b-container>

@@ -32,7 +32,8 @@ const router = new Router({
       name: 'landing',
       component: Landing,
       meta: {
-        requiresAuth: false
+        requiresAuth: false,
+        breadcrumbs: []
       }
     },
     {

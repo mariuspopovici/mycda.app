@@ -1,6 +1,6 @@
 <template>
   <div class="container">
-    <b-breadcrumb id="breadcrumb" :items="items">
+    <b-breadcrumb v-if="items.length > 0" id="breadcrumb" :items="items">
     </b-breadcrumb>
   </div>
 </template>
@@ -26,13 +26,15 @@ export default {
   methods: {
     formatItems: function () {
       let breadCrumbItems = []
-      this.crumbs.forEach((crumb) => {
-        breadCrumbItems.push({
-          text: crumb.name,
-          to: crumb.link ? { name: crumb.link } : undefined,
-          active: crumb.link === undefined
+      if (this.crumbs) {
+        this.crumbs.forEach((crumb) => {
+          breadCrumbItems.push({
+            text: crumb.name,
+            to: crumb.link ? { name: crumb.link } : undefined,
+            active: crumb.link === undefined
+          })
         })
-      })
+      }
       this.items = breadCrumbItems
     }
   }

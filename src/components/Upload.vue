@@ -364,7 +364,6 @@ function uuid () {
   margin-left: auto;
   margin-right: auto;
   margin-top: 10px;
-
 }
 
 #uploadDropZone .dz-preview {
