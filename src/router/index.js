@@ -9,7 +9,7 @@ import Home from '@/components/Home'
 import Landing from '@/components/Landing'
 import Activity from '@/components/Activity'
 import CdA from '@/components/CdA'
-
+import Profile from '@/components/Profile'
 import firebase from 'firebase/app'
 import 'firebase/auth'
 
@@ -121,6 +121,17 @@ const router = new Router({
       meta: {
         breadcrumbs: [
           { name: 'Sign Up' }
+        ]
+      }
+    },
+    {
+      path: '/profile',
+      name: 'user.profile',
+      component: Profile,
+      meta: {
+        requiresAuth: true,
+        breadcrumbs: [
+          { name: 'User Profile' }
         ]
       }
     }
