@@ -12,13 +12,13 @@
                         label="Display Name:"
                         label-class="text-sm-right"
                         label-for="name">
-            <b-form-input id="name" v-on:input="enableSaveUserInfo" v-model="displayName"></b-form-input>
+            <b-form-input id="name" v-on:input="enableSaveUserInfo" v-model.trim="displayName"></b-form-input>
           </b-form-group>
           <b-form-group horizontal
                         label="Email Address:"
                         label-class="text-sm-right"
                         label-for="email">
-            <b-form-input id="email" v-on:input="enableSaveUserInfo" type="email" v-model="email"></b-form-input>
+            <b-form-input id="email" v-on:input="enableSaveUserInfo" type="email" v-model.trim="email"></b-form-input>
           </b-form-group>
           <b-form-group>
             <div align="right">
