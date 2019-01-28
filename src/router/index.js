@@ -42,9 +42,7 @@ const router = new Router({
       component: Home,
       meta: {
         requiresAuth: true,
-        breadcrumbs: [
-          { name: 'Home' }
-        ]
+        breadcrumbs: []
       }
     },
     {
@@ -67,6 +65,7 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
+          { name: 'Home', link: 'home' },
           { name: 'Activities', link: 'activity.list' },
           { name: 'Details' }
         ]
@@ -80,7 +79,9 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
-          { name: 'Activity', link: 'activity.details' },
+          { name: 'Home', link: 'home' },
+          { name: 'Activities', link: 'activity.list' },
+          { name: 'Details', link: 'activity.details' },
           { name: 'Analysis' }
         ]
       }
@@ -90,9 +91,7 @@ const router = new Router({
       name: 'About',
       component: About,
       meta: {
-        breadcrumbs: [
-          { name: 'About' }
-        ]
+        breadcrumbs: []
       }
     },
     {
@@ -100,9 +99,7 @@ const router = new Router({
       name: 'Rho Calculator',
       component: RhoCalculator,
       meta: {
-        breadcrumbs: [
-          { name: 'Air Density Calculator' }
-        ]
+        breadcrumbs: []
       }
     },
     {
@@ -110,9 +107,7 @@ const router = new Router({
       name: 'Login',
       component: Login,
       meta: {
-        breadcrumbs: [
-          { name: 'Log In' }
-        ]
+        breadcrumbs: []
       }
     },
     {
@@ -120,9 +115,7 @@ const router = new Router({
       name: 'SignUp',
       component: SignUp,
       meta: {
-        breadcrumbs: [
-          { name: 'Sign Up' }
-        ]
+        breadcrumbs: []
       }
     },
     {
@@ -132,6 +125,7 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
+          { name: 'Home', link: 'home' },
           { name: 'User Profile' }
         ]
       }

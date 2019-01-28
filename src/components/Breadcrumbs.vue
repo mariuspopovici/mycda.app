@@ -43,6 +43,6 @@ export default {
 
 <style scoped>
   #breadcrumb  {
-    background-color: #495057;
+    background-color: transparent;
   }
 </style>

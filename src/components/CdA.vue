@@ -92,6 +92,9 @@
 import VuePlotly from '@statnett/vue-plotly'
 import vueSlider from 'vue-slider-component'
 import VirtualElevation from '../services/ve'
+import firebase from 'firebase/app'
+import 'firebase/auth'
+import { db } from '../main'
 
 export default {
   name: 'CdA',
@@ -161,7 +164,7 @@ export default {
   },
   props: ['theme', 'range', 'data', 'description'],
   methods: {
-    filterData: function (data, range) {
+    filterData: async function (data, range) {
       let powerSeries = data[0]
       let altitudeSeries = data[1]
       let speedSeries = data[2]
@@ -192,6 +195,18 @@ export default {
         mode: 'lines',
         name: 'Elevation'
       }]
+
+      // TODO: refactor this to use some kind of state management to avoid reading every time
+      const user = firebase.auth().currentUser
+      let prefsDocRef = db.collection('userprefs').doc(user.uid)
+      let doc = await prefsDocRef.get()
+      if (doc.exists) {
+        const docData = doc.data()
+        this.units = docData.units
+        this.mass = parseFloat(docData.weight) + parseFloat(docData.bikeWeight)
+        this.cda = docData.cda
+        this.crr = docData.crr
+      }
 
       this.veService = new VirtualElevation(this.power, this.speed, this.altitude, this.time)
       this.calculateCdA()

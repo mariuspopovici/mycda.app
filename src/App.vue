@@ -36,7 +36,7 @@
                 <b-nav-item-dropdown v-if="user" id="navUserOptionsDD"
                   text="<i class='fa fa-user'></i>"
                   extra-toggle-classes="nav-link-custom" right>
-                  <b-dropdown-header>User Options</b-dropdown-header>
+                  <b-dropdown-header>{{user.displayName ? user.displayName : 'User Options'}}</b-dropdown-header>
                   <b-dropdown-item :to="{name: 'user.profile'}" >My Profile</b-dropdown-item>
                   <b-dropdown-item v-on:click="signOut"><font-awesome-icon icon="sign-out-alt"/>&nbsp;Sign Out</b-dropdown-item>
                 </b-nav-item-dropdown>
