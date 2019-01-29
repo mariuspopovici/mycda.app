@@ -355,8 +355,8 @@ function uuid () {
 #uploadDropZone {
   height: 150px;
   padding: 10px;
-  color: white;
-  background: #313131;
+  color: #b1aeae;
+  background: transparent;
   box-sizing: border-box;
   border-radius: 5px;
   border: 2px dashed #b1aeae;

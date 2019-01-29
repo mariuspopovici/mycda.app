@@ -54,7 +54,10 @@
                   :use-keyboard="true"
                   :min="0.150" :max="0.500"
                   :interval="0.001"
-                  v-model="cda">
+                  v-model="cda"
+                  v-bind:tooltip-style="sliderStyle"
+                  v-bind:process-style="sliderStyle"
+                  >
                 </vue-slider>
               </b-card>
             </b-col>
@@ -122,6 +125,7 @@ export default {
   },
   data () {
     return {
+      sliderStyle: {},
       modalHeaderBgVariant: this.theme,
       modalHeaderTextVariant: this.theme === 'dark' ? 'light' : 'dark',
       loading: true,
@@ -177,6 +181,11 @@ export default {
   },
   created: function () {
     this.filterData(this.$props.data, this.$props.range)
+
+    this.sliderStyle = {
+      backgroundColor: '#3463af',
+      borderColor: '#3463af'
+    }
   },
   props: ['theme', 'range', 'data', 'description'],
   methods: {
