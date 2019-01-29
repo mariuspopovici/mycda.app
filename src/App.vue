@@ -1,7 +1,7 @@
 <template>
   <div id="app" v-bind:style="themeStyle">
     <div class="wrapper">
-      <b-navbar toggleable="md" :type="theme" :variant="theme" :fixed="'top'" :sticky="false">
+      <b-navbar id="nav" toggleable="md" :type="theme" :variant="theme" :fixed="'top'" :sticky="false">
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
@@ -17,10 +17,6 @@
 
           <b-navbar-nav>
             <b-nav-item href="#/home">&nbsp;Home</b-nav-item>
-          </b-navbar-nav>
-
-          <b-navbar-nav>
-            <b-nav-item href="#/rho">&nbsp;Rho Calculator</b-nav-item>
           </b-navbar-nav>
 
           <b-navbar-nav>

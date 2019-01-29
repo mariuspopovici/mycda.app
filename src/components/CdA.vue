@@ -1,5 +1,12 @@
 <template>
   <div id="About">
+    <!-- rho calculator model -->
+    <b-modal :body-bg-variant="theme" hide-footer id="rhoModal" ref="rhoModal"
+      :header-bg-variant="modalHeaderBgVariant"
+      :header-text-variant="modalHeaderTextVariant"
+      centered title="Air Density Calculator">
+      <RhoCalculator v-on:calculate="onCalculate" showClose unitsType="metric" calculateCaption="Apply"/>
+    </b-modal>
     <div class="container">
       <h2>CdA Analysis</h2>
       <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use the CdA slider to align the virtual elevation profile.</h4>
@@ -26,7 +33,12 @@
                     label="Air Density (kg/m<sup>3</sup>)"
                     label-for="rho"
                 >
-                  <b-form-input v-on:change="calculateCdA" id="rho" v-model.trim="rho" type="number" step="0.001"></b-form-input>
+                  <b-input-group>
+                    <b-form-input v-on:change="calculateCdA" id="rho" v-model.trim="rho" type="number" step="0.0001"></b-form-input>
+                    <b-input-group-append>
+                      <b-btn variant="primary" id="btnCalc" v-on:click="showRhoCalculator" v-b-tooltip.hover title="Open Calculator"><i class="fa fa-calculator"></i></b-btn>
+                    </b-input-group-append>
+                  </b-input-group>
                 </b-form-group>
                 <b-form-group
                     description="Enter tire rolling resistance (crr) value."
@@ -91,7 +103,8 @@
 <script>
 import VuePlotly from '@statnett/vue-plotly'
 import vueSlider from 'vue-slider-component'
-import VirtualElevation from '../services/ve'
+import VirtualElevation from '@/services/ve'
+import RhoCalculator from '@/components/RhoCalculator'
 import firebase from 'firebase/app'
 import 'firebase/auth'
 import { db } from '../main'
@@ -104,10 +117,13 @@ export default {
   },
   components: {
     VuePlotly,
-    vueSlider
+    vueSlider,
+    RhoCalculator
   },
   data () {
     return {
+      modalHeaderBgVariant: this.theme,
+      modalHeaderTextVariant: this.theme === 'dark' ? 'light' : 'dark',
       loading: true,
       activityID: this.$route.params.id,
       analysisDescription: '',
@@ -164,6 +180,13 @@ export default {
   },
   props: ['theme', 'range', 'data', 'description'],
   methods: {
+    onCalculate: function (result) {
+      this.rho = result
+      this.$refs.rhoModal.hide()
+    },
+    showRhoCalculator: function () {
+      this.$refs.rhoModal.show()
+    },
     filterData: async function (data, range) {
       let powerSeries = data[0]
       let altitudeSeries = data[1]
@@ -243,7 +266,4 @@ export default {
 </script>
 
 <style>
-.tab-title-class {
-    color: #FF0000 !important;
-}
 </style>

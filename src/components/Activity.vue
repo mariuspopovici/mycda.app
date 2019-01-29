@@ -143,9 +143,6 @@ export default {
     this.fetchData(this.activityID)
   },
   methods: {
-    onBlur: function () {
-      alert(1)
-    },
     updateTitle: async function () {
       let docRef = db.collection('activities').doc(this.activityID)
       let _this = this

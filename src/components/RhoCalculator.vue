@@ -96,6 +96,7 @@
                   > Metric
                 </label>
               </div>
+
               <div class="form-check form-check-inline disabled">
                 <label class="form-check-label">
                   <input
@@ -113,8 +114,7 @@
 
           <div class="form-group row" v-if="rho !== '' && units ==='metric'">
             <label for="example-text-input" class="col-4 col-form-label">
-              Air Density: (kg/m
-              <sup>3</sup>)
+              Air Density: (kg/m<sup>3</sup>)
             </label>
             <div class="col-8">
               <input
@@ -155,8 +155,8 @@
                 loadingCaption="Please wait..."
                 v-on:click.native="getLocation"
               ></LoadingButton>
-              <button type="submit" class="btn btn-success">
-                <font-awesome-icon icon="check"/>&nbsp;Calculate
+              <button type="submit" class="btn btn-primary">
+                <font-awesome-icon icon="check"/>&nbsp;{{calculateCaption}}
               </button>
             </div>
           </div>
@@ -168,8 +168,8 @@
 
 <script>
 import { required, decimal } from 'vuelidate/lib/validators'
-import WeatherService from '../services/weather'
-import LoadingButton from './LoadingButton'
+import WeatherService from '@/services/weather'
+import LoadingButton from '@/components/LoadingButton'
 
 const weatherService = new WeatherService()
 
@@ -178,6 +178,20 @@ export default {
   components: {
     LoadingButton
   },
+  props: {
+    showClose: {
+      type: Boolean,
+      default: false
+    },
+    unitsType: {
+      type: String,
+      default: 'metric'
+    },
+    calculateCaption: {
+      type: String,
+      default: 'Calculate'
+    }
+  },
   data () {
     return {
       temperature: '',
@@ -185,7 +199,6 @@ export default {
       pressure: '',
       rho: '',
       rho_lbcuft: '',
-      units: 'metric',
       temperatureUnits: '°C',
       pressureUnits: 'hPa',
       lat: '',
@@ -197,13 +210,17 @@ export default {
     title: 'Calculator',
     links: [{ rel: 'canonical', href: 'https://rho.mycda.app/#/' }]
   },
+  created: function () {
+    this.units = this.unitsType
+  },
   methods: {
     onSubmit: function () {
       this.$v.$touch()
       if (this.$v.$invalid) {
         this.rho = ''
       } else {
-        this.calculate()
+        let result = this.calculate()
+        this.$emit('calculate', result)
       }
     },
     getLocation: function (event) {
@@ -232,7 +249,7 @@ export default {
           this.calculate()
         }
       } catch (e) {
-        alert(e)
+        console.log(e)
       } finally {
         this.loadingLocation = false
       }
@@ -240,16 +257,18 @@ export default {
     calculate: function (event) {
       const rhoCalc = require('@mariuspopovici/rho')
       try {
-        const rho = rhoCalc(
+        const result = rhoCalc(
           parseFloat(this.temperature),
           parseFloat(this.pressure),
           parseFloat(this.dewpoint),
           this.units
         )
-        this.rho = rho.toFixed(4)
-        this.rho_lbcuft = rho.toPoundsPerCubicFeet().toFixed(4)
+        this.rho = parseFloat(result).toFixed(4)
+        this.rho_lbcuft = result.toPoundsPerCubicFeet().toFixed(4)
+
+        return (this.units === 'metric' ? this.rho : this.rho_lbcuft)
       } catch (e) {
-        alert(e)
+        console.log(e)
       }
     }
   },

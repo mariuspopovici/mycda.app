@@ -1,6 +1,5 @@
 import Vue from 'vue'
 import Router from 'vue-router'
-import RhoCalculator from '@/components/RhoCalculator'
 import Upload from '@/components/Upload'
 import About from '@/components/About'
 import Login from '@/components/Login'
@@ -90,14 +89,6 @@ const router = new Router({
       path: '/about',
       name: 'About',
       component: About,
-      meta: {
-        breadcrumbs: []
-      }
-    },
-    {
-      path: '/rho',
-      name: 'Rho Calculator',
-      component: RhoCalculator,
       meta: {
         breadcrumbs: []
       }
