@@ -4,13 +4,12 @@ import Vue from 'vue'
 import App from './App'
 import router from './router'
 import BootstrapVue from 'bootstrap-vue'
-// import 'bootstrap/dist/css/bootstrap.css'
-// import 'bootstrap-vue/dist/bootstrap-vue.css'
 import Meta from 'vue-meta'
 import 'vue2-dropzone/dist/vue2Dropzone.css'
 import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
+import { store } from './store/store'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
 import {
@@ -29,6 +28,7 @@ import {
   faCloud
 } from '@fortawesome/free-solid-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
+
 import Vuelidate from 'vuelidate'
 
 library.add(faWind)
@@ -72,7 +72,8 @@ firebase.auth().onAuthStateChanged(() => {
       el: '#app',
       template: '<App/>',
       components: { App },
-      router
+      store: store,
+      router: router
     })
   }
 })
