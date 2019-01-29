@@ -20,7 +20,29 @@
                         label-for="email">
             <b-form-input id="email" v-on:input="enableSaveUserInfo" type="email" v-model.trim="email"></b-form-input>
           </b-form-group>
+          <b-form-group horizontal
+                        description="Enter your existing password to save any of the values in this section."
+                        label="Current Password:"
+                        label-class="text-sm-right"
+                        label-for="password">
+            <b-form-input id="password" v-on:input="enableSaveUserInfo" type="password" maxLength="25" required v-model.trim="password"></b-form-input>
+          </b-form-group>
+          <b-form-group horizontal
+                        description="Enter your new password in case you want to change it."
+                        label="New Password:"
+                        label-class="text-sm-right"
+                        label-for="password1">
+            <b-form-input id="password1" v-on:input="enableSaveUserInfo" type="password" maxLength="25" v-model.trim="password1"></b-form-input>
+          </b-form-group>
+          <b-form-group horizontal
+                        description="Re-enter your new password. It must match the previous entry."
+                        label="Repeat Password:"
+                        label-class="text-sm-right"
+                        label-for="password2">
+            <b-form-input id="password1" v-on:input="enableSaveUserInfo" type="password" maxLength="25" v-model.trim="password2"></b-form-input>
+          </b-form-group>
           <b-form-group>
+            <b-alert v-if="saveUserInfoFail" show dismissible variant="danger">{{saveUserInfoFailMessage}}</b-alert>
             <div align="right">
               <b-button :disabled="!saveUserInfoEnabled" align="right" variant="primary" v-on:click="updateUserInfo">{{saveUserInfoCaption}}</b-button>
             </div>
@@ -86,7 +108,7 @@ import firebase from 'firebase/app'
 import 'firebase/auth'
 import LoadingButton from '@/components/LoadingButton'
 import { db } from '../main'
-import { required, email, between } from 'vuelidate/lib/validators'
+import { required, email, between, minLength, maxLength, sameAs } from 'vuelidate/lib/validators'
 
 export default {
   name: 'Profile',
@@ -94,6 +116,9 @@ export default {
     title: 'User Profile'
   },
   validations: {
+    password: { required, minLength: minLength(6), maxLength: maxLength(25) },
+    password1: { minLength: minLength(6), maxLength: maxLength(25) },
+    password2: { minLength: minLength(6), maxLength: maxLength(25), sameAsPassword1: sameAs('password1') },
     email: { email, required },
     cda: { between: between(0, 1) },
     crr: { between: between(0, 1) },
@@ -112,7 +137,12 @@ export default {
       saveUserInfoEnabled: false,
       saveUserPrefsCaption: 'Save',
       saveUserPrefsEnabled: false,
+      saveUserInfoFail: false,
+      saveUserInfoFailMessage: '',
       user: null,
+      password: '',
+      password1: '',
+      password2: '',
       displayName: '',
       email: '',
       units: '',
@@ -125,7 +155,13 @@ export default {
   props: ['theme'],
   methods: {
     enableSaveUserInfo: function () {
-      let isValid = !(this.$v.email.$invalid)
+      let isValid = !(this.$v.email.$invalid) &&
+        !(this.$v.password.$invalid)
+
+      if (this.password1.length > 0) {
+        isValid = isValid && !(this.$v.password1.$invalid) && !(this.$v.password2.$invalid)
+      }
+
       this.saveUserInfoEnabled = isValid
       this.saveUserInfoCaption = 'Save'
     },
@@ -147,14 +183,39 @@ export default {
     },
     updateUserInfo: async function () {
       try {
+        // let's try to reauthenticate the current user with their existing password
+        const credential = firebase.auth.EmailAuthProvider.credential(this.user.email, this.password)
+        await this.user.reauthenticateAndRetrieveDataWithCredential(credential)
+
+        // let's check if a password change is requested
+        if (this.password1.length !== 0) {
+          // check if new passwords match
+          if (this.password1 !== this.password2) {
+            this.saveUserInfoFail = true
+            this.saveUserInfoFailMessage = 'New passwords do not match.'
+            return
+          } else {
+            // update password
+            await this.user.updatePassword(this.password1)
+          }
+        }
+
+        // update display name
         await this.user.updateProfile({
-          displayName: this.displayName,
-          email: this.email
+          displayName: this.displayName
         })
+
+        // update email
+        await this.user.updateEmail(this.email)
+
+        this.saveUserInfoFail = false
+        this.saveUserInfoFailMessage = ''
         this.saveUserInfoEnabled = false
         this.saveUserInfoCaption = 'Saved'
       } catch (error) {
         console.log(error)
+        this.saveUserInfoFail = true
+        this.saveUserInfoFailMessage = error.message
       }
     },
     enableSaveUserPrefs: function () {
