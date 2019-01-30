@@ -38,6 +38,9 @@ import 'firebase/auth'
 
 export default {
   name: 'login',
+  metaInfo: {
+    title: 'Login'
+  },
   data () {
     return {
       email: '',

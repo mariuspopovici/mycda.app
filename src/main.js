@@ -6,9 +6,11 @@ import router from './router'
 import BootstrapVue from 'bootstrap-vue'
 import Meta from 'vue-meta'
 import 'vue2-dropzone/dist/vue2Dropzone.css'
+
 import firebase from 'firebase/app'
 import 'firebase/firestore'
 import 'firebase/auth'
+
 import { store } from './store/store'
 
 import { library } from '@fortawesome/fontawesome-svg-core'
@@ -27,6 +29,7 @@ import {
   faSignOutAlt,
   faCloud
 } from '@fortawesome/free-solid-svg-icons'
+
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
 import Vuelidate from 'vuelidate'
@@ -58,24 +61,18 @@ const firebaseConfig = {
   messagingSenderId: process.envFB_MSG_SENDER_ID
 }
 
-let app = ''
-
 firebase.initializeApp(firebaseConfig)
 
 export const db = firebase.firestore()
 
-firebase.auth().onAuthStateChanged(() => {
-  // init app when the firebase auth object is ready
-  if (!app) {
-    /* eslint-disable no-new */
-    app = new Vue({
-      el: '#app',
-      template: '<App/>',
-      components: { App },
-      store: store,
-      router: router
-    })
-  }
+firebase.auth().onAuthStateChanged(function (user) {
+  // eslint-disable-next-line no-new
+  new Vue({
+    el: '#app',
+    store: store,
+    router: router,
+    render: h => h(App)
+  })
 })
 
 Vue.use(Vuelidate)

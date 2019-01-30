@@ -62,7 +62,8 @@
                         label="Units of Measurement:"
                         label-class="text-sm-right"
                         class="mb-0">
-            <b-form-radio-group class="pt-2" id="units" v-model="units" :options="['Imperial', 'Metric']" v-on:input="enableSaveUserPrefs" />
+            <b-form-radio-group class="pt-2" id="units" v-model="units" :options="[{text: 'Imperial', value: 'imperial'}, {text: 'Metric', value: 'metric'}]"
+              v-on:input="enableSaveUserPrefs" />
           </b-form-group>
           <b-form-group horizontal
                         label="Weight:"
@@ -94,7 +95,10 @@
           </b-form-group>
           <b-form-group>
             <div align="right">
-              <b-button align="right" variant="primary" :disabled="!saveUserPrefsEnabled" v-on:click="updateUserPrefs">{{saveUserPrefsCaption}}</b-button>
+              <b-button align="right" variant="primary"
+                v-b-tooltip.hover title="Log out and log back in for changes to take effect."
+                :disabled="!saveUserPrefsEnabled"
+                v-on:click="updateUserPrefs">{{saveUserPrefsCaption}}</b-button>
             </div>
           </b-form-group>
         </b-form-group>
@@ -115,6 +119,9 @@ export default {
   metaInfo: {
     title: 'User Profile'
   },
+  components: {
+    LoadingButton
+  },
   validations: {
     password: { required, minLength: minLength(6), maxLength: maxLength(25) },
     password1: { minLength: minLength(6), maxLength: maxLength(25) },
@@ -125,11 +132,11 @@ export default {
     bikeWeight: { between: between(0, 50) },
     weight: { between: between(0, 300) }
   },
-  components: {
-    LoadingButton
-  },
-  created: function () {
-    this.fetchData()
+  props: ['theme'],
+  computed: {
+    user () {
+      return this.$store.getters.getUser
+    }
   },
   data () {
     return {
@@ -139,7 +146,6 @@ export default {
       saveUserPrefsEnabled: false,
       saveUserInfoFail: false,
       saveUserInfoFailMessage: '',
-      user: null,
       password: '',
       password1: '',
       password2: '',
@@ -152,7 +158,9 @@ export default {
       crr: 0.0
     }
   },
-  props: ['theme'],
+  created: function () {
+    this.fetchData()
+  },
   methods: {
     enableSaveUserInfo: function () {
       let isValid = !(this.$v.email.$invalid) &&
@@ -166,7 +174,6 @@ export default {
       this.saveUserInfoCaption = 'Save'
     },
     fetchData: async function () {
-      this.user = firebase.auth().currentUser
       this.displayName = this.user.displayName
       this.email = this.user.email
 

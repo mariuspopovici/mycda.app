@@ -175,8 +175,19 @@ const weatherService = new WeatherService()
 
 export default {
   name: 'RhoCalculator',
+  metaInfo: {
+    title: 'Calculator'
+  },
   components: {
     LoadingButton
+  },
+  computed: {
+    user () {
+      return this.$store.getters.getUser
+    },
+    userPrefs () {
+      return this.$store.getters.getUserPrefs
+    }
   },
   props: {
     showClose: {
@@ -206,12 +217,54 @@ export default {
       loadingLocation: false
     }
   },
-  metaInfo: {
-    title: 'Calculator',
-    links: [{ rel: 'canonical', href: 'https://rho.mycda.app/#/' }]
+  validations: {
+    temperature: {
+      required,
+      decimal
+    },
+    dewpoint: {
+      required,
+      decimal
+    },
+    pressure: {
+      required,
+      decimal
+    }
+  },
+  watch: {
+    units: function (val, oldVal) {
+      // when units change
+      switch (val) {
+        case 'imperial':
+          // set placeholders
+          this.temperatureUnits = '°F'
+          this.pressureUnits = 'inHg'
+          if (oldVal !== val) {
+            // convert units to imperial from metric
+            this.temperature = weatherService.toFahrenheit(this.temperature)
+            this.dewpoint = weatherService.toFahrenheit(this.dewpoint)
+            this.pressure = weatherService.hpaToInHg(this.pressure)
+          }
+          break
+        case 'metric':
+          // set placeholders
+          this.temperatureUnits = '°C'
+          this.pressureUnits = 'hPa'
+          if (oldVal !== val) {
+            // convert units to metric from imperial
+            this.temperature = weatherService.toCelcius(this.temperature)
+            this.dewpoint = weatherService.toCelcius(this.dewpoint)
+            this.pressure = weatherService.inHgToC(this.pressure)
+          }
+          break
+        default:
+          this.temperatureUnits = '°C'
+          this.pressureUnits = 'hPa'
+      }
+    }
   },
   created: function () {
-    this.units = this.unitsType
+    this.units = this.userPrefs.units
   },
   methods: {
     onSubmit: function () {
@@ -269,52 +322,6 @@ export default {
         return (this.units === 'metric' ? this.rho : this.rho_lbcuft)
       } catch (e) {
         console.log(e)
-      }
-    }
-  },
-  validations: {
-    temperature: {
-      required,
-      decimal
-    },
-    dewpoint: {
-      required,
-      decimal
-    },
-    pressure: {
-      required,
-      decimal
-    }
-  },
-  watch: {
-    units: function (val, oldVal) {
-      // when units change
-      switch (val) {
-        case 'imperial':
-          // set placeholders
-          this.temperatureUnits = '°F'
-          this.pressureUnits = 'inHg'
-          if (oldVal !== val) {
-            // convert units to imperial from metric
-            this.temperature = weatherService.toFahrenheit(this.temperature)
-            this.dewpoint = weatherService.toFahrenheit(this.dewpoint)
-            this.pressure = weatherService.hpaToInHg(this.pressure)
-          }
-          break
-        case 'metric':
-          // set placeholders
-          this.temperatureUnits = '°C'
-          this.pressureUnits = 'hPa'
-          if (oldVal !== val) {
-            // convert units to metric from imperial
-            this.temperature = weatherService.toCelcius(this.temperature)
-            this.dewpoint = weatherService.toCelcius(this.dewpoint)
-            this.pressure = weatherService.inHgToC(this.pressure)
-          }
-          break
-        default:
-          this.temperatureUnits = '°C'
-          this.pressureUnits = 'hPa'
       }
     }
   }

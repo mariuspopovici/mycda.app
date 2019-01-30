@@ -28,20 +28,6 @@
           <small class="text-muted">Last updated 3 mins ago</small>
         </div>
       </b-card>
-      <!-- <b-card title="Settings"
-              :bg-variant="theme"
-              img-src="/static/images/home/sprint.png"
-              img-alt="Settings"
-              img-top>
-        <p class="card-text">
-            This is a wider card with supporting text below as a natural lead-in to additional content. This card has even longer content
-            than the first to show that equal height action.
-        </p>
-        <b-button href="#" variant="primary">Settings</b-button>
-        <div slot="footer">
-          <small class="text-muted">Last updated 3 mins ago</small>
-        </div>
-      </b-card> -->
     </b-card-group>
   </div>
 </template>
@@ -51,8 +37,7 @@
 export default {
   name: 'Home',
   metaInfo: {
-    title: 'Home',
-    links: [{ rel: 'canonical', href: 'https://mycda.app/#/home' }]
+    title: 'Home'
   },
   data () {
     return {}

@@ -41,6 +41,9 @@ import 'firebase/auth'
 
 export default {
   name: 'signUp',
+  metaInfo: {
+    title: 'Sign Up'
+  },
   data () {
     return {
       email: '',

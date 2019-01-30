@@ -108,21 +108,26 @@ import VuePlotly from '@statnett/vue-plotly'
 import vueSlider from 'vue-slider-component'
 import VirtualElevation from '@/services/ve'
 import RhoCalculator from '@/components/RhoCalculator'
-import firebase from 'firebase/app'
-import 'firebase/auth'
-import { db } from '../main'
 
 export default {
   name: 'CdA',
   metaInfo: {
-    title: 'CdA',
-    links: []
+    title: 'CdA Analysis'
   },
   components: {
     VuePlotly,
     vueSlider,
     RhoCalculator
   },
+  computed: {
+    user () {
+      return this.$store.getters.getUser
+    },
+    userPrefs () {
+      return this.$store.getters.getUserPrefs
+    }
+  },
+  props: ['theme', 'range', 'data', 'description'],
   data () {
     return {
       sliderStyle: {},
@@ -179,15 +184,19 @@ export default {
       }
     }
   },
+  watch: {
+    cda: function (val) {
+      this.calculateCdA()
+    }
+  },
   created: function () {
-    this.filterData(this.$props.data, this.$props.range)
+    this.fetchData(this.$props.data, this.$props.range)
 
     this.sliderStyle = {
       backgroundColor: '#3463af',
       borderColor: '#3463af'
     }
   },
-  props: ['theme', 'range', 'data', 'description'],
   methods: {
     onCalculate: function (result) {
       this.rho = result
@@ -196,7 +205,7 @@ export default {
     showRhoCalculator: function () {
       this.$refs.rhoModal.show()
     },
-    filterData: async function (data, range) {
+    fetchData: async function (data, range) {
       let powerSeries = data[0]
       let altitudeSeries = data[1]
       let speedSeries = data[2]
@@ -228,16 +237,11 @@ export default {
         name: 'Elevation'
       }]
 
-      // TODO: refactor this to use some kind of state management to avoid reading every time
-      const user = firebase.auth().currentUser
-      let prefsDocRef = db.collection('userprefs').doc(user.uid)
-      let doc = await prefsDocRef.get()
-      if (doc.exists) {
-        const docData = doc.data()
-        this.units = docData.units
-        this.mass = parseFloat(docData.weight) + parseFloat(docData.bikeWeight)
-        this.cda = docData.cda
-        this.crr = docData.crr
+      if (this.userPrefs) {
+        this.units = this.userPrefs.units
+        this.mass = parseFloat(this.userPrefs.weight) + parseFloat(this.userPrefs.bikeWeight)
+        this.cda = this.userPrefs.cda
+        this.crr = this.userPrefs.crr
       }
 
       this.veService = new VirtualElevation(this.power, this.speed, this.altitude, this.time)
@@ -264,11 +268,6 @@ export default {
           yaxis: 'y2'
         }
       ]
-    }
-  },
-  watch: {
-    cda: function (val) {
-      this.calculateCdA()
     }
   }
 }

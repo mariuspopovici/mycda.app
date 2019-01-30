@@ -92,12 +92,8 @@ import breadcrumbs from '@/components/Breadcrumbs'
 
 export default {
   name: 'App',
-  beforeCreate () {
-    firebase.auth().onAuthStateChanged(user => {
-      if (user) {
-        this.user = user
-      }
-    })
+  created: function () {
+    this.setUser()
   },
   metaInfo: {
     title:
@@ -132,8 +128,7 @@ export default {
       themeStyle: {
         backgroundColor: '#313131'
       },
-      breadcrumbs: null,
-      user: null
+      breadcrumbs: null
     }
   },
   watch: {
@@ -141,10 +136,18 @@ export default {
       this.breadcrumbs = this.$route.meta.breadcrumbs
     }
   },
+  computed: {
+    user () {
+      return this.$store.getters.getUser
+    }
+  },
   methods: {
+    setUser: function () {
+      this.$store.dispatch('setUser')
+    },
     async signOut () {
       await firebase.auth().signOut()
-      this.user = null
+      this.setUser()
       this.$router.replace('login')
     },
     toggleTheme () {

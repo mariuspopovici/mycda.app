@@ -40,8 +40,7 @@
 export default {
   name: "About",
   metaInfo: {
-    title: "About",
-    links: [{ rel: "canonical", href: "https://mycda.app/#/about" }]
+    title: "About"
   },
   data() {
     return {};

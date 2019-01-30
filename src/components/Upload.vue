@@ -57,7 +57,6 @@
         @dismissed="uploadError=false"
       >{{uploadMessage}}</b-alert>
 
-      <br>
       <!-- Drop Zone -->
       <vue-dropzone ref="uploadDropZone" id="uploadDropZone" :options="dropOptions" v-on:vdropzone-file-added="fileAdded" ></vue-dropzone>
 
@@ -111,8 +110,6 @@
 <script>
 import vueDropzone from 'vue2-dropzone'
 import firebase from 'firebase/app'
-import 'firebase/auth'
-import 'firebase/firestore'
 import 'firebase/storage'
 
 import { db } from '../main'
@@ -120,8 +117,7 @@ import { db } from '../main'
 export default {
   name: 'Upload',
   metaInfo: {
-    title: 'Upload',
-    links: [{ rel: 'canonical', href: 'https://mycda.app/#/upload' }]
+    title: 'Upload'
   },
   data () {
     return {
@@ -162,6 +158,12 @@ export default {
     }
   },
   computed: {
+    user () {
+      return this.$store.getters.getUser
+    },
+    userPrefs () {
+      return this.$store.getters.getUserPrefs
+    },
     isActivityNameValid () {
       return this.activityName.length > 0
     },
@@ -241,7 +243,7 @@ export default {
           let activities = db.collection('activities')
           let doc = {
             id: -1,
-            uid: firebase.auth().currentUser.uid,
+            uid: this.user.uid,
             status: 'New',
             timestamp: '-',
             name: 'New Activity',
@@ -279,7 +281,7 @@ export default {
       let _this = this
 
       activitiesRef
-        .where('uid', '==', firebase.auth().currentUser.uid)
+        .where('uid', '==', this.user.uid)
         .where('status', '==', 'Processed')
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
@@ -306,7 +308,7 @@ function uploadToStorage (activityId, file, data, dz, callback, onErrorCallback)
   let dzProgressBar = file.previewElement.children[2]
 
   // create a unique id for the file to be uploaded - this will be the activity id from now on
-  let path = 'userdata/' + firebase.auth().currentUser.uid + '/activities/' + activityId + '.fit'
+  let path = 'userdata/' + this.user.uid + '/activities/' + activityId + '.fit'
 
   // get a ref to firebase storage root
   let storageRef = firebase.storage().ref()

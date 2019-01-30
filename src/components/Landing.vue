@@ -11,8 +11,7 @@
 export default {
   name: 'Landing',
   metaInfo: {
-    title: 'MyCDA',
-    links: [{ rel: 'canonical', href: 'https://mycda.app/#/' }]
+    title: 'MyCDA'
   },
   data () {
     return {}

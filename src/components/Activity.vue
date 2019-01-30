@@ -68,8 +68,6 @@
 </template>
 
 <script>
-import firebase from 'firebase/app'
-import 'firebase/functions'
 import { db } from '../main'
 import VuePlotly from '@statnett/vue-plotly'
 const rp = require('request-promise')
@@ -79,7 +77,15 @@ export default {
   metaInfo: {
     title: 'Activity Details'
   },
+  components: {
+    VuePlotly
+  },
   props: ['theme'],
+  computed: {
+    user () {
+      return this.$store.getters.getUser
+    }
+  },
   data () {
     return {
       showEditButton: false,
@@ -285,7 +291,7 @@ export default {
       this.chartLayout.title.text = 'Lap ' + (index)
     },
     fetchData: async function (id) {
-      const token = await firebase.auth().currentUser.getIdToken(true)
+      const token = await this.user.getIdToken(true)
       let docRef = db.collection('activities').doc(this.activityID)
 
       const options = {
@@ -385,9 +391,6 @@ export default {
 
       return ('0' + h).slice(-2) + ':' + ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2)
     }
-  },
-  components: {
-    VuePlotly
   }
 }
 
