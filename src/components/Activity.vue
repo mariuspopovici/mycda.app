@@ -14,7 +14,7 @@
       </b-input-group>
     </h2>
     <h4 v-if="!loading">Zoom in on an activity section or select a lap for analysis.</h4>
-    <span v-if="loading">Loading activity details, please wait...</span>
+    <span v-if="loading">Loading activity details, please wait... <font-awesome-icon icon="spinner" spin/></span>
     <div id='activityDetails' ref="activityDetails" v-else>
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions"
         :autoResize="true"

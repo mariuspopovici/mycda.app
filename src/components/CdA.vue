@@ -10,7 +10,7 @@
     <div class="container">
       <h2>CdA Analysis</h2>
       <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use the CdA slider to align the virtual elevation profile.</h4>
-      <span v-if="loading">Loading segment details, please wait...</span>
+      <span v-if="loading">Loading segment details, please wait...<font-awesome-icon icon="spinner" spin/></span>
       <div id='virtualElevation' ref="virtualElevation" v-else>
         <b-container fluid>
           <b-row>
@@ -201,6 +201,7 @@ export default {
     onCalculate: function (result) {
       this.rho = result
       this.$refs.rhoModal.hide()
+      this.calculateCdA()
     },
     showRhoCalculator: function () {
       this.$refs.rhoModal.show()
