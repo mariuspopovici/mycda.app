@@ -21,11 +21,11 @@
               <b-card :bg-variant="theme">
                 <b-form-group
                     description="Enter rider mass including bike in kilograms."
-                    label="Rider Mass (kg)"
+                    label="Total Mass (kg)"
                     label-for="mass"
                 >
                   <b-form-input id="mass" v-on:change="calculateCdA"
-                    min="40" max="250"
+                    min="40" max="300"
                     v-model.trim="mass" type="number"></b-form-input>
                 </b-form-group>
                 <b-form-group
@@ -34,7 +34,7 @@
                     label-for="rho"
                 >
                   <b-input-group>
-                    <b-form-input v-on:change="calculateCdA" id="rho" v-model.trim="rho" type="number" step="0.0001"></b-form-input>
+                    <b-form-input v-on:change="calculateCdA" id="rho" v-model.trim="rho" type="number" min="0" max="2" step="0.0001"></b-form-input>
                     <b-input-group-append>
                       <b-btn variant="primary" id="btnCalc" v-on:click="showRhoCalculator" v-b-tooltip.hover title="Open Calculator"><i class="fa fa-calculator"></i></b-btn>
                     </b-input-group-append>
@@ -76,7 +76,7 @@
                                 label="Segment Name:"
                                 label-class="text-sm-right"
                                 label-for="name">
-                    <b-form-input id="name" v-model="description"></b-form-input>
+                    <b-form-input id="name" v-model="analysisName" v-on:input="setDirty"></b-form-input>
                   </b-form-group>
                   <b-form-group horizontal
                                 label="Description:"
@@ -84,13 +84,27 @@
                                 label-for="description">
                     <b-form-textarea id="description" v-model="analysisDescription"
                         placeholder="Enter description. You can record things such as weather conditions, equipment and position changes, etc."
+                        v-on:input="setDirty"
                         :rows="3"
                         :max-rows="6">
                     </b-form-textarea>
                   </b-form-group>
+
+                  <b-form-group horizontal v-if="$v.$invalid">
+                    <b-alert show variant="danger">
+                      <div v-if="$v.analysisName.$invalid">Segment name is required and length must be between 1 and 255.</div>
+                      <div v-if="$v.mass.$invalid">Total Mass is required and must be between 40 and 300.</div>
+                      <div v-if="$v.rho.$invalid">Air Density is required and must be between 0 and 2.</div>
+                      <div v-if="$v.crr.$invalid">Rolling Resistance is required and must be between 0 and 1.</div>
+                    </b-alert>
+                  </b-form-group>
                   <b-form-group>
                     <div align="right">
-                      <b-button align="right" variant="primary">Save</b-button>
+                      <b-button align="right" variant="primary"
+                        :disabled="!dirty || $v.$invalid"
+                        v-on:click="saveAnalysis">
+                        <span v-if="dirty && !saving">Save</span><span v-else-if="saving">Saving...</span><span v-else>Saved</span
+                        ></b-button>
                     </div>
                   </b-form-group>
                 </b-form-group>
@@ -108,6 +122,11 @@ import VuePlotly from '@statnett/vue-plotly'
 import vueSlider from 'vue-slider-component'
 import VirtualElevation from '@/services/ve'
 import RhoCalculator from '@/components/RhoCalculator'
+import { required, between, minLength, maxLength } from 'vuelidate/lib/validators'
+import { db } from '../main'
+import Utils from '@/services/utils'
+
+const utils = new Utils()
 
 export default {
   name: 'CdA',
@@ -128,14 +147,24 @@ export default {
     }
   },
   props: ['theme', 'range', 'data', 'description'],
+  validations: {
+    mass: { required, between: between(40, 300) },
+    rho: { required, between: between(0, 2) },
+    crr: { required, between: between(0, 1) },
+    analysisName: { required, minLength: minLength(1), maxLength: maxLength(255) }
+  },
   data () {
     return {
+      saving: false,
+      dirty: true,
       sliderStyle: {},
       modalHeaderBgVariant: this.theme,
       modalHeaderTextVariant: this.theme === 'dark' ? 'light' : 'dark',
       loading: true,
       activityID: this.$route.params.id,
+      segmentID: null,
       analysisDescription: '',
+      analysisName: '',
       time: [],
       power: [],
       altitude: [],
@@ -198,6 +227,44 @@ export default {
     }
   },
   methods: {
+    setDirty: function () {
+      this.dirty = true
+    },
+    saveAnalysis: async function () {
+      if (this.$v.$invalid) {
+        return
+      }
+
+      if (!this.segmentID) {
+        this.segmentID = utils.uuid()
+      }
+
+      this.saving = true
+      try {
+        let segments = db.collection('segments')
+        let doc = {
+          id: this.segmentID,
+          mass: this.mass,
+          rho: this.rho,
+          cda: this.cda,
+          crr: this.crr,
+          activity: this.activityID,
+          name: this.analysisName,
+          description: this.analysisDescription,
+          range: this.range,
+          time: this.time,
+          power: this.power,
+          speed: this.speed,
+          altitude: this.altitude,
+          ve: this.ve
+        }
+        await segments.doc(this.segmentID).set(doc)
+        this.saving = false
+        this.dirty = false
+      } catch (error) {
+        console.log(error)
+      }
+    },
     onCalculate: function (result) {
       this.rho = result
       this.$refs.rhoModal.hide()
@@ -248,11 +315,14 @@ export default {
       this.veService = new VirtualElevation(this.power, this.speed, this.altitude, this.time)
       this.calculateCdA()
 
+      this.analysisName = this.description
+
       this.loading = false
     },
     calculateCdA: function () {
+      this.dirty = true
       // recalculate virtual elevation
-      let ve = this.veService.calculateVirtualElevation(this.rho, this.mass, this.crr, this.cda)
+      this.ve = this.veService.calculateVirtualElevation(this.rho, this.mass, this.crr, this.cda)
 
       this.chartData = [
         {
@@ -263,7 +333,7 @@ export default {
         },
         {
           x: this.time,
-          y: ve,
+          y: this.ve,
           type: 'scatter',
           name: 'Virtual Elevation',
           yaxis: 'y2'

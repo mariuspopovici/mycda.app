@@ -169,9 +169,11 @@
 <script>
 import { required, decimal } from 'vuelidate/lib/validators'
 import WeatherService from '@/services/weather'
+import Utils from '@/services/utils'
 import LoadingButton from '@/components/LoadingButton'
 
 const weatherService = new WeatherService()
+const utils = new Utils()
 
 export default {
   name: 'RhoCalculator',
@@ -241,9 +243,9 @@ export default {
           this.pressureUnits = 'inHg'
           if (oldVal !== val) {
             // convert units to imperial from metric
-            this.temperature = weatherService.toFahrenheit(this.temperature)
-            this.dewpoint = weatherService.toFahrenheit(this.dewpoint)
-            this.pressure = weatherService.hpaToInHg(this.pressure)
+            this.temperature = utils.toFahrenheit(this.temperature)
+            this.dewpoint = utils.toFahrenheit(this.dewpoint)
+            this.pressure = utils.hpaToInHg(this.pressure)
           }
           break
         case 'metric':
@@ -252,9 +254,9 @@ export default {
           this.pressureUnits = 'hPa'
           if (oldVal !== val) {
             // convert units to metric from imperial
-            this.temperature = weatherService.toCelcius(this.temperature)
-            this.dewpoint = weatherService.toCelcius(this.dewpoint)
-            this.pressure = weatherService.inHgToC(this.pressure)
+            this.temperature = utils.toCelcius(this.temperature)
+            this.dewpoint = utils.toCelcius(this.dewpoint)
+            this.pressure = utils.inHgTohpa(this.pressure)
           }
           break
         default:

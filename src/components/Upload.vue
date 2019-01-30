@@ -111,8 +111,11 @@
 import vueDropzone from 'vue2-dropzone'
 import firebase from 'firebase/app'
 import 'firebase/storage'
+import Utils from '@/services/utils'
 
 import { db } from '../main'
+
+const utils = new Utils()
 
 export default {
   name: 'Upload',
@@ -230,7 +233,7 @@ export default {
       }
     },
     fileAdded: function (file) {
-      this.activityID = uuid()
+      this.activityID = utils.uuid()
 
       let dz = this.$refs.uploadDropZone.dropzone
       this.uploadError = false
@@ -343,13 +346,6 @@ function uploadToStorage (activityId, file, data, dz, callback, onErrorCallback)
   )
 }
 
-function uuid () {
-  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-    // eslint-disable-next-line one-var
-    var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8)
-    return v.toString(16)
-  })
-}
 </script>
 
 <style>
