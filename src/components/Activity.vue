@@ -59,10 +59,44 @@
               <p>
               <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
               <p class="card-text"><b>End Time:</b> {{selectionXRange.end.toLocaleString()}}</p>
-              <p class="card-text"><b>Duration (h:m:s):</b> {{this.secondsToHms((this.selectionXRange.end - this.selectionXRange.start) / 1000)}}</p>
+              <p class="card-text"><b>Duration (h:m:s):</b> {{utils.secondsToHms((this.selectionXRange.end - this.selectionXRange.start) / 1000)}}</p>
           </b-tab>
         </b-tabs>
       </b-card>
+      <br>
+      <b-table
+        v-if="segments.length > 0"
+        :dark="theme === 'dark'"
+        :head-variant="theme"
+        striped
+        hover
+        stacked="sm"
+        responsive
+        :items="segments"
+        :fields="fields"
+      >
+        <template slot="rangeStart" slot-scope="row">
+          {{row.item.rangeStart.toLocaleString()}}
+        </template>
+        <template slot="rangeEnd" slot-scope="row">
+          {{row.item.rangeEnd.toLocaleString()}}
+        </template>
+        <template slot="actions" slot-scope="row">
+          <div align="center">
+            <b-button
+              size="sm"
+              variant="primary"
+              :to="{name: 'activity.details', params: { id: row.item.id }}"
+            >Show Details</b-button>
+            <b-button
+              size="sm"
+              variant="secondary"
+              v-b-tooltip.hover title="Delete Segment"
+            ><i class="fa fa-trash fa-1x"></i>
+            </b-button>
+          </div>
+        </template>
+      </b-table>
     </div>
   </div>
 </template>
@@ -70,7 +104,10 @@
 <script>
 import { db } from '../main'
 import VuePlotly from '@statnett/vue-plotly'
+import Utils from '@/services/utils'
 const rp = require('request-promise')
+
+const utils = new Utils()
 
 export default {
   name: 'Activity',
@@ -88,6 +125,15 @@ export default {
   },
   data () {
     return {
+      fields: [
+        {key: 'name', label: 'Segment Name', sortable: true},
+        {key: 'rangeStart', label: 'Start', sortable: true, sortDirection: 'asc'},
+        {key: 'rangeEnd', label: 'End', sortable: true},
+        {key: 'cda', label: 'CdA', class: 'text-right'},
+        {key: 'crr', label: 'crr', class: 'text-right'},
+        {key: 'actions', label: 'Actions', class: 'text-center'}
+      ],
+      segments: [],
       showEditButton: false,
       editTitleEnabled: false,
       selectionActive: false,
@@ -292,7 +338,6 @@ export default {
     },
     fetchData: async function (id) {
       const token = await this.user.getIdToken(true)
-      let docRef = db.collection('activities').doc(this.activityID)
 
       const options = {
         method: 'GET',
@@ -310,18 +355,47 @@ export default {
       try {
         this.loading = true
 
+        // get activity info
+        let docRef = db.collection('activities').doc(id)
         const doc = await docRef.get()
         this.activityName = doc.data().name
 
+        // get activity .fit file as JSON
         const result = await rp(
           'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
           options
         )
         this.processData(result)
+
+        // get any saved segments
+        let segmentsRef = db.collection('segments')
+        let _this = this
+
+        segmentsRef
+          .where('activity', '==', id)
+          .orderBy('range.start', 'asc')
+          .onSnapshot(function (querySnapshot) {
+            _this.segments = []
+            querySnapshot.forEach(function (doc) {
+              let docData = doc.data()
+              _this.segments.push({
+                id: doc.id,
+                name: docData.name,
+                cda: docData.cda,
+                crr: docData.crr,
+                description: docData.description,
+                rangeStart: docData.range.start.toDate(),
+                rangeEnd: docData.range.end.toDate()
+              })
+            })
+          })
       } catch (error) {
         console.log(error)
       }
     },
+    /**
+     * Parse .FIT file and prepare it for charting.
+     */
     processData: function (data) {
       this.totalTime = (new Date(parseInt(data.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]
       this.avgSpeed = parseFloat(data.avg_speed).toFixed(2)
@@ -331,6 +405,7 @@ export default {
       this.totalDistance = parseFloat(data.total_distance).toFixed(1)
       this.laps = data.laps
 
+      // these are the chart series (data points)
       let time = []
       let power = []
       let altitude = []
@@ -343,6 +418,7 @@ export default {
         speed.push(point.speed)
       })
 
+      // these are the chart settings for each series
       let tracePower = {
         x: time,
         y: power,
@@ -371,6 +447,7 @@ export default {
         yaxis: 'y3'
       }
 
+      // save the initial chart ranges so we can revert back after a zoom or selection
       let xRangeStart = new Date(data.start_time)
       let xRangeEnd = new Date(xRangeStart)
       xRangeEnd.setSeconds(xRangeStart.getSeconds() + parseInt(data.total_elapsed_time))
@@ -379,17 +456,9 @@ export default {
         end: xRangeEnd
       }
 
+      // go chart this
       this.chartData = [tracePower, traceAltitude, traceSpeed]
       this.loading = false
-    },
-    secondsToHms (d) {
-      d = Number(d)
-
-      var h = Math.floor(d / 3600)
-      var m = Math.floor(d % 3600 / 60)
-      var s = Math.floor(d % 3600 % 60)
-
-      return ('0' + h).slice(-2) + ':' + ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2)
     }
   }
 }
