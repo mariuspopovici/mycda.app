@@ -1,7 +1,7 @@
 {
-  "name": "rhoapp",
+  "name": "mycda.app",
   "version": "0.1.0",
-  "description": "Calculate air density (rho) based on air temperature, pressure and dew point.",
+  "description": "MyCdA.app lets you use data collected using a power meter, speed sensor and a cycling computer and estimate your drag coefficient (CdA) and /or rolling resistance (crr).",
   "author": "Marius Popovici ",
   "private": true,
   "scripts": {

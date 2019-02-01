@@ -236,33 +236,48 @@ export default {
       if (this.$v.$invalid) {
         return
       }
-
+      let isNew = false
       if (!this.segmentID) {
+        isNew = true
         this.segmentID = utils.uuid()
       }
 
       this.saving = true
       try {
         let segments = db.collection('segments')
-        // TODO: if this is an edit there's no need to
+        // if this is an edit there's no need to
         // send all the series ... they can't change.
-        let doc = {
-          id: this.segmentID,
-          mass: this.mass,
-          rho: this.rho,
-          cda: this.cda,
-          crr: this.crr,
-          activity: this.activityID,
-          name: this.analysisName,
-          description: this.analysisDescription,
-          range: this.savedRange,
-          time: this.time,
-          power: this.power,
-          speed: this.speed,
-          altitude: this.altitude,
-          ve: this.ve
+        if (isNew) {
+          let doc = {
+            id: this.segmentID,
+            mass: this.mass,
+            rho: this.rho,
+            cda: this.cda,
+            crr: this.crr,
+            activity: this.activityID,
+            name: this.analysisName,
+            description: this.analysisDescription,
+            range: this.savedRange,
+            time: this.time,
+            power: this.power,
+            speed: this.speed,
+            altitude: this.altitude,
+            ve: this.ve
+          }
+
+          await segments.doc(this.segmentID).set(doc)
+        } else {
+          let doc = {
+            mass: this.mass,
+            rho: this.rho,
+            cda: this.cda,
+            crr: this.crr,
+            name: this.analysisName,
+            description: this.analysisDescription,
+            ve: this.ve
+          }
+          await segments.doc(this.segmentID).update(doc)
         }
-        await segments.doc(this.segmentID).set(doc)
         this.saving = false
         this.dirty = false
       } catch (error) {
@@ -322,7 +337,7 @@ export default {
 
         powerSeries.x.forEach((x, i) => {
         // filter out dropouts or zero speed + zero power points
-          if (x >= range.start && x <= range.end && !(speedSeries.y[i] === 0 && powerSeries.y[i] === 0)) {
+          if (x >= this.savedRange.start && x <= this.savedRange.end && !(speedSeries.y[i] === 0 && powerSeries.y[i] === 0)) {
             time.push(x)
             power.push(powerSeries.y[i])
             altitude.push(altitudeSeries.y[i])

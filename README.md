@@ -1,6 +1,8 @@
 # MyCdA.app
 
-Description under construction.
+MyCdA.app lets you use data collected using a power meter, speed sensor and a cycling computer and
+estimate your drag coefficient (CdA) and /or rolling resistance (crr). Compare data across different runs in order
+to determine if an equipment or position change is beneficial or not.
 
 ## Demo
 
@@ -8,11 +10,18 @@ Demo URL under construction.
 
 ## Features
 
-Under construction.
-
+* Upload and process Garmin .FIT files
+* Analyze power, speed and elevation data
+* View statistics by entire activity or for individual laps
+* Analyze CdA and crr for by lap or manual selection from chart. 
+* View virtual elevation chart, visually adjust CdA and crr and analyze results
+* Record notes and equipment changes for specific segments
+* Calculate air density by manual input or automatically based on current location
+* Save CdA/crr analysis segments and view / edit later
+  
 ## TODO
 
-Under construction.
+* Under construction
 
 ## Build Setup
 
@@ -39,7 +48,7 @@ In order to use the location based weather data pull you need to configure your 
 - Sample application configuration files are provided in the _config_ folder. Rename _sample.dev.env.js_ to _dev.env.js_ and _sample.prod.env.js_ to _prod.env.js_.
 - Sign up for a free **OpenWeatherMap** account at https://openweathermap.org/api
 - Once your account is set up, go into [API Keys](https://home.openweathermap.org/api_keys) and copy your API key.
-- Configure **RhoApp** by editing the _config/prov.env.js_ or _config/dev/env.js_ files and inserting the API key copied in the previous text into the placeholder.
+- Configure **MyCdA.app** by editing the _config/prov.env.js_ or _config/dev/env.js_ files and inserting the API key copied in the previous text into the placeholder.
 
 ## History
 
