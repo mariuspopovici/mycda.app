@@ -176,6 +176,7 @@ export default {
       crr: 0.005,
       crrValid: true,
       rho: 1.2,
+      savedRange: null,
       veService: null,
       invalidFeedback: '',
       validFeedback: '',
@@ -243,6 +244,8 @@ export default {
       this.saving = true
       try {
         let segments = db.collection('segments')
+        // TODO: if this is an edit there's no need to
+        // send all the series ... they can't change.
         let doc = {
           id: this.segmentID,
           mass: this.mass,
@@ -252,7 +255,7 @@ export default {
           activity: this.activityID,
           name: this.analysisName,
           description: this.analysisDescription,
-          range: this.range,
+          range: this.savedRange,
           time: this.time,
           power: this.power,
           speed: this.speed,
@@ -292,7 +295,10 @@ export default {
           this.altitude = docData.altitude
           this.speed = docData.speed
           this.ve = docData.ve
-
+          this.savedRange = {
+            start: docData.range.start.toDate(),
+            end: docData.range.end.toDate()
+          }
           if (this.userPrefs) {
             this.units = this.userPrefs.units
           }
@@ -303,7 +309,7 @@ export default {
       } else {
         // we use the data sent through properties
         // and we need to filter it by range
-        let range = this.range
+        this.savedRange = this.range
         let data = this.data
         let powerSeries = data[0]
         let altitudeSeries = data[1]
