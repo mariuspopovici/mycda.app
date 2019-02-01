@@ -41,8 +41,8 @@
           <b-tab title="Entire Activity" active>
             <p class="card-text"><b>Date:</b> {{timestamp}}</p>
             <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
-            <p class="card-text"><b>Distance:</b> {{totalDistance}} km </p>
-            <p class="card-text"><b>Avg Speed:</b> {{avgSpeed}} km/h</p>
+            <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance)}} {{distanceUnits}} </p>
+            <p class="card-text"><b>Avg Speed:</b> {{convertDistance(avgSpeed)}} {{speedUnits}}</p>
             <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
           </b-tab>
           <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
@@ -59,8 +59,8 @@
             <p>
             <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
             <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
-            <p class="card-text"><b>Distance:</b> {{lap.total_distance.toFixed(2)}} km </p>
-            <p class="card-text"><b>Avg Speed:</b> {{lap.avg_speed.toFixed(2)}} km/h</p>
+            <p class="card-text"><b>Distance:</b> {{convertDistance(lap.total_distance).toFixed(2)}} {{distanceUnits}} </p>
+            <p class="card-text"><b>Avg Speed:</b> {{convertDistance(lap.avg_speed).toFixed(2)}} {{speedUnits}}</p>
             <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
           </b-tab>
           <b-tab title="Selection" v-if="selectionActive" active>
@@ -140,6 +140,9 @@ export default {
   computed: {
     user () {
       return this.$store.getters.getUser
+    },
+    userPrefs () {
+      return this.$store.getters.getUserPrefs
     }
   },
   data () {
@@ -152,6 +155,8 @@ export default {
         {key: 'crr', label: 'crr', class: 'text-right'},
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
+      distanceUnits: 'km',
+      speedUnits: 'km/h',
       utils: new Utils(),
       segments: [],
       segmentName: '',
@@ -221,8 +226,17 @@ export default {
   },
   created: function () {
     this.fetchData(this.activityID)
+    this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
+    this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
   },
   methods: {
+    convertDistance: function (d) {
+      if (this.userPrefs.units !== 'metric') {
+        return this.utils.kmToMi(d)
+      } else {
+        return d
+      }
+    },
     onconfirmDeleteSegment: async function () {
       let docRef = db.collection('segments').doc(this.segmentID)
       try {
