@@ -74,11 +74,22 @@
       >
         <template slot="status" slot-scope="data">
           <div id='newStatus' v-if="data.value === 'New'">
-            <span><font-awesome-icon icon="spinner" spin/>&nbsp;New</span>
+            <font-awesome-icon icon="spinner" spin/>
           </div>
           <div id='newStatus' v-if="data.value === 'Processed'">
-            <span>{{data.value}}</span>
+            <i class="fa fa-check text-success"></i>
           </div>
+        </template>
+        <template slot="distance" slot-scope="data">
+          <div id='distance'>
+            {{convertDistance(data.value)}} {{distanceUnits}}
+          </div>
+        </template>
+        <template slot="avgPower" slot-scope="data">
+          <span>{{data.value}} W</span>
+        </template>
+        <template slot="avgSpeed" slot-scope="data">
+            {{convertDistance(data.value)}} {{speedUnits}}
         </template>
         <template slot="actions" slot-scope="row">
           <div align="center">
@@ -115,8 +126,6 @@ import Utils from '@/services/utils'
 
 import { db } from '../main'
 
-const utils = new Utils()
-
 export default {
   name: 'Upload',
   metaInfo: {
@@ -125,6 +134,7 @@ export default {
   data () {
     return {
       dropOptions: {
+        utils: new Utils(),
         url: '/',
         method: 'put',
         autoQueue: false,
@@ -135,10 +145,12 @@ export default {
         forceChuncking: true,
         chunkSize: 500, // bytes
         dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop a .FIT file here or click to select one.`,
-        acceptedFiles: '.fit'
+        acceptedFiles: '.fit',
+        distanceUnits: 'km',
+        speedUnits: 'km/h'
       },
       fields: [
-        {key: 'status', label: 'Status'},
+        {key: 'status', label: 'Status', class: 'text-center'},
         {key: 'name', label: 'Name', sortable: true},
         {key: 'timestamp', label: 'Date Time', sortable: true, sortDirection: 'desc'},
         {key: 'distance', label: 'Distance', class: 'text-right'},
@@ -181,6 +193,9 @@ export default {
   },
   created: function () {
     this.fetchData()
+
+    this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
+    this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
   },
   watch: {
     theme: function (value) {
@@ -192,6 +207,13 @@ export default {
   },
   props: ['theme'],
   methods: {
+    convertDistance: function (d) {
+      if (this.userPrefs.units !== 'metric') {
+        return this.utils.kmToMi(d)
+      } else {
+        return d
+      }
+    },
     onEditEnterKey: function (event) {
       if (event.which === 13) {
         this.onEditOK()

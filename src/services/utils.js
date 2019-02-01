@@ -58,4 +58,12 @@ export default class CdaUtils {
 
     return ('0' + h).slice(-2) + ':' + ('0' + m).slice(-2) + ':' + ('0' + s).slice(-2)
   }
+
+  /**
+   * Converts from km to miles
+   * @param {*} d
+   */
+  kmToMi (d) {
+    return d / 1.609
+  }
 }
