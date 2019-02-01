@@ -66,7 +66,7 @@ const router = new Router({
         breadcrumbs: [
           { name: 'Home', link: 'home' },
           { name: 'Activities', link: 'activity.list' },
-          { name: 'Details' }
+          { name: 'Activity Details' }
         ]
       }
     },
@@ -80,7 +80,22 @@ const router = new Router({
         breadcrumbs: [
           { name: 'Home', link: 'home' },
           { name: 'Activities', link: 'activity.list' },
-          { name: 'Details', link: 'activity.details' },
+          { name: 'Activity Details', link: 'activity.details' },
+          { name: 'Analysis' }
+        ]
+      }
+    },
+    {
+      path: '/activity/:id/cda/:sid',
+      name: 'activity.cda.direct',
+      component: CdA,
+      props: true,
+      meta: {
+        requiresAuth: true,
+        breadcrumbs: [
+          { name: 'Home', link: 'home' },
+          { name: 'Activities', link: 'activity.list' },
+          { name: 'Activity Details', link: 'activity.details' },
           { name: 'Analysis' }
         ]
       }

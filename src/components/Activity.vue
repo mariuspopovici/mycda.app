@@ -1,5 +1,22 @@
 <template>
   <div class="container" id="Activity">
+    <!-- Delete segment modal -->
+    <b-modal id="confirmModal" ref="confirmDeleteModal"
+      centered title="Delete Segment"
+      ok-title="Yes" cancel-title="No"
+      v-on:ok="onconfirmDeleteSegment"
+      ok-variant="danger"
+      :header-bg-variant="modalHeaderBgVariant"
+      :header-text-variant="modalHeaderTextVariant"
+      :header-border-variant="modalHeaderBgVariant"
+      :body-bg-variant="modalBodyBgVariant"
+      :body-text-variant="modalBodyTextVariant"
+      :footer-bg-variant="modalFooterBgVariant"
+      :footer-border-variant="modalFooterBgVariant"
+      :footer-text-variant="modalFooterTextVariant">
+      <p>Delete segment '{{segmentName}}'?</p>
+    </b-modal>
+
     <h2 @mouseleave="onTitleHover" @mouseenter="onTitleHover">
       <span v-if="!editTitleEnabled">{{activityName}} Activity Details</span>
       <i @click="toggleTitleEdit" v-if="!editTitleEnabled && showEditButton" class="fa fa-edit fa-1x"></i>
@@ -83,15 +100,19 @@
         </template>
         <template slot="actions" slot-scope="row">
           <div align="center">
-            <b-button
+            <b-btn
               size="sm"
               variant="primary"
-              :to="{name: 'activity.details', params: { id: row.item.id }}"
-            >Show Details</b-button>
+              v-b-tooltip.hover title="Edit Segment"
+              :to="{ name: 'activity.cda.direct',
+                params: {id: row.item.activity, sid: row.item.id }
+              }"
+            ><i class="fa fa-edit fa-1x"></i></b-btn>
             <b-button
               size="sm"
-              variant="secondary"
+              variant="danger"
               v-b-tooltip.hover title="Delete Segment"
+              v-on:click="showConfirmDelete(row.item)"
             ><i class="fa fa-trash fa-1x"></i>
             </b-button>
           </div>
@@ -106,8 +127,6 @@ import { db } from '../main'
 import VuePlotly from '@statnett/vue-plotly'
 import Utils from '@/services/utils'
 const rp = require('request-promise')
-
-const utils = new Utils()
 
 export default {
   name: 'Activity',
@@ -133,7 +152,10 @@ export default {
         {key: 'crr', label: 'crr', class: 'text-right'},
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
+      utils: new Utils(),
       segments: [],
+      segmentName: '',
+      segmentID: '',
       showEditButton: false,
       editTitleEnabled: false,
       selectionActive: false,
@@ -188,13 +210,32 @@ export default {
       },
       chartOptions: {
         displayModeBar: false
-      }
+      },
+      modalHeaderBgVariant: this.theme,
+      modalHeaderTextVariant: this.theme === 'dark' ? 'light' : 'dark',
+      modalBodyBgVariant: this.theme === 'dark' ? 'semidark' : 'light',
+      modalBodyTextVariant: 'dark',
+      modalFooterBgVariant: this.theme,
+      modalFooterTextVariant: this.theme === 'dark' ? 'light' : 'dark'
     }
   },
   created: function () {
     this.fetchData(this.activityID)
   },
   methods: {
+    onconfirmDeleteSegment: async function () {
+      let docRef = db.collection('segments').doc(this.segmentID)
+      try {
+        await docRef.delete()
+      } catch (error) {
+        console.log(error)
+      }
+    },
+    showConfirmDelete: function (item) {
+      this.segmentName = item.name
+      this.segmentID = item.id
+      this.$refs.confirmDeleteModal.show()
+    },
     updateTitle: async function () {
       let docRef = db.collection('activities').doc(this.activityID)
       let _this = this
@@ -352,6 +393,7 @@ export default {
         json: true,
         gzip: true
       }
+
       try {
         this.loading = true
 
@@ -380,6 +422,7 @@ export default {
               let docData = doc.data()
               _this.segments.push({
                 id: doc.id,
+                activity: docData.activity,
                 name: docData.name,
                 cda: docData.cda,
                 crr: docData.crr,

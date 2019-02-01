@@ -95,7 +95,7 @@
             ><i class="fa fa-edit fa-1x"></i></b-btn>
             <b-button
               size="sm"
-              variant="secondary"
+              variant="danger"
               v-b-tooltip.hover title="Delete Activity"
               v-on:click="showConfirmDelete(row.item)"
             ><i class="fa fa-trash fa-1x"></i>

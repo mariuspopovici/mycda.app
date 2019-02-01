@@ -9,6 +9,7 @@
     </b-modal>
     <div class="container">
       <h2>CdA Analysis</h2>
+      <h4>{{analysisName}}</h4>
       <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use the CdA slider to align the virtual elevation profile.</h4>
       <span v-if="loading">Loading segment details, please wait...<font-awesome-icon icon="spinner" spin/></span>
       <div id='virtualElevation' ref="virtualElevation" v-else>
@@ -162,7 +163,7 @@ export default {
       modalHeaderTextVariant: this.theme === 'dark' ? 'light' : 'dark',
       loading: true,
       activityID: this.$route.params.id,
-      segmentID: null,
+      segmentID: this.$route.params.sid,
       analysisDescription: '',
       analysisName: '',
       time: [],
@@ -170,17 +171,17 @@ export default {
       altitude: [],
       speed: [],
       ve: [],
-      mass: 85,
-      cda: 0.351,
+      mass: 80,
+      cda: 0.350,
       crr: 0.005,
       crrValid: true,
-      rho: 1.1830,
+      rho: 1.2,
       veService: null,
       invalidFeedback: '',
       validFeedback: '',
       chartData: [],
       chartLayout: {
-        title: 'Virtual Elevation - ' + this.$props.description,
+        title: 'Virtual Elevation',
         paper_bgcolor: 'transparent',
         plot_bgcolor: 'transparent',
         modebar: {
@@ -219,7 +220,7 @@ export default {
     }
   },
   created: function () {
-    this.fetchData(this.$props.data, this.$props.range)
+    this.fetchData()
 
     this.sliderStyle = {
       backgroundColor: '#3463af',
@@ -273,49 +274,82 @@ export default {
     showRhoCalculator: function () {
       this.$refs.rhoModal.show()
     },
-    fetchData: async function (data, range) {
-      let powerSeries = data[0]
-      let altitudeSeries = data[1]
-      let speedSeries = data[2]
+    fetchData: async function () {
+      if (this.segmentID) {
+        // a specific segment was requested for editing
+        // so let's fetch the segment saved details from store
+        try {
+          let docRef = db.collection('segments').doc(this.segmentID)
+          const doc = await docRef.get()
+          const docData = doc.data()
+          this.mass = docData.mass
+          this.rho = docData.rho
+          this.cda = docData.cda
+          this.analysisName = docData.name
+          this.analysisDescription = docData.description
+          this.time = docData.time.map(value => value.toDate())
+          this.power = docData.power
+          this.altitude = docData.altitude
+          this.speed = docData.speed
+          this.ve = docData.ve
 
-      let time = []
-      let power = []
-      let altitude = []
-      let speed = []
-
-      powerSeries.x.forEach((x, i) => {
-        // filter out dropouts or zero speed + zero power points
-        if (x >= range.start && x <= range.end && !(speedSeries.y[i] === 0 && powerSeries.y[i] === 0)) {
-          time.push(x)
-          power.push(powerSeries.y[i])
-          altitude.push(altitudeSeries.y[i])
-          speed.push(speedSeries.y[i])
+          if (this.userPrefs) {
+            this.units = this.userPrefs.units
+          }
+        } catch (error) {
+          console.log(error)
+          return
         }
-      })
+      } else {
+        // we use the data sent through properties
+        // and we need to filter it by range
+        let range = this.range
+        let data = this.data
+        let powerSeries = data[0]
+        let altitudeSeries = data[1]
+        let speedSeries = data[2]
 
-      this.time = time
-      this.altitude = altitude
-      this.power = power
-      this.speed = speed
+        let time = []
+        let power = []
+        let altitude = []
+        let speed = []
 
+        powerSeries.x.forEach((x, i) => {
+        // filter out dropouts or zero speed + zero power points
+          if (x >= range.start && x <= range.end && !(speedSeries.y[i] === 0 && powerSeries.y[i] === 0)) {
+            time.push(x)
+            power.push(powerSeries.y[i])
+            altitude.push(altitudeSeries.y[i])
+            speed.push(speedSeries.y[i])
+          }
+        })
+
+        this.time = time
+        this.altitude = altitude
+        this.power = power
+        this.speed = speed
+
+        // we load these from preferences if a new analysis is requested
+        // otherwise we used the saved ones
+        if (this.userPrefs) {
+          this.units = this.userPrefs.units
+          this.mass = parseFloat(this.userPrefs.weight) + parseFloat(this.userPrefs.bikeWeight)
+          this.cda = this.userPrefs.cda
+          this.crr = this.userPrefs.crr
+        }
+        this.analysisName = this.description
+      }
+
+      // now we have the data from whatever means it was obtained
       this.chartData = [{
-        x: time,
-        y: altitude,
+        x: this.time,
+        y: this.altitude,
         mode: 'lines',
         name: 'Elevation'
       }]
 
-      if (this.userPrefs) {
-        this.units = this.userPrefs.units
-        this.mass = parseFloat(this.userPrefs.weight) + parseFloat(this.userPrefs.bikeWeight)
-        this.cda = this.userPrefs.cda
-        this.crr = this.userPrefs.crr
-      }
-
       this.veService = new VirtualElevation(this.power, this.speed, this.altitude, this.time)
       this.calculateCdA()
-
-      this.analysisName = this.description
 
       this.loading = false
     },
