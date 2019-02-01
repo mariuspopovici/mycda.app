@@ -255,7 +255,7 @@ export default {
       }
     },
     fileAdded: function (file) {
-      this.activityID = utils.uuid()
+      this.activityID = this.utils.uuid()
 
       let dz = this.$refs.uploadDropZone.dropzone
       this.uploadError = false
