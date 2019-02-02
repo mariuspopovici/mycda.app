@@ -133,8 +133,8 @@ export default {
   },
   data () {
     return {
+      utils: new Utils(),
       dropOptions: {
-        utils: new Utils(),
         url: '/',
         method: 'put',
         autoQueue: false,
@@ -209,7 +209,7 @@ export default {
   methods: {
     convertDistance: function (d) {
       if (this.userPrefs.units !== 'metric') {
-        return this.utils.kmToMi(d)
+        return this.utils.kmToMi(d).toFixed(1)
       } else {
         return d
       }

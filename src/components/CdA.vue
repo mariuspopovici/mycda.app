@@ -326,22 +326,26 @@ export default {
         // and we need to filter it by range
         this.savedRange = this.range
         let data = this.data
-        let powerSeries = data[0]
-        let altitudeSeries = data[1]
-        let speedSeries = data[2]
+
+        let powerSeries = data.power
+        let altitudeSeries = data.altitude
+        let speedSeries = data.speed
+        let timeSeries = data.time
+
+        console.log(data)
 
         let time = []
         let power = []
         let altitude = []
         let speed = []
 
-        powerSeries.x.forEach((x, i) => {
+        timeSeries.forEach((x, i) => {
         // filter out dropouts or zero speed + zero power points
-          if (x >= this.savedRange.start && x <= this.savedRange.end && !(speedSeries.y[i] === 0 && powerSeries.y[i] === 0)) {
+          if (x >= this.savedRange.start && x <= this.savedRange.end && !(speedSeries[i] === 0 && powerSeries[i] === 0)) {
             time.push(x)
-            power.push(powerSeries.y[i])
-            altitude.push(altitudeSeries.y[i])
-            speed.push(speedSeries.y[i])
+            power.push(powerSeries[i])
+            altitude.push(altitudeSeries[i])
+            speed.push(speedSeries[i])
           }
         })
 

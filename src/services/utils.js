@@ -66,4 +66,8 @@ export default class CdaUtils {
   kmToMi (d) {
     return d / 1.609
   }
+
+  mToFt (d) {
+    return Math.floor(d * 3.281)
+  }
 }

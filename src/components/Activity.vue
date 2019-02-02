@@ -41,8 +41,8 @@
           <b-tab title="Entire Activity" active>
             <p class="card-text"><b>Date:</b> {{timestamp}}</p>
             <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
-            <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance)}} {{distanceUnits}} </p>
-            <p class="card-text"><b>Avg Speed:</b> {{convertDistance(avgSpeed)}} {{speedUnits}}</p>
+            <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance).toFixed(2)}} {{distanceUnits}} </p>
+            <p class="card-text"><b>Avg Speed:</b> {{convertDistance(avgSpeed).toFixed(2)}} {{speedUnits}}</p>
             <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
           </b-tab>
           <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
@@ -53,7 +53,7 @@
               params: {
                 id: activityID,
                 range: getLapRange(index),
-                data: chartData,
+                data: {time: time, speed: speed, power: power, altitude: altitude},
                 description: 'Lap ' + (index + 1)
               }}">Analyze</b-button>
             <p>
@@ -70,7 +70,7 @@
               params: {
                 id: activityID,
                 range: selectionXRange,
-                data: chartData,
+                data: {time: time, speed: speed, power: power, altitude: altitude},
                 description: 'Selection'
               }}">Analyze</b-button>
               <p>
@@ -178,6 +178,10 @@ export default {
       initXRange: null,
       selectionXRange: null,
       chartData: [],
+      time: [],
+      altitude: [],
+      power: [],
+      speed: [],
       chartLayout: {
         title: '',
         dragmode: 'zoom+select',
@@ -461,24 +465,27 @@ export default {
       this.timestamp = new Date(data.timestamp).toLocaleString()
       this.totalDistance = parseFloat(data.total_distance).toFixed(1)
       this.laps = data.laps
+      let _this = this
 
-      // these are the chart series (data points)
-      let time = []
-      let power = []
-      let altitude = []
-      let speed = []
-
-      data.points.forEach(function (point) { // new Date(point.timestamp).toLocaleTimeString()
-        time.push(new Date(point.timestamp))
-        power.push(point.power)
-        altitude.push(point.altitude * 1000)
-        speed.push(point.speed)
+      data.points.forEach(function (point) {
+        _this.time.push(new Date(point.timestamp))
+        _this.power.push(point.power)
+        _this.altitude.push(point.altitude * 1000)
+        _this.speed.push(point.speed)
       })
+
+      let chartSpeed = this.speed
+      let chartAltitude = this.altitude
+      if (this.userPrefs.units !== 'metric') {
+        // convert speed and altitude to mph and ft
+        chartSpeed = this.speed.map(km => this.utils.kmToMi(km))
+        chartAltitude = this.altitude.map(m => this.utils.mToFt(m))
+      }
 
       // these are the chart settings for each series
       let tracePower = {
-        x: time,
-        y: power,
+        x: this.time,
+        y: this.power,
         mode: 'lines',
         name: 'Power',
         line: {
@@ -487,8 +494,8 @@ export default {
       }
 
       let traceAltitude = {
-        x: time,
-        y: altitude,
+        x: this.time,
+        y: chartAltitude,
         type: 'scatter',
         fill: 'tozeroy',
         mode: 'none',
@@ -497,8 +504,8 @@ export default {
       }
 
       let traceSpeed = {
-        x: time,
-        y: speed,
+        x: this.time,
+        y: chartSpeed,
         mode: 'lines',
         name: 'Speed',
         yaxis: 'y3'
