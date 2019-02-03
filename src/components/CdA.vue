@@ -315,10 +315,16 @@ export default {
           this.cda = docData.cda
           this.analysisName = docData.name
           this.analysisDescription = docData.description
-          this.time = docData.time.map(value => value.toDate())
-          this.power = docData.power
-          this.altitude = docData.altitude
-          this.speed = docData.speed
+
+          docData.time.forEach((x, i) => {
+            if (docData.speed[i] !== 0 && docData.power[i] !== 0) {
+              this.time.push(x.toDate())
+              this.power.push(docData.power[i])
+              this.altitude.push(docData.altitude[i])
+              this.speed.push(docData.speed[i])
+            }
+          })
+
           this.ve = docData.ve
           this.savedRange = {
             start: docData.range.start.toDate(),
@@ -349,7 +355,7 @@ export default {
 
         timeSeries.forEach((x, i) => {
         // filter out dropouts or zero speed + zero power points
-          if (x >= this.savedRange.start && x <= this.savedRange.end && !(speedSeries[i] === 0 && powerSeries[i] === 0)) {
+          if (x >= this.savedRange.start && x <= this.savedRange.end && speedSeries[i] !== 0 && powerSeries[i] !== 0) {
             time.push(x)
             power.push(powerSeries[i])
             altitude.push(altitudeSeries[i])
