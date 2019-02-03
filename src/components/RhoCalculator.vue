@@ -10,10 +10,10 @@
                 class="form-control"
                 type="text"
                 id="temperature"
+                v-model="$v.temperature.$model"
                 @blur="$v.temperature.$touch()"
-                v-model.trim="$v.temperature.$model"
-                maxlength="5"
                 autocomplete="off"
+                maxlength="5"
                 :placeholder="temperatureUnits"
               >
               <div v-if="$v.temperature.$error">
@@ -36,7 +36,7 @@
                 class="form-control"
                 type="text"
                 id="dewpoint"
-                v-model.trim="$v.dewpoint.$model"
+                v-model="$v.dewpoint.$model"
                 @blur="$v.dewpoint.$touch()"
                 maxlength="5"
                 autocomplete="off"
@@ -92,11 +92,10 @@
                     id="metric"
                     v-model="units"
                     value="metric"
-                    checked="true"
+                    checked
                   > Metric
                 </label>
               </div>
-
               <div class="form-check form-check-inline disabled">
                 <label class="form-check-label">
                   <input
@@ -171,7 +170,7 @@ import { required, decimal } from 'vuelidate/lib/validators'
 import WeatherService from '@/services/weather'
 import Utils from '@/services/utils'
 import LoadingButton from '@/components/LoadingButton'
-
+const rhoCalc = require('@mariuspopovici/rho')
 const weatherService = new WeatherService()
 const utils = new Utils()
 
@@ -196,10 +195,6 @@ export default {
       type: Boolean,
       default: false
     },
-    unitsType: {
-      type: String,
-      default: 'metric'
-    },
     calculateCaption: {
       type: String,
       default: 'Calculate'
@@ -207,6 +202,7 @@ export default {
   },
   data () {
     return {
+      units: '',
       temperature: '',
       dewpoint: '',
       pressure: '',
@@ -235,7 +231,6 @@ export default {
   },
   watch: {
     units: function (val, oldVal) {
-      // when units change
       switch (val) {
         case 'imperial':
           // set placeholders
@@ -243,9 +238,9 @@ export default {
           this.pressureUnits = 'inHg'
           if (oldVal !== val) {
             // convert units to imperial from metric
-            this.temperature = utils.toFahrenheit(this.temperature)
-            this.dewpoint = utils.toFahrenheit(this.dewpoint)
-            this.pressure = utils.hpaToInHg(this.pressure)
+            if (this.temperature !== '') { this.temperature = utils.toFahrenheit(this.temperature) }
+            if (this.dewpoint !== '') { this.dewpoint = utils.toFahrenheit(this.dewpoint) }
+            if (this.pressure !== '') { this.pressure = utils.hpaToInHg(this.pressure) }
           }
           break
         case 'metric':
@@ -254,9 +249,9 @@ export default {
           this.pressureUnits = 'hPa'
           if (oldVal !== val) {
             // convert units to metric from imperial
-            this.temperature = utils.toCelcius(this.temperature)
-            this.dewpoint = utils.toCelcius(this.dewpoint)
-            this.pressure = utils.inHgTohpa(this.pressure)
+            if (this.temperature !== '') { this.temperature = utils.toCelcius(this.temperature) }
+            if (this.dewpoint !== '') { this.dewpoint = utils.toCelcius(this.dewpoint) }
+            if (this.pressure !== '') { this.pressure = utils.inHgTohpa(this.pressure) }
           }
           break
         default:
@@ -274,8 +269,9 @@ export default {
       if (this.$v.$invalid) {
         this.rho = ''
       } else {
-        let result = this.calculate()
-        this.$emit('calculate', result)
+        this.calculate()
+        // trigger event to parent component that a result is ready
+        this.$emit('calculate', this.rho)
       }
     },
     getLocation: function (event) {
@@ -310,7 +306,6 @@ export default {
       }
     },
     calculate: function (event) {
-      const rhoCalc = require('@mariuspopovici/rho')
       try {
         const result = rhoCalc(
           parseFloat(this.temperature),

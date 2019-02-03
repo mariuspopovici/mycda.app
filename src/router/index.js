@@ -9,6 +9,7 @@ import Landing from '@/components/Landing'
 import Activity from '@/components/Activity'
 import CdA from '@/components/CdA'
 import Profile from '@/components/Profile'
+import RhoCalculator from '@/components/RhoCalculator'
 import firebase from 'firebase/app'
 import 'firebase/auth'
 
@@ -120,6 +121,14 @@ const router = new Router({
       path: '/signup',
       name: 'SignUp',
       component: SignUp,
+      meta: {
+        breadcrumbs: []
+      }
+    },
+    {
+      path: '/rho',
+      name: 'calculator',
+      component: RhoCalculator,
       meta: {
         breadcrumbs: []
       }

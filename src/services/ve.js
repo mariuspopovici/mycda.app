@@ -1,15 +1,16 @@
 export default class VirtualElevation {
-  constructor (power, speed, elevation, time) {
+  constructor (power, speed, elevation, time, units = 'metric') {
     this.powerDataPoints = power
     this.speedDataPoints = speed
     this.timeDataPoints = time
     this.elevationDataPoints = elevation
+    this.units = units
   }
 
   calculateVirtualElevation (rho, mass, crr, cda) {
     let veDataPoints = []
     this.powerDataPoints.forEach((power, i) => {
-      const vFactor = 3.600
+      const vFactor = this.units === 'metric' ? 3.600 : 2.237
       const g = 9.81
       const speed = this.speedDataPoints[i]
       const velocity = speed / vFactor

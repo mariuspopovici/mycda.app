@@ -62,22 +62,22 @@
                         label="Units of Measurement:"
                         label-class="text-sm-right"
                         class="mb-0">
-            <b-form-radio-group class="pt-2" id="units" v-model="units" :options="[{text: 'Imperial', value: 'imperial'}, {text: 'Metric', value: 'metric'}]"
+            <b-form-radio-group class="pt-2" id="units" v-on:change="onUnitsChanged" v-model="units" :options="[{text: 'Imperial', value: 'imperial'}, {text: 'Metric', value: 'metric'}]"
               v-on:input="enableSaveUserPrefs" />
           </b-form-group>
           <b-form-group horizontal
-                        label="Weight:"
+                        :label="'Weight (' + weightUnits + '):'"
                         description="Enter your weight including cycling kit, shoes, helmet etc."
                         label-class="text-sm-right"
                         label-for="weight">
-            <b-form-input type="number" min="0" max="300" id="weight" v-model="weight" v-on:input="enableSaveUserPrefs"></b-form-input>
+            <b-form-input type="number" min="0" max="300" step="0.1" id="weight" v-model="weight" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
           <b-form-group horizontal
                         description="Enter bike weight as set up for testing, including any accessories such as hydration, flat kit etc.."
-                        label="Bike Weight:"
+                        :label="'Weight (' + weightUnits + '):'"
                         label-class="text-sm-right"
                         label-for="weight">
-            <b-form-input type="number" min="0" max="50" id="bikeWeight" v-model="bikeWeight" v-on:input="enableSaveUserPrefs"></b-form-input>
+            <b-form-input type="number" min="0" max="50" step="0.1" id="bikeWeight" v-model="bikeWeight" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
           <b-form-group horizontal
                         label="CdA:"
@@ -113,6 +113,7 @@ import 'firebase/auth'
 import LoadingButton from '@/components/LoadingButton'
 import { db } from '../main'
 import { required, email, between, minLength, maxLength, sameAs } from 'vuelidate/lib/validators'
+import Utils from '@/services/utils'
 
 export default {
   name: 'Profile',
@@ -123,6 +124,7 @@ export default {
     LoadingButton
   },
   validations: {
+    weightUnits: 'kg',
     password: { required, minLength: minLength(6), maxLength: maxLength(25) },
     password1: { minLength: minLength(6), maxLength: maxLength(25) },
     password2: { minLength: minLength(6), maxLength: maxLength(25), sameAsPassword1: sameAs('password1') },
@@ -138,8 +140,12 @@ export default {
       return this.$store.getters.getUser
     }
   },
+  watch: {
+  },
   data () {
     return {
+      weightUnits: 'kg',
+      utils: new Utils(),
       saveUserInfoCaption: 'Save',
       saveUserInfoEnabled: false,
       saveUserPrefsCaption: 'Save',
@@ -162,6 +168,16 @@ export default {
     this.fetchData()
   },
   methods: {
+    onUnitsChanged: function (value) {
+      this.weightUnits = value
+      if (value === 'imperial') {
+        this.weight = this.utils.kgToLbs(this.weight).toFixed(1)
+        this.bikeWeight = this.utils.kgToLbs(this.bikeWeight).toFixed(1)
+      } else {
+        this.weight = this.utils.lbsToKg(this.weight).toFixed(1)
+        this.bikeWeight = this.utils.lbsToKg(this.bikeWeight).toFixed(1)
+      }
+    },
     enableSaveUserInfo: function () {
       let isValid = !(this.$v.email.$invalid) &&
         !(this.$v.password.$invalid)

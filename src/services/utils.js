@@ -1,5 +1,5 @@
 /**
- * Just a bunch of utility methods
+ * Just a bunch of utility methods. Units conversion and stuff.
  */
 export default class CdaUtils {
   /**
@@ -67,7 +67,25 @@ export default class CdaUtils {
     return d / 1.609
   }
 
+  /**
+   * Convert meters to feet
+   */
   mToFt (d) {
     return Math.floor(d * 3.281)
+  }
+
+  /**
+   * Convert kg to lbs
+   * @param {} d
+   */
+  kgToLbs (d) {
+    return d * 2.205
+  }
+
+  /**
+   * Convert lbs to kg
+   */
+  lbsToKg (d) {
+    return d / 2.205
   }
 }

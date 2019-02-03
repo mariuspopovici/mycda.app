@@ -4,8 +4,9 @@
     <b-modal :body-bg-variant="theme" hide-footer id="rhoModal" ref="rhoModal"
       :header-bg-variant="modalHeaderBgVariant"
       :header-text-variant="modalHeaderTextVariant"
+      v-on:hidden="onHideCalculator"
       centered title="Air Density Calculator">
-      <RhoCalculator v-on:calculate="onCalculate" showClose unitsType="metric" calculateCaption="Apply"/>
+      <RhoCalculator v-if="isCalculatorVisible" v-on:calculate="onCalculate" showClose calculateCaption="Apply"/>
     </b-modal>
     <div class="container">
       <h2>CdA Analysis</h2>
@@ -21,8 +22,8 @@
             <b-col sm="3">
               <b-card :bg-variant="theme">
                 <b-form-group
-                    description="Enter rider mass including bike in kilograms."
-                    label="Total Mass (kg)"
+                    description="Enter rider mass including bike."
+                    :label="'Total Mass (' + this.weightUnits + ')'"
                     label-for="mass"
                 >
                   <b-form-input id="mass" v-on:change="calculateCdA"
@@ -156,6 +157,8 @@ export default {
   },
   data () {
     return {
+      weightUnits: '',
+      isCalculatorVisible: false,
       saving: false,
       dirty: true,
       sliderStyle: {},
@@ -227,6 +230,8 @@ export default {
       backgroundColor: '#3463af',
       borderColor: '#3463af'
     }
+
+    this.weightUnits = this.userPrefs.units === 'metric' ? 'kg' : 'lbs'
   },
   methods: {
     setDirty: function () {
@@ -287,10 +292,15 @@ export default {
     onCalculate: function (result) {
       this.rho = result
       this.$refs.rhoModal.hide()
+      this.isCalculatorVisible = false
       this.calculateCdA()
     },
     showRhoCalculator: function () {
+      this.isCalculatorVisible = true
       this.$refs.rhoModal.show()
+    },
+    onHideCalculator () {
+      this.isCalculatorVisible = false
     },
     fetchData: async function () {
       if (this.segmentID) {
@@ -332,8 +342,6 @@ export default {
         let speedSeries = data.speed
         let timeSeries = data.time
 
-        console.log(data)
-
         let time = []
         let power = []
         let altitude = []
@@ -373,7 +381,11 @@ export default {
         name: 'Elevation'
       }]
 
-      this.veService = new VirtualElevation(this.power, this.speed, this.altitude, this.time)
+      this.veService = new VirtualElevation(this.power,
+        this.speed,
+        this.altitude,
+        this.time,
+        this.userPrefs.units)
       this.calculateCdA()
 
       this.loading = false
