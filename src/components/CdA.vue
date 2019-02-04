@@ -375,8 +375,10 @@ export default {
         let speed = []
 
         timeSeries.forEach((x, i) => {
-        // filter out dropouts or zero speed + zero power points
-          if (x >= this.savedRange.start && x <= this.savedRange.end && speedSeries[i] !== 0 && powerSeries[i] !== 0) {
+        // filter out dropouts or zero speed, zero power points, power spikes
+          if (x >= this.savedRange.start && x <= this.savedRange.end &&
+            speedSeries[i] !== 0 && powerSeries[i] !== 0 &&
+            powerSeries[i] < 1000) {
             time.push(x)
             power.push(powerSeries[i])
             altitude.push(altitudeSeries[i])
