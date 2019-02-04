@@ -18,7 +18,28 @@ Demo URL under construction.
 * Record notes and equipment changes for specific segments
 * Calculate air density by manual input or automatically based on current location
 * Save CdA/crr analysis segments and view / edit later
-  
+
+## Screenshot Tour
+<figure>
+  <img src="static/images/screens/Upload MyCdA app.png" alt="Activities Screen">
+  <figcaption>Activities List</figcaption>
+</figure>
+
+<figure>
+  <img src="static/images/screens/Activity Details MyCdA app.png" alt="Activity Details Screen">
+  <figcaption>Activity Details</figcaption>
+</figure>
+
+<figure>
+  <img src="static/images/screens/CdA Analysis MyCdA app.png" alt="CdA Screen">
+  <figcaption>CdA Analysis</figcaption>
+</figure>
+
+<figure>
+  <img src="static/images/screens/Calculator MyCdA app.png" alt="Activities Screen">
+  <figcaption>CdA Analysis Air Density Calculator.</figcaption>
+</figure>
+
 ## TODO
 
 * Under construction

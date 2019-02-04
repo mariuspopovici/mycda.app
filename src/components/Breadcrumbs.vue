@@ -1,6 +1,6 @@
 <template>
-  <div class="container">
-    <b-breadcrumb v-if="items.length > 0" id="breadcrumb" :items="items">
+  <div v-if="items.length > 0" class="container-fluid">
+    <b-breadcrumb id="breadcrumb" :items="items">
     </b-breadcrumb>
   </div>
 </template>

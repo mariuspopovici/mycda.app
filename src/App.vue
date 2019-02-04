@@ -57,7 +57,7 @@
     </div>
     <!-- Footer -->
     <footer class="footer">
-      <div class="container">
+      <div class="container-fluid">
         <div class="row">
           <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
             <ul class="list-inline mb-2">
@@ -148,7 +148,7 @@ export default {
     async signOut () {
       await firebase.auth().signOut()
       this.setUser()
-      this.$router.replace('login')
+      this.$router.replace('/login')
     },
     toggleTheme () {
       if (this.theme === 'dark') {

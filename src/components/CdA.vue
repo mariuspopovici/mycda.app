@@ -8,7 +8,7 @@
       centered title="Air Density Calculator">
       <RhoCalculator v-if="isCalculatorVisible" v-on:calculate="onCalculate" showClose calculateCaption="Apply"/>
     </b-modal>
-    <div class="container">
+    <div class="container-fluid">
       <h2>CdA Analysis</h2>
       <h4>{{analysisName}}</h4>
       <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use the CdA slider to align the virtual elevation profile.</h4>

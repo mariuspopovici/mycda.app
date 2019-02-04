@@ -27,7 +27,10 @@ import {
   faTrash,
   faSpinner,
   faSignOutAlt,
-  faCloud
+  faCloud,
+  faCloudUploadAlt,
+  faChartArea,
+  faClipboardCheck
 } from '@fortawesome/free-solid-svg-icons'
 
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
@@ -47,6 +50,9 @@ library.add(faTrash)
 library.add(faSpinner)
 library.add(faSignOutAlt)
 library.add(faCloud)
+library.add(faChartArea)
+library.add(faClipboardCheck)
+library.add(faCloudUploadAlt)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
 

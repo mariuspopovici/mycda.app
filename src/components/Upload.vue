@@ -1,5 +1,5 @@
 <template>
-  <div class="container" id="Upload">
+  <div class="container-fluid" id="Upload">
     <!-- Delete confirmation modal -->
     <b-modal id="confirmModal" ref="confirmDeleteModal"
       centered title="Delete Activity"

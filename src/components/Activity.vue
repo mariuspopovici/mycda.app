@@ -1,5 +1,5 @@
 <template>
-  <div class="container" id="Activity">
+  <div class="container-fluid" id="Activity">
     <!-- Delete segment modal -->
     <b-modal id="confirmModal" ref="confirmDeleteModal"
       centered title="Delete Segment"

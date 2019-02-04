@@ -4,7 +4,7 @@ import Upload from '@/components/Upload'
 import About from '@/components/About'
 import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
-import Home from '@/components/Home'
+// import Home from '@/components/Home'
 import Landing from '@/components/Landing'
 import Activity from '@/components/Activity'
 import CdA from '@/components/CdA'
@@ -39,7 +39,7 @@ const router = new Router({
     {
       path: '/home',
       name: 'home',
-      component: Home,
+      component: Upload,
       meta: {
         requiresAuth: true,
         breadcrumbs: []
@@ -52,8 +52,6 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
-          { name: 'Home', link: 'home' },
-          { name: 'Activities' }
         ]
       }
     },
@@ -65,8 +63,7 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
-          { name: 'Home', link: 'home' },
-          { name: 'Activities', link: 'activity.list' },
+          { name: 'Home', link: 'activity.list' },
           { name: 'Activity Details' }
         ]
       }
@@ -79,8 +76,7 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
-          { name: 'Home', link: 'home' },
-          { name: 'Activities', link: 'activity.list' },
+          { name: 'Home', link: 'activity.list' },
           { name: 'Activity Details', link: 'activity.details' },
           { name: 'Analysis' }
         ]
@@ -94,8 +90,7 @@ const router = new Router({
       meta: {
         requiresAuth: true,
         breadcrumbs: [
-          { name: 'Home', link: 'home' },
-          { name: 'Activities', link: 'activity.list' },
+          { name: 'Home', link: 'activity.list' },
           { name: 'Activity Details', link: 'activity.details' },
           { name: 'Analysis' }
         ]

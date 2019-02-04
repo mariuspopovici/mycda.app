@@ -1,5 +1,5 @@
 <template>
-  <div class="container" id="home">
+  <div class="container-fluid" id="home">
     <b-card-group  deck>
       <b-card :bg-variant="theme" title="Activities">
         <p class="card-text">

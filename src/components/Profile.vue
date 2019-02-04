@@ -1,6 +1,6 @@
 <template>
   <div id="Profile">
-    <div class="container">
+    <div class="container-fluid">
       <b-card :bg-variant="theme">
         <b-form-group horizontal
                       breakpoint="lg"
