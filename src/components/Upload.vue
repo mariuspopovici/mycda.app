@@ -256,7 +256,6 @@ export default {
     },
     fileAdded: function (file) {
       this.activityID = this.utils.uuid()
-
       let dz = this.$refs.uploadDropZone.dropzone
       this.uploadError = false
 
@@ -268,7 +267,7 @@ export default {
           let activities = db.collection('activities')
           let doc = {
             id: -1,
-            uid: this.user.uid,
+            uid: _this.user.uid,
             status: 'New',
             timestamp: '-',
             name: 'New Activity',
@@ -282,7 +281,7 @@ export default {
           // make sure we have an activity in firestore before the trigger is fired
           await activities.doc(_this.activityID).set(doc)
 
-          uploadToStorage(_this.activityID, file, event.target.result, dz,
+          uploadToStorage(_this.user.uid, _this.activityID, file, event.target.result, dz,
             // on success
             function (downloadURL) {
               // processing is handled by a firestore cloud function triggered by a storage add event
@@ -306,7 +305,7 @@ export default {
       let _this = this
 
       activitiesRef
-        .where('uid', '==', this.user.uid)
+        .where('uid', '==', _this.user.uid)
         .where('status', '==', 'Processed')
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
@@ -328,12 +327,12 @@ export default {
   }
 }
 
-function uploadToStorage (activityId, file, data, dz, callback, onErrorCallback) {
+function uploadToStorage (userId, activityId, file, data, dz, callback, onErrorCallback) {
   // this is the dropzone's file preview progressbar, we're going to use this to let the user know how firebase upload is doing
   let dzProgressBar = file.previewElement.children[2]
 
   // create a unique id for the file to be uploaded - this will be the activity id from now on
-  let path = 'userdata/' + this.user.uid + '/activities/' + activityId + '.fit'
+  let path = 'userdata/' + userId + '/activities/' + activityId + '.fit'
 
   // get a ref to firebase storage root
   let storageRef = firebase.storage().ref()
