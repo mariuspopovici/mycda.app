@@ -302,6 +302,24 @@ export default {
     onHideCalculator () {
       this.isCalculatorVisible = false
     },
+    exportData: function () {
+      let csvContent = 'data:text/csv;charset=utf-8,'
+      csvContent += [
+        'Time,Speed,Power,Altitude',
+        ...this.time.map((item, i) => {
+          return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.power[i] + ',' + this.altitude[i]
+        })
+      ]
+        .join('\n')
+        .replace(/(^\[)|(\]$)/gm, '')
+
+      const data = encodeURI(csvContent)
+
+      const link = document.createElement('a')
+      link.setAttribute('href', data)
+      link.setAttribute('download', 'export.csv')
+      link.click()
+    },
     fetchData: async function () {
       if (this.segmentID) {
         // a specific segment was requested for editing

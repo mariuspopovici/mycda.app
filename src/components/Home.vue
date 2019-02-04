@@ -1,10 +1,7 @@
 <template>
   <div class="container" id="home">
     <b-card-group  deck>
-      <b-card :bg-variant="theme" title="Activities"
-              img-src="/static/images/home/sprint.png"
-              img-alt="Activities"
-              img-top>
+      <b-card :bg-variant="theme" title="Activities">
         <p class="card-text">
           Upload and manage activities recorded using your Garmin or other cycling head units. View activity details, select segments for analysis
           and estimate your coefficient of drag (CdA) or rolling resistance (crr).
@@ -14,10 +11,10 @@
           <small class="text-muted">Last updated 3 mins ago</small>
         </div>
       </b-card>
-
+      <!--
       <b-card title="Experiments"
               :bg-variant="theme"
-              img-src="/static/images/home/velodrome.png"
+              img-src="/static/images/home/tuck-800px.png"
               img-alt="Experiments"
               img-top>
         <p class="card-text">
@@ -28,7 +25,7 @@
         <div slot="footer">
           <small class="text-muted">Last updated 3 mins ago</small>
         </div>
-      </b-card>
+      </b-card>-->
     </b-card-group>
   </div>
 </template>

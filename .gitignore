@@ -69,3 +69,6 @@ dist/
 .firebase/
 .firebaserc
 firebase.*
+
+# my stuff
+TODO.txt
