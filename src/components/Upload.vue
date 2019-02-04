@@ -41,7 +41,7 @@
         <b-form-input ref="activityName" id="activityName"
           @keydown.native="onEditEnterKey"
           :state="isActivityNameValid"
-          v-model.trim="activityName">
+          v-model="activityName">
         </b-form-input>
       </b-form-group>
     </b-modal>
