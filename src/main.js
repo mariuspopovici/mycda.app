@@ -72,6 +72,7 @@ firebase.initializeApp(firebaseConfig)
 export const db = firebase.firestore()
 
 firebase.auth().onAuthStateChanged(function (user) {
+  store.dispatch('setUser')
   // eslint-disable-next-line no-new
   new Vue({
     el: '#app',
