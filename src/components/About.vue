@@ -14,12 +14,13 @@
           </p>
           <p>* flat course, no wind.  Time savings increase at lower speeds.</p>
           <br>
+          <p>Version {{appVersion}}</p>
           <p>
             Developer:
             <a href="mailto:marius@popovici.net">marius@popovici.net</a>
           </p>
           <div>
-            Icons made by
+            FavIcons made by
             <a href="https://www.freepik.com/" title="Freepik">Freepik</a> from
             <a href="https://www.flaticon.com/" title="Flaticon">www.flaticon.com</a>
             is licensed by
@@ -30,12 +31,8 @@
             >CC 3.0 BY</a>
           </div>
           <p/>
-          <p>For more information visit GitHub</p>
-          <b-btn
-            variant="primary"
-            target="_blank"
-            href="https://github.com/mariuspopovici/mycda.app"
-          >More Info</b-btn>
+          <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/fork" aria-label="Fork mariuspopovici/mycda.app on GitHub">Fork me on GitHub</a>
+          <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/issues" data-icon="octicon-issue-opened" aria-label="Issue ntkme/github-buttons on GitHub">Report Issue</a>
         </b-jumbotron>
       </div>
     </div>
@@ -43,6 +40,7 @@
 </template>
 
 <script>
+import { version } from '../../package.json'
 /* eslint-disable */
 export default {
   name: "About",
@@ -50,7 +48,15 @@ export default {
     title: "About"
   },
   data() {
-    return {};
+    return {
+      appVersion: version
+    };
+  },
+  mounted: function() {
+    let script = document.createElement('script')
+    script.async = true
+    script.setAttribute('src', 'https://buttons.github.io/buttons.js')
+    document.head.appendChild(script)
   },
   props: ["theme"],
   methods: {}
