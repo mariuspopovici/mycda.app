@@ -469,10 +469,12 @@ export default {
       let _this = this
 
       data.points.forEach(function (point) {
-        _this.time.push(new Date(point.timestamp))
-        _this.power.push(point.power)
-        _this.altitude.push(point.altitude * 1000)
-        _this.speed.push(point.speed)
+        if (point.power < 2000) { // eliminate ridiculous spikes
+          _this.time.push(new Date(point.timestamp))
+          _this.power.push(point.power)
+          _this.altitude.push(point.altitude * 1000)
+          _this.speed.push(point.speed)
+        }
       })
 
       let chartSpeed = this.speed
