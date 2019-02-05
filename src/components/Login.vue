@@ -1,33 +1,36 @@
 <template>
-  <div id="parent">
+  <div id="parent" >
     <div class="container" id="Login">
-      <h2>Sign In</h2>
       <b-alert
         variant="danger"
         dismissible
         :show="loginError"
         @dismissed="loginError=false"
       >{{loginMessage}}</b-alert>
-      <b-form-group horizontal :label-cols="2" label-size="lg" label="Email" label-for="email">
-        <b-form-input id="email" size="lg" v-model="email"></b-form-input>
-      </b-form-group>
-      <b-form-group
-        horizontal
-        :label-cols="2"
-        label-size="lg"
-        label="Password"
-        label-for="password"
-      >
-        <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
-      </b-form-group>
+      <b-card :bg-variant="theme">
+        <h2>Sign In</h2>
+        <b-form-group horizontal :label-cols="2" label-size="lg" label="Email:" label-for="email">
+          <b-form-input id="email" size="lg" v-model="email"></b-form-input>
+        </b-form-group>
+        <b-form-group
+          horizontal
+          :label-cols="2"
+          label-size="lg"
+          label="Password:"
+          label-for="password"
+        >
+          <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
+        </b-form-group>
 
-      <b-button size="lg" variant="primary" @click="login">Login</b-button>
-
-      <br>
-      <br>
-      <p>You don't have an account? You can
-        <router-link to="/signup">create one</router-link>.
-      </p>
+        <div align='right'>
+          <b-button align='right' size="lg" variant="primary" @click="login">Login</b-button>
+        </div>
+        <br>
+        <br>
+        <p>You don't have an account? You can
+          <router-link to="/signup">create one</router-link>.
+        </p>
+      </b-card>
     </div>
   </div>
 </template>
@@ -41,6 +44,7 @@ export default {
   metaInfo: {
     title: 'Login'
   },
+  props: ['theme'],
   data () {
     return {
       email: '',
@@ -68,7 +72,7 @@ export default {
 
 <style scoped>
 #parent {
-  padding: 100px 0;
+  padding: 20px 0;
 }
 #Login {
   max-width: 700px;
