@@ -74,7 +74,7 @@
           </b-form-group>
           <b-form-group horizontal
                         description="Enter bike weight as set up for testing, including any accessories such as hydration, flat kit etc.."
-                        :label="'Weight (' + weightUnits + '):'"
+                        :label="'Bike Weight (' + weightUnits + '):'"
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input type="number" min="0" max="50" step="0.1" id="bikeWeight" v-model="bikeWeight" v-on:input="enableSaveUserPrefs"></b-form-input>
