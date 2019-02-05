@@ -133,6 +133,8 @@ export default {
   },
   data () {
     return {
+      distanceUnits: 'km',
+      speedUnits: 'km/h',
       utils: new Utils(),
       dropOptions: {
         url: '/',
@@ -145,9 +147,7 @@ export default {
         forceChuncking: true,
         chunkSize: 500, // bytes
         dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop a .FIT file here or click to select one.`,
-        acceptedFiles: '.fit',
-        distanceUnits: 'km',
-        speedUnits: 'km/h'
+        acceptedFiles: '.fit'
       },
       fields: [
         {key: 'status', label: 'Status', class: 'text-center'},
@@ -192,10 +192,11 @@ export default {
     }
   },
   created: function () {
-    this.fetchData()
-
-    this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
-    this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
+    if (this.user && this.userPrefs) {
+      this.fetchData()
+      this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
+      this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
+    }
   },
   watch: {
     theme: function (value) {

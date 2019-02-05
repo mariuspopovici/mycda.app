@@ -229,9 +229,11 @@ export default {
     }
   },
   created: function () {
-    this.fetchData(this.activityID)
-    this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
-    this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
+    if (this.user && this.userPrefs) {
+      this.fetchData(this.activityID)
+      this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
+      this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
+    }
   },
   methods: {
     convertDistance: function (d) {
@@ -428,7 +430,10 @@ export default {
         )
         console.timeEnd('Cloud Call')
 
+        console.time('Process')
         this.processData(result)
+        console.timeEnd('Process')
+
         // get any saved segments
         let segmentsRef = db.collection('segments')
         let _this = this
@@ -460,6 +465,7 @@ export default {
      * Parse .FIT file and prepare it for charting.
      */
     processData: function (data) {
+      console.log('Processing data...')
       this.totalTime = (new Date(parseInt(data.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]
       this.avgSpeed = parseFloat(data.avg_speed).toFixed(2)
       this.avgPower = parseInt(data.avg_power)

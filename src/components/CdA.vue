@@ -226,8 +226,9 @@ export default {
     }
   },
   created: function () {
-    this.fetchData()
-
+    if (this.user) {
+      this.fetchData()
+    }
     this.sliderStyle = {
       backgroundColor: '#3463af',
       borderColor: '#3463af'
