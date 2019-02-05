@@ -62,9 +62,7 @@ export default {
         this.signUpMessage = 'Your account has been created.'
         this.signUpError = false
         this.signUpSuccess = true
-        // clear the form
-        this.email = ''
-        this.password = ''
+        this.$router.replace('profile')
       } catch (e) {
         this.signUpMessage = e.message
         this.signUpError = true

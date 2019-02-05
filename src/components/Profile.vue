@@ -1,6 +1,9 @@
 <template>
   <div id="Profile">
     <div class="container-fluid">
+      <h2>User Profile</h2>
+      <h4>Please enter your preferences below. If you don't know these then use the suggested values to establish a baseline profile.</h4>
+      <br>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
                       breakpoint="lg"
@@ -81,14 +84,14 @@
           </b-form-group>
           <b-form-group horizontal
                         label="CdA:"
-                        description="Select your default coefficient of drag (CdA) if you know it."
+                        description="Select your default coefficient of drag (CdA) if you know it. Typical values are in the 0.200 - 0.350 range with very fast positions under in the 0.170 - 0.200 range."
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input id="cda" v-model="cda" type="number" min="0" max="1" step="0.001" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
           <b-form-group horizontal
                         label="crr:"
-                        description="Select your default coefficient of rolling resistance if you know it."
+                        description="Select your default coefficient of rolling resistance if you know it. Typical values are in the 0.003 - 0.008 range depending on road conditions and tires. A great collection of test data can be found <a href='https://docs.google.com/spreadsheets/d/1vTm2AQYKeDuabP8Qiv5_AjatJVNYSY_DRBOeFmO3-_8/edit?usp=sharing'>here.</a>"
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input id="crr" v-model="crr" type="number" step="0.0001" min="0" max="1" v-on:input="enableSaveUserPrefs"></b-form-input>
@@ -157,7 +160,7 @@ export default {
       password2: '',
       displayName: '',
       email: '',
-      units: '',
+      units: 'metric',
       weight: 0.0,
       bikeWeight: 0.0,
       cda: 0.0,
@@ -169,13 +172,15 @@ export default {
   },
   methods: {
     onUnitsChanged: function (value) {
-      this.weightUnits = value
+      this.units = value
       if (value === 'imperial') {
         this.weight = this.utils.kgToLbs(this.weight).toFixed(1)
         this.bikeWeight = this.utils.kgToLbs(this.bikeWeight).toFixed(1)
+        this.weightUnits = 'lbs'
       } else {
         this.weight = this.utils.lbsToKg(this.weight).toFixed(1)
         this.bikeWeight = this.utils.lbsToKg(this.bikeWeight).toFixed(1)
+        this.weightUnits = 'kg'
       }
     },
     enableSaveUserInfo: function () {
@@ -190,18 +195,20 @@ export default {
       this.saveUserInfoCaption = 'Save'
     },
     fetchData: async function () {
-      this.displayName = this.user.displayName
-      this.email = this.user.email
+      if (this.user) {
+        this.displayName = this.user.displayName
+        this.email = this.user.email
 
-      let prefsDocRef = db.collection('userprefs').doc(this.user.uid)
-      let doc = await prefsDocRef.get()
-      if (doc.exists) {
-        const docData = doc.data()
-        this.units = docData.units
-        this.weight = docData.weight
-        this.bikeWeight = docData.bikeWeight
-        this.cda = docData.cda
-        this.crr = docData.crr
+        let prefsDocRef = db.collection('userprefs').doc(this.user.uid)
+        let doc = await prefsDocRef.get()
+        if (doc.exists) {
+          const docData = doc.data()
+          this.units = docData.units
+          this.weight = docData.weight
+          this.bikeWeight = docData.bikeWeight
+          this.cda = docData.cda
+          this.crr = docData.crr
+        }
       }
     },
     updateUserInfo: async function () {
