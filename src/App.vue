@@ -68,6 +68,7 @@
               <li class="list-inline-item">
                 <a href="#">Contact</a>
               </li>
+              <!--
               <li class="list-inline-item">&sdot;</li>
               <li class="list-inline-item">
                 <a href="#">Terms of Use</a>
@@ -75,7 +76,7 @@
               <li class="list-inline-item">&sdot;</li>
               <li class="list-inline-item">
                 <a href="#">Privacy Policy</a>
-              </li>
+              </li> -->
             </ul>
             <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved.</p>
           </div>

@@ -420,14 +420,15 @@ export default {
         const doc = await docRef.get()
         this.activityName = doc.data().name
 
+        console.time('Cloud Call')
         // get activity .fit file as JSON
         const result = await rp(
           'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
           options
         )
+        console.timeEnd('Cloud Call')
 
         this.processData(result)
-
         // get any saved segments
         let segmentsRef = db.collection('segments')
         let _this = this
