@@ -5,7 +5,7 @@
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
-          <img class="d-inline-block align-top logo" alt="MyCdA.App Beta" src="./assets/logo.svg">&nbsp;MyCdA.App Beta
+          <img class="d-inline-block align-top logo" alt="MyCdA.App Beta" src="./assets/logo.svg">&nbsp;MyCdA.App βeta
         </b-navbar-brand>
 
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
