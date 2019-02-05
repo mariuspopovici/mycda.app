@@ -5,7 +5,7 @@
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
         <b-navbar-brand href="#/">
-          <img class="d-inline-block align-top logo" alt="MyCdA.App" src="./assets/logo.svg">&nbsp;MyCdA.App
+          <img class="d-inline-block align-top logo" alt="MyCdA.App Beta" src="./assets/logo.svg">&nbsp;MyCdA.App Beta
         </b-navbar-brand>
 
         <b-collapse is-nav id="nav_collapse" v-model="menuCollapsed">
@@ -78,7 +78,7 @@
                 <a href="#">Privacy Policy</a>
               </li> -->
             </ul>
-            <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved.</p>
+            <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved. Build {{appVersion}}</p>
           </div>
         </div>
       </div>
@@ -90,6 +90,7 @@
 import firebase from 'firebase/app'
 import 'firebase/auth'
 import breadcrumbs from '@/components/Breadcrumbs'
+import { version } from '../package.json'
 
 export default {
   name: 'App',
@@ -129,7 +130,8 @@ export default {
       themeStyle: {
         backgroundColor: '#313131'
       },
-      breadcrumbs: null
+      breadcrumbs: null,
+      appVersion: version
     }
   },
   watch: {
