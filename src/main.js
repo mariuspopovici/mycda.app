@@ -5,7 +5,6 @@ import App from './App'
 import router from './router'
 import BootstrapVue from 'bootstrap-vue'
 import Meta from 'vue-meta'
-import 'vue2-dropzone/dist/vue2Dropzone.css'
 
 import firebase from 'firebase/app'
 import 'firebase/firestore'
@@ -71,17 +70,15 @@ firebase.initializeApp(firebaseConfig)
 
 export const db = firebase.firestore()
 
-firebase.auth().onAuthStateChanged(function (user) {
-  store.dispatch('setUser')
-  // eslint-disable-next-line no-new
-  new Vue({
-    el: '#app',
-    store: store,
-    router: router,
-    render: h => h(App)
-  })
-})
-
 Vue.use(Vuelidate)
 Vue.use(BootstrapVue)
 Vue.use(Meta)
+
+// eslint-disable-next-line no-new
+new Vue({
+  el: '#app',
+  store,
+  router,
+  components: { App },
+  template: '<App/>'
+})

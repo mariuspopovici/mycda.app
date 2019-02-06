@@ -418,9 +418,11 @@ export default {
         this.loading = true
 
         // get activity info
+        console.time('Document')
         let docRef = db.collection('activities').doc(id)
         const doc = await docRef.get()
         this.activityName = doc.data().name
+        console.timeEnd('Document')
 
         console.time('Cloud Call')
         // get activity .fit file as JSON

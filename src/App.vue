@@ -95,7 +95,10 @@ import { version } from '../package.json'
 export default {
   name: 'App',
   created: function () {
-    this.setUser()
+    let _this = this
+    firebase.auth().onAuthStateChanged(function (user) {
+      _this.$store.dispatch('setUser', user)
+    })
   },
   metaInfo: {
     title:
@@ -125,7 +128,7 @@ export default {
     return {
       menuCollapsed: false,
       theme: 'dark',
-      themeIcon: 'sun',
+      themeIcon: 'lightbulb',
       themeCaption: 'Go Light',
       themeStyle: {
         backgroundColor: '#313131'
@@ -166,7 +169,7 @@ export default {
       } else {
         this.theme = 'dark'
         this.color = '#b1aeae'
-        this.themeIcon = 'sun'
+        this.themeIcon = 'lightbulb'
         this.themeCaption = 'Go Light'
         this.themeStyle = {
           color: '#b1aeae',
