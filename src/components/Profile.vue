@@ -3,9 +3,14 @@
     <div class="container-fluid">
       <h2>User Profile</h2>
       <h5>Please enter your preferences below. If you don't know some of them you can use the suggested values to establish a baseline profile.
-        Log out then log back in after saving.
       </h5>
       <br>
+      <b-alert variant="success"
+             dismissible
+             :show="showUserInfoSuccessAlert"
+             @dismissed="showUserInfoSuccessAlert=false">
+        You user information was saved succesfully. Please log out and log back in for changes to take effect.
+      </b-alert>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
                       breakpoint="lg"
@@ -55,6 +60,12 @@
         </b-form-group>
       </b-card>
       <br>
+      <b-alert variant="success"
+             dismissible
+             :show="showUserPrefsSuccessAlert"
+             @dismissed="showUserPrefsSuccessAlert=false">
+        Your preferences were saved succesfully. Please log out and log back in for changes to take effect.
+      </b-alert>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
                       breakpoint="lg"
@@ -149,6 +160,8 @@ export default {
   },
   data () {
     return {
+      showUserPrefsSuccessAlert: false,
+      showUserInfoSuccessAlert: false,
       weightUnits: 'kg',
       utils: new Utils(),
       saveUserInfoCaption: 'Save',
@@ -244,6 +257,8 @@ export default {
         this.saveUserInfoFailMessage = ''
         this.saveUserInfoEnabled = false
         this.saveUserInfoCaption = 'Saved'
+
+        this.showUserInfoSuccessAlert = true
       } catch (error) {
         console.log(error)
         this.saveUserInfoFail = true
@@ -276,6 +291,7 @@ export default {
 
         this.saveUserPrefsEnabled = false
         this.saveUserPrefsCaption = 'Saved'
+        this.showUserPrefsSuccessAlert = true
       } catch (error) {
         console.log(error)
       }
