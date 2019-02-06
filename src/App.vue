@@ -97,6 +97,7 @@ export default {
   created: function () {
     let _this = this
     firebase.auth().onAuthStateChanged(function (user) {
+      console.log('Auth state changed.')
       _this.$store.dispatch('setUser', user)
     })
   },
@@ -148,12 +149,8 @@ export default {
     }
   },
   methods: {
-    setUser: function () {
-      this.$store.dispatch('setUser')
-    },
     async signOut () {
       await firebase.auth().signOut()
-      this.setUser()
       this.$router.replace('/login')
     },
     toggleTheme () {

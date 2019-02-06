@@ -193,6 +193,7 @@ export default {
     }
   },
   created: function () {
+    console.log('Upload component created.')
     if (this.user && this.userPrefs) {
       this.fetchData()
       this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'

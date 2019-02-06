@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import firebase from 'firebase/app'
+
 import 'firebase/auth'
 import { db } from '../main'
 
@@ -20,20 +20,29 @@ export const store = new Vuex.Store({
     }
   },
   mutations: {
-    setUser: async state => {
-      state.user = firebase.auth().currentUser
-      if (state.user) {
-        let prefsDocRef = db.collection('userprefs').doc(state.user.uid)
-        let doc = await prefsDocRef.get()
-        if (doc.exists) {
-          state.userPrefs = doc.data()
-        }
-      }
+    setUser (state, user) {
+      console.log('setUser mutation', user)
+      state.user = user
+    },
+    setUserPrefs (state, userPrefs) {
+      console.log('setUserPrefs mutation', userPrefs)
+      state.userPrefs = userPrefs
     }
   },
   actions: {
-    setUser: context => {
-      context.commit('setUser')
+    setUser: (context, user) => {
+      context.commit('setUser', user)
+      if (user) {
+        let prefsDocRef = db.collection('userprefs').doc(user.uid)
+        prefsDocRef.get().then((doc) => {
+          if (doc.exists) {
+            let userPrefs = doc.data()
+            context.commit('setUserPrefs', userPrefs)
+          }
+        }).catch((error) => {
+          console.log(error)
+        })
+      }
     }
   }
 })
