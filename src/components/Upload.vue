@@ -193,16 +193,21 @@ export default {
     }
   },
   created: function () {
-    console.log('Upload component created.')
-    if (this.user && this.userPrefs) {
+    if (this.user) {
       this.fetchData()
-      this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
-      this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
     }
   },
   watch: {
     theme: function (value) {
       this.isDark = value === 'dark'
+    },
+    userPrefs () {
+      // need a watcher on userPrefs because these are loaded async from store
+      // it could happen that user prefs are set after this component is loaded
+      if (this.userPrefs) {
+        this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
+        this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
+      }
     }
   },
   components: {

@@ -21,11 +21,9 @@ export const store = new Vuex.Store({
   },
   mutations: {
     setUser (state, user) {
-      console.log('setUser mutation', user)
       state.user = user
     },
     setUserPrefs (state, userPrefs) {
-      console.log('setUserPrefs mutation', userPrefs)
       state.userPrefs = userPrefs
     }
   },

@@ -96,8 +96,8 @@ export default {
   name: 'App',
   created: function () {
     let _this = this
+    // subscribe to auth changes and reset user in store
     firebase.auth().onAuthStateChanged(function (user) {
-      console.log('Auth state changed.')
       _this.$store.dispatch('setUser', user)
     })
   },
