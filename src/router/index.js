@@ -4,14 +4,12 @@ import Upload from '@/components/Upload'
 import About from '@/components/About'
 import Login from '@/components/Login'
 import SignUp from '@/components/SignUp'
-// import Home from '@/components/Home'
 import Landing from '@/components/Landing'
 import Activity from '@/components/Activity'
 import CdA from '@/components/CdA'
 import Profile from '@/components/Profile'
 import RhoCalculator from '@/components/RhoCalculator'
-import firebase from 'firebase/app'
-import 'firebase/auth'
+import { store } from '../store/store'
 
 Vue.config.productionTip = false
 
@@ -144,7 +142,7 @@ const router = new Router({
 })
 
 router.beforeEach((to, from, next) => {
-  const currentUser = firebase.auth().currentUser
+  const currentUser = store.getters.getUser
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth)
 
   if (requiresAuth && !currentUser) {
