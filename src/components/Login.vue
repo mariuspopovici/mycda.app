@@ -1,38 +1,44 @@
 <template>
-  <div id="parent" >
+  <b-container fluid id="parent">
+    <div id="fullscreen_bg" class="fullscreen_bg"/>
     <div class="container" id="Login">
-      <b-alert
-        variant="danger"
-        dismissible
-        :show="loginError"
-        @dismissed="loginError=false"
-      >{{loginMessage}}</b-alert>
-      <b-card :bg-variant="theme">
-        <h2>Sign In</h2>
-        <b-form-group horizontal :label-cols="2" label-size="lg" label="Email:" label-for="email">
-          <b-form-input id="email" size="lg" v-model="email"></b-form-input>
-        </b-form-group>
-        <b-form-group
-          horizontal
-          :label-cols="2"
-          label-size="lg"
-          label="Password:"
-          label-for="password"
-        >
-          <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
-        </b-form-group>
+      <b-row align-v="center">
+        <b-col align-self="center" cols="12">
+          <b-alert
+            variant="danger"
+            dismissible
+            :show="loginError"
+            @dismissed="loginError=false"
+          >{{loginMessage}}
+          </b-alert>
+          <b-card :bg-variant="theme">
+            <h2>Sign In</h2>
+            <b-form-group horizontal :label-cols="2" label-size="lg" label="Email:" label-for="email">
+              <b-form-input id="email" size="lg" v-model="email"></b-form-input>
+            </b-form-group>
+            <b-form-group
+              horizontal
+              :label-cols="2"
+              label-size="lg"
+              label="Password:"
+              label-for="password"
+            >
+              <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
+            </b-form-group>
 
-        <div align='right'>
-          <b-button align='right' size="lg" variant="primary" @click="login">Login</b-button>
-        </div>
-        <br>
-        <br>
-        <p>You don't have an account? You can
-          <router-link to="/signup">create one</router-link>.
-        </p>
-      </b-card>
+            <div align='right'>
+              <b-button align='right' size="lg" variant="primary" @click="login">Login</b-button>
+            </div>
+            <br>
+            <br>
+            <p>You don't have an account? You can
+              <router-link to="/signup">create one</router-link>.
+            </p>
+          </b-card>
+        </b-col>
+      </b-row>
     </div>
-  </div>
+  </b-container>
 </template>
 
 <script>
@@ -72,9 +78,33 @@ export default {
 
 <style scoped>
 #parent {
-  padding: 20px 0;
+  padding: 100px 0;
 }
 #Login {
-  max-width: 700px;
+  max-width: 690px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.fullscreen_bg {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-size: cover;
+  background-position: 50% 50%;
+  background-image: url('/static/images/home/oos-1200px.jpg');
+  background-repeat:repeat;
+}
+
+.vertical-center {
+  min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
+  min-height: 100vh; /* These two lines are counted as one :-)       */
+
+  display: flex;
+  align-items: center;
 }
 </style>

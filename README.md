@@ -6,7 +6,7 @@ to determine if an equipment or position change is beneficial or not.
 
 ## Demo
 
-Demo URL under construction.
+Click [here](https://mycdap.app) for a working demo.
 
 ## Features
 
@@ -42,7 +42,10 @@ Demo URL under construction.
 
 ## TODO
 
-* Under construction
+* Create FAQ / HOWTO section
+* Calculate mean, CV across runs
+* Include mechanical / drivetrain loss in VE calc
+* Etc.
 
 ## Build Setup
 

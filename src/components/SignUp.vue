@@ -1,6 +1,7 @@
 <template>
-  <div id="parent">
-    <div class="container" id="signUp">
+  <b-container fluid id="parent">
+    <div id="fullscreen_bg" class="fullscreen_bg"/>
+    <div class="container" id="signup">
       <b-card :bg-variant="theme">
         <h2>Sign Up</h2>
         <br>
@@ -48,7 +49,7 @@
         </div>
       </b-card>
     </div>
-  </div>
+  </b-container>
 </template>
 
 <script>
@@ -97,9 +98,33 @@ export default {
 
 <style scoped>
 #parent {
-  padding: 20px 0;
+  padding: 100px 0;
 }
-#signUp {
-  max-width: 700px;
+#signup {
+  max-width: 690px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.fullscreen_bg {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-size: cover;
+  background-position: 50% 50%;
+  background-image: url('/static/images/home/tt-1200px.jpg');
+  background-repeat:repeat;
+}
+
+.vertical-center {
+  min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
+  min-height: 100vh; /* These two lines are counted as one :-)       */
+
+  display: flex;
+  align-items: center;
 }
 </style>

@@ -1,6 +1,6 @@
 <template>
   <div id="app" v-bind:style="themeStyle">
-    <div class="wrapper">
+    <b-container id="wrapper">
       <b-navbar id="nav" toggleable="md" :type="theme" :variant="theme" :fixed="'top'" :sticky="false">
         <b-navbar-toggle target="nav_collapse"></b-navbar-toggle>
 
@@ -54,9 +54,10 @@
         <breadcrumbs :theme="theme" :crumbs="breadcrumbs"/>
         <router-view :theme="theme"/>
       </div>
-    </div>
+    </b-container>
     <!-- Footer -->
-    <footer class="footer">
+
+    <footer id="footer">
       <div class="container-fluid">
         <div class="row">
           <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
@@ -68,15 +69,6 @@
               <li class="list-inline-item">
                 <a href="#">Contact</a>
               </li>
-              <!--
-              <li class="list-inline-item">&sdot;</li>
-              <li class="list-inline-item">
-                <a href="#">Terms of Use</a>
-              </li>
-              <li class="list-inline-item">&sdot;</li>
-              <li class="list-inline-item">
-                <a href="#">Privacy Policy</a>
-              </li> -->
             </ul>
             <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved. Build {{appVersion}}</p>
           </div>
@@ -204,6 +196,17 @@ export default {
 #component {
   margin-top: 70px;
   margin-bottom: 20px;
+}
+
+#wrapper {
+  min-height: -webkit-calc(100vh - 70px);     /* Chrome */
+  min-height: -moz-calc(100vh - 70px);     /* Firefox */
+  min-height: calc(100vh - 70px);     /* native */
+}
+
+#footer {
+  position: relative;
+  clear:both;
 }
 </style>
 

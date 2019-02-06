@@ -2,7 +2,9 @@
   <div id="Profile">
     <div class="container-fluid">
       <h2>User Profile</h2>
-      <h4>Please enter your preferences below. If you don't know these then use the suggested values to establish a baseline profile.</h4>
+      <h5>Please enter your preferences below. If you don't know some of them you can use the suggested values to establish a baseline profile.
+        Log out then log back in after saving.
+      </h5>
       <br>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
