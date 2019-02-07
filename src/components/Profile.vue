@@ -9,7 +9,7 @@
              dismissible
              :show="showUserInfoSuccessAlert"
              @dismissed="showUserInfoSuccessAlert=false">
-        You user information was saved succesfully. Please log out and log back in for changes to take effect.
+        You user information was saved succesfully. Please <b-link v-on:click="signOut">log out</b-link> and log back in for changes to take effect.
       </b-alert>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
@@ -64,7 +64,7 @@
              dismissible
              :show="showUserPrefsSuccessAlert"
              @dismissed="showUserPrefsSuccessAlert=false">
-        Your preferences were saved succesfully. Please log out and log back in for changes to take effect.
+        Your preferences were saved succesfully. Please <b-link v-on:click="signOut">log out</b-link> and log back in for changes to take effect.
       </b-alert>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
@@ -295,6 +295,9 @@ export default {
       } catch (error) {
         console.log(error)
       }
+    },
+    signOut: function () {
+      this.$emit('signout')
     }
   }
 }

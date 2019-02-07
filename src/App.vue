@@ -48,7 +48,7 @@
       </b-navbar>
       <div id="component">
         <breadcrumbs :theme="theme" :crumbs="breadcrumbs"/>
-        <router-view :theme="theme"/>
+        <router-view v-on:signout="signOut" :theme="theme"/>
       </div>
     </b-container>
     <!-- Footer -->
@@ -63,7 +63,7 @@
               </li>
               <li class="list-inline-item">&sdot;</li>
               <li class="list-inline-item">
-                <a href="#">Contact</a>
+                <a href="mailto:support@mycda.app">Contact</a>
               </li>
             </ul>
             <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved. Build {{appVersion}}</p>

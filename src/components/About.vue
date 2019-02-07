@@ -9,10 +9,10 @@
             to determine if an equipment or position change is beneficial or not.
           </p>
           <p>
-            Determine how much faster or efficient a change in position or equipment will make you on race day by using a simple rule of thumb: Reducing CdA
+            Determine how much faster or efficient a change in position or equipment will make you on race day by using a simple rule of thumb: reducing CdA
             by 0.005 is worth 5W or 0.5 s/km (40 seconds over 40 km) at 30mph*.
           </p>
-          <p>* flat course, no wind.  Time savings increase at lower speeds.</p>
+
           <br>
           <p>Version {{appVersion}}</p>
           <p>
@@ -31,7 +31,7 @@
             >CC 3.0 BY</a>
           </div>
           <p/>
-          <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/fork" aria-label="Fork mariuspopovici/mycda.app on GitHub">Fork me on GitHub</a>
+          <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/" aria-label="Fork mariuspopovici/mycda.app on GitHub">GitHub</a>
           <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/issues" data-icon="octicon-issue-opened" aria-label="Issue ntkme/github-buttons on GitHub">Report Issue</a>
         </b-jumbotron>
       </div>
