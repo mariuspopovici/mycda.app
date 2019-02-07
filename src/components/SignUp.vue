@@ -41,7 +41,7 @@
           <b-form-input id="password2" v-on:input="$v.password2.$touch()" type="password" size="lg" v-model="password2"></b-form-input>
           <br><b-alert v-if="$v.password2.$dirty && $v.password2.$invalid" show variant="danger">Repeat Password is required and must match Password.</b-alert>
         </b-form-group>
-        <div align="right">
+        <div align="left">
           <b-button size="lg" :disabled="$v.$invalid" variant="success" @click="signUp">Sign Up</b-button>
           <span>or go back to
             <router-link to="/login">Login</router-link>.
@@ -101,7 +101,7 @@ export default {
   padding: 100px 0;
 }
 #signup {
-  max-width: 690px;
+  max-width: 600px;
   position: absolute;
   top: 50%;
   left: 50%;

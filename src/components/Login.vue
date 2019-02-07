@@ -13,27 +13,25 @@
           </b-alert>
           <b-card :bg-variant="theme">
             <h2>Sign In</h2>
-            <b-form-group horizontal :label-cols="2" label-size="lg" label="Email:" label-for="email">
+            <b-form-group horizontal :label-cols="4" label-size="lg" label="Email:" label-for="email">
               <b-form-input id="email" size="lg" v-model="email"></b-form-input>
             </b-form-group>
             <b-form-group
               horizontal
-              :label-cols="2"
+              :label-cols="4"
               label-size="lg"
               label="Password:"
               label-for="password"
             >
               <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
             </b-form-group>
-
-            <div align='right'>
-              <b-button align='right' size="lg" variant="primary" @click="login">Login</b-button>
+            <div>
+              <b-row>
+                <b-col>Not registered? <router-link to="/signup">Sign up</router-link> now.</b-col>
+                <b-col><div align='right'><b-button align='right' size="lg" variant="primary" @click="login">Login</b-button></div></b-col>
+              </b-row>
             </div>
             <br>
-            <br>
-            <p>You don't have an account? You can
-              <router-link to="/signup">create one</router-link>.
-            </p>
           </b-card>
         </b-col>
       </b-row>
@@ -81,7 +79,7 @@ export default {
   padding: 100px 0;
 }
 #Login {
-  max-width: 690px;
+  max-width: 600px;
   position: absolute;
   top: 50%;
   left: 50%;
