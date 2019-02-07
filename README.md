@@ -73,7 +73,22 @@ In order to use the location based weather data pull you need to configure your 
 - Sign up for a free **OpenWeatherMap** account at https://openweathermap.org/api
 - Once your account is set up, go into [API Keys](https://home.openweathermap.org/api_keys) and copy your API key.
 - Configure **MyCdA.app** by editing the _config/prov.env.js_ or _config/dev/env.js_ files and inserting the API key copied in the previous text into the placeholder.
-
+- Sign up for a free Google Firebase account at https://firebase.google.com/
+- From the Firebase console, enable **Email/Password** authentication from the Authentication, Sign-in method tab.
+- Obtain your firebase project keys and insert them in the env.js configuration file
+  
+```javascript
+module.exports = merge(prodEnv, {
+  NODE_ENV: `"development"`,
+  OW_API_KEY: `"your open weather API key here"`,
+  FB_API_KEY: `"Firebase API key here"`,
+  FB_AUTH_DOMAIN: `"Firebase auth domain"`,
+  FB_DATABASE_URL: `"Firebase database url"`,
+  FB_PROJECT_ID: `"Firebase app name"`,
+  FB_STORAGE_BUCKET: `"Firebase storage bucket"`,
+  FB_MSG_SENDER_ID: `"Firebase sender id"`
+});
+```
 ## History
 
 Under construction.
