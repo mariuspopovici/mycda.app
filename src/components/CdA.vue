@@ -28,7 +28,7 @@
                     label-for="mass"
                 >
                   <b-form-input id="mass" v-on:change="calculateCdA"
-                    min="40" max="300"
+                    min="40" max="300" step="0.1"
                     v-model.trim="mass" type="number"></b-form-input>
                 </b-form-group>
                 <b-form-group
