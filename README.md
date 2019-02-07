@@ -21,13 +21,23 @@ Click [here](https://mycdap.app) for a working demo.
 
 ## Screenshot Tour
 <figure>
+  <img src="static/images/screens/Login MyCdA app.png" alt="Activities Screen">
+  <figcaption>Login screen.</figcaption>
+</figure>
+
+<figure>
   <img src="static/images/screens/Upload MyCdA app.png" alt="Activities Screen">
   <figcaption>Activities List</figcaption>
 </figure>
 
 <figure>
   <img src="static/images/screens/Activity Details MyCdA app.png" alt="Activity Details Screen">
-  <figcaption>Activity Details</figcaption>
+  <figcaption>Home / Activity Details</figcaption>
+</figure>
+
+<figure>
+  <img src="static/images/screens/Summary Activity Details MyCdA app.png" alt="Activity Details Screen">
+  <figcaption>Home / Activity Details with Segment Stats</figcaption>
 </figure>
 
 <figure>
@@ -46,7 +56,7 @@ Click [here](https://mycdap.app) for a working demo.
 * Calculate mean, CV across runs
 * Include mechanical / drivetrain loss in VE calc
 * Etc.
-
+ 
 ## Build Setup
 
 ```bash

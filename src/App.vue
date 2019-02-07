@@ -26,7 +26,7 @@
             <b-nav-form>
               <b-navbar-nav>
                 <b-nav-item-dropdown v-if="user" id="navUserOptionsDD"
-                  text="<i class='fa fa-user'></i>"
+                  :text="`<i class='fa fa-user'></i>` + (menuCollapsed ? ' User' : '')"
                   extra-toggle-classes="nav-link-custom" right>
                   <b-dropdown-header>{{user.displayName ? user.displayName : 'User Options'}}</b-dropdown-header>
                   <b-dropdown-item :to="{name: 'user.profile'}" >My Profile</b-dropdown-item>

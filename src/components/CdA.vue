@@ -55,13 +55,15 @@
                 CdA
                 <vue-slider
                   :use-keyboard="true"
-                  :min="0.150" :max="0.500"
+                  :min="0.100" :max="0.500"
                   :interval="0.001"
                   v-model="cda"
                   v-bind:tooltip-style="sliderStyle"
                   v-bind:process-style="sliderStyle"
                   >
                 </vue-slider>
+                <br>
+                <b-form-checkbox id="hideElevation" v-on:change="onHideElevation" v-model="hideElevation">Hide Elevation</b-form-checkbox>
               </b-card>
             </b-col>
           </b-row>
@@ -159,6 +161,7 @@ export default {
   },
   data () {
     return {
+      hideElevation: false,
       weightUnits: '',
       isCalculatorVisible: false,
       saving: false,
@@ -202,13 +205,13 @@ export default {
         yaxis: {
           gridcolor: '#37474f',
           showgrid: true,
-          tickfont: { color: '#f4a433' }
+          tickfont: { color: '#2196f3' }
         },
         yaxis2: {
           side: 'right',
           showgrid: false,
           overlaying: 'y',
-          tickfont: { color: '#404244' }
+          tickfont: { color: '#f4a433' }
         },
         xaxis: {
           showgrid: false
@@ -420,26 +423,39 @@ export default {
 
       this.loading = false
     },
+    onHideElevation: function (checked) {
+      this.hideElevation = checked
+      this.calculateCdA()
+    },
     calculateCdA: function () {
       this.dirty = true
       // recalculate virtual elevation
       this.ve = this.veService.calculateVirtualElevation(this.rho, this.mass, this.crr, this.cda)
+      let data = []
 
-      this.chartData = [
-        {
+      if (!this.hideElevation) {
+        data.push({
           x: this.time,
           y: this.altitude,
           type: 'scatter',
-          name: 'Elevation'
-        },
+          name: 'Elevation',
+          yaxis: 'y2'
+        })
+      }
+      data.push(
         {
           x: this.time,
           y: this.ve,
           type: 'scatter',
           name: 'Virtual Elevation',
-          yaxis: 'y2'
+
+          line: {
+            color: '#2196f3'
+          }
+
         }
-      ]
+      )
+      this.chartData = data
     }
   }
 }

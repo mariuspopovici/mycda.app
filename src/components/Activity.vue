@@ -117,6 +117,11 @@
             </b-button>
           </div>
         </template>
+        <template slot="bottom-row" slot-scope="row">
+          <td :colspan="row.columns">
+            <div class="text-center"><strong>Mean:</strong> {{meanCdA.toFixed(3)}} <strong>SD:</strong> {{sdCdA.toFixed(3)}} <strong>CV:</strong> {{cvCdA.toFixed(3)}}</div>
+          </td>
+        </template>
       </b-table>
     </div>
   </div>
@@ -143,6 +148,26 @@ export default {
     },
     userPrefs () {
       return this.$store.getters.getUserPrefs
+    },
+    meanCdA () {
+      if (this.segments.length > 0) {
+        return (this.segments.reduce(function (acc, curr) {
+          return acc + curr.cda
+        }, 0)) / this.segments.length
+      }
+    },
+    sdCdA () {
+      const mean = this.meanCdA
+      let aSigma = this.segments.map(function (segment) {
+        return Math.pow(segment.cda - mean, 2)
+      })
+      const sigma = aSigma.reduce(function (acc, curr) {
+        return acc + curr
+      }, 0)
+      return Math.sqrt(sigma / this.segments.length)
+    },
+    cvCdA () {
+      return (this.sdCdA / this.meanCdA) * 100
     }
   },
   data () {
