@@ -56,7 +56,7 @@
     <footer id="footer">
       <div class="container-fluid">
         <div class="row">
-          <div class="col-lg-6 h-100 text-center text-lg-left my-auto">
+          <div class="col-lg-12 h-100 text-center text-lg-center my-auto">
             <ul class="list-inline mb-2">
               <li class="list-inline-item">
                 <a href="#/about">About</a>
