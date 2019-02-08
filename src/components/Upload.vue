@@ -72,12 +72,15 @@
         :items="activities"
         :fields="fields"
       >
-        <template slot="status" slot-scope="data">
-          <div id='newStatus' v-if="data.value === 'New'">
+        <template slot="status" slot-scope="row">
+          <div id='newStatus' v-if="row.item.status === 'New'">
             <font-awesome-icon icon="spinner" spin/>
           </div>
-          <div id='newStatus' v-if="data.value === 'Processed'">
+          <div id='newStatus' v-if="row.item.status === 'Processed'">
             <i class="fa fa-check text-success"></i>
+          </div>
+          <div id='newStatus' v-if="row.item.status === 'Error'">
+            <i class="fa fa-exclamation-circle text-danger"></i>
           </div>
         </template>
         <template slot="distance" slot-scope="data">
@@ -93,18 +96,23 @@
         </template>
         <template slot="actions" slot-scope="row">
           <div align="center">
-            <b-button
+            <b-button v-if="row.item.status === 'Error'"
+              size="sm"
+              variant="danger"
+              :to="{name: 'activity.details', params: { id: row.item.id }}"
+            >Error Details</b-button>
+            <b-button v-if="row.item.status === 'Processed'"
               size="sm"
               variant="primary"
               :to="{name: 'activity.details', params: { id: row.item.id }}"
             >Details</b-button>
-            <b-btn
+            <b-btn v-if="row.item.status === 'Processed'"
               size="sm"
               variant="secondary"
               v-b-tooltip.hover title="Rename Activity"
               v-on:click="showEditActivity(row.item)"
             ><i class="fa fa-edit fa-1x"></i></b-btn>
-            <b-button
+            <b-button v-if="row.item.status === 'Processed' || row.item.status === 'Error'"
               size="sm"
               variant="danger"
               v-b-tooltip.hover title="Delete Activity"
@@ -274,7 +282,7 @@ export default {
           // create a new item in my activities collection
           let activities = db.collection('activities')
           let doc = {
-            id: -1,
+            id: _this.activityID,
             uid: _this.user.uid,
             status: 'New',
             timestamp: '-',
@@ -318,6 +326,10 @@ export default {
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
           _this.activities = []
+          // refresh all processed
+          // _this.activities = _this.activities.filter(function (item) {
+          //  return item.status !== 'Processed'
+          // })
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
             _this.activities.push({
@@ -330,6 +342,34 @@ export default {
               status: docData.status
             })
           })
+        })
+
+      // this is pretty lame but Firestore does not support OR queries as of 2/8/2019
+      activitiesRef
+        .where('uid', '==', _this.user.uid)
+        .where('status', '==', 'Error')
+        .orderBy('timestamp', 'desc')
+        .onSnapshot(function (querySnapshot) {
+          querySnapshot.docChanges().forEach(function (change) {
+            if (change.type === 'added') {
+              let docData = change.data()
+              _this.activities.push({
+                id: change.id,
+                name: docData.name,
+                status: docData.status,
+                statusMessage: docData.statusMessage
+              })
+            }
+          })
+          // querySnapshot.forEach(function (doc) {
+          //   let docData = doc.data()
+          //   _this.activities.push({
+          //     id: doc.id,
+          //     name: docData.name,
+          //     status: docData.status,
+          //     statusMessage: docData.statusMessage
+          //   })
+          // })
         })
     }
   }
