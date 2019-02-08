@@ -97,7 +97,7 @@
               size="sm"
               variant="primary"
               :to="{name: 'activity.details', params: { id: row.item.id }}"
-            >Show Details</b-button>
+            >Details</b-button>
             <b-btn
               size="sm"
               variant="secondary"
@@ -147,7 +147,7 @@ export default {
         chunking: true,
         forceChuncking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop a .FIT file here or click to select one.`,
+        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop .FIT file here or click to select one.`,
         acceptedFiles: '.fit'
       },
       fields: [
@@ -380,7 +380,7 @@ function uploadToStorage (userId, activityId, file, data, dz, callback, onErrorC
 <style>
 
 #uploadDropZone {
-  height: 150px;
+  height: 160px;
   padding: 10px;
   color: #b1aeae;
   background: transparent;
