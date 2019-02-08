@@ -253,6 +253,16 @@ export default {
         this.segmentID = utils.uuid()
       }
 
+      // convert speed and elevation back to metric
+      // convert units
+      let saveSpeed = this.speed
+      let saveAltitude = this.altitude
+
+      if (this.units === 'imperial') {
+        saveSpeed = this.speed.map(item => utils.miToKm(item))
+        saveAltitude = this.altitude.map(item => utils.ftToM(item))
+      }
+
       this.saving = true
       try {
         let segments = db.collection('segments')
@@ -271,8 +281,8 @@ export default {
             range: this.savedRange,
             time: this.time,
             power: this.power,
-            speed: this.speed,
-            altitude: this.altitude,
+            speed: saveSpeed,
+            altitude: saveAltitude,
             ve: this.ve
           }
 
@@ -414,6 +424,12 @@ export default {
         name: 'Elevation'
       }]
 
+      // convert units
+      if (this.units === 'imperial') {
+        this.speed = this.speed.map(item => utils.kmToMi(item))
+        this.altitude = this.altitude.map(item => utils.mToFt(item))
+      }
+
       this.veService = new VirtualElevation(this.power,
         this.speed,
         this.altitude,
@@ -430,7 +446,10 @@ export default {
     calculateCdA: function () {
       this.dirty = true
       // recalculate virtual elevation
-      this.ve = this.veService.calculateVirtualElevation(this.rho, this.mass, this.crr, this.cda)
+      // use mass in kg for ve calculations
+      let mass = this.units === 'metric' ? this.mass : utils.lbsToKg(this.mass)
+
+      this.ve = this.veService.calculateVirtualElevation(this.rho, mass, this.crr, this.cda)
       let data = []
 
       if (!this.hideElevation) {

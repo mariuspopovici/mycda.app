@@ -216,7 +216,7 @@ export default {
   props: ['theme'],
   methods: {
     convertDistance: function (d) {
-      if (this.userPrefs.units !== 'metric') {
+      if (this.userPrefs.units !== 'metric' && !isNaN(d)) {
         return this.utils.kmToMi(d).toFixed(1)
       } else {
         return d

@@ -68,10 +68,26 @@ export default class CdaUtils {
   }
 
   /**
+   * Convert from miles to km
+   * @param {*} d
+   */
+  miToKm (d) {
+    return d * 1.609
+  }
+
+  /**
    * Convert meters to feet
    */
   mToFt (d) {
-    return Math.floor(d * 3.281)
+    return (d * 3.281)
+  }
+
+  /**
+   * Convert ft to meters
+   * @param {*} d
+   */
+  ftToM (d) {
+    return (d / 3.281)
   }
 
   /**
