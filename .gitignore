@@ -72,3 +72,4 @@ firebase.*
 
 # my stuff
 TODO.txt
+.vscode/launch.json

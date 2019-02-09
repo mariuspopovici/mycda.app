@@ -85,22 +85,30 @@
         </template>
         <template slot="distance" slot-scope="data">
           <div id='distance'>
-            {{convertDistance(data.value)}} {{distanceUnits}}
+            <span v-if="data.value">{{convertDistance(data.value)}} {{distanceUnits}}</span>
           </div>
         </template>
         <template slot="avgPower" slot-scope="data">
-          <span>{{data.value}} W</span>
+          <span v-if="data.value">{{data.value}} W</span>
         </template>
         <template slot="avgSpeed" slot-scope="data">
-            {{convertDistance(data.value)}} {{speedUnits}}
+            <span v-if="data.value">{{convertDistance(data.value)}} {{speedUnits}}</span>
         </template>
         <template slot="actions" slot-scope="row">
           <div align="center">
-            <b-button v-if="row.item.status === 'Error'"
-              size="sm"
-              variant="danger"
-              :to="{name: 'activity.details', params: { id: row.item.id }}"
-            >Error Details</b-button>
+            <span v-if="row.item.status === 'Error'">
+              <b-button
+                size="sm"
+                variant="danger"
+                :id="'errorDetails-' + row.index"
+              >Error Details</b-button>
+              <b-popover :target="'errorDetails-' + row.index"
+                    placement="left"
+                    title="Error Details"
+                    triggers="hover focus"
+                    :content="row.item.statusMessage">
+              </b-popover>
+            </span>
             <b-button v-if="row.item.status === 'Processed'"
               size="sm"
               variant="primary"
@@ -285,11 +293,11 @@ export default {
             id: _this.activityID,
             uid: _this.user.uid,
             status: 'New',
-            timestamp: '-',
+            timestamp: null,
             name: 'New Activity',
-            distance: '-',
-            averageSpeed: '-',
-            averagePower: '-'
+            distance: null,
+            averageSpeed: null,
+            averagePower: null
           }
           // show a placeholder activity while the server parses the .fit file
           _this.activities.unshift(doc)
@@ -326,10 +334,6 @@ export default {
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
           _this.activities = []
-          // refresh all processed
-          // _this.activities = _this.activities.filter(function (item) {
-          //  return item.status !== 'Processed'
-          // })
           querySnapshot.forEach(function (doc) {
             let docData = doc.data()
             _this.activities.push({
@@ -350,26 +354,34 @@ export default {
         .where('status', '==', 'Error')
         .orderBy('timestamp', 'desc')
         .onSnapshot(function (querySnapshot) {
+          let deleted = []
+          let added = []
           querySnapshot.docChanges().forEach(function (change) {
+            let docData = change.doc.data()
             if (change.type === 'added') {
-              let docData = change.data()
-              _this.activities.push({
-                id: change.id,
+              // errors are pushed to the top
+              added.push(docData.id)
+              _this.activities.unshift({
+                id: docData.id,
                 name: docData.name,
                 status: docData.status,
                 statusMessage: docData.statusMessage
               })
+            } else if (change.type === 'removed') {
+              deleted.push(docData.id)
+            }
+            if (deleted.length > 0) {
+              _this.activities = _this.activities.filter(function (item) {
+                return !deleted.includes(item.id)
+              })
+            }
+            if (added.length > 0) {
+              // there are new errors remove 'New' item
+              _this.activities = _this.activities.filter(function (item) {
+                return item.status !== 'New'
+              })
             }
           })
-          // querySnapshot.forEach(function (doc) {
-          //   let docData = doc.data()
-          //   _this.activities.push({
-          //     id: doc.id,
-          //     name: docData.name,
-          //     status: docData.status,
-          //     statusMessage: docData.statusMessage
-          //   })
-          // })
         })
     }
   }

@@ -18,7 +18,7 @@ const app = express();
 const cors = require('cors')({origin: true});
 
 const db = admin.firestore();
-
+db.settings({ timestampsInSnapshots: true })
 
 
 /**
@@ -307,17 +307,19 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     }
     else {
       try {
+        const stats = getActivityStats(data)
         return docRef.update({
           // .fit file metadata
-          timestamp: data.activity.timestamp,
-          distance: session.total_distance,
-          averagePower: session.avg_power,
-          averageSpeed: session.avg_speed,
+          timestamp: stats.timestamp,
+          distance: stats.total_distance,
+          averagePower: stats.avg_power,
+          averageSpeed: stats.avg_speed,
           // location of converted .fit file
           fitFile: jsonFilePath,
           status: 'Processed'
         });
       } catch (e) {
+        console.error(e)
         return docRef.update({
           fitFile: jsonFilePath,
           status: 'Error',
@@ -330,4 +332,63 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     return null;
   }
 })
+
+
+function getActivityStats(data) {
+  const session = data.activity.sessions[0];
+  const timestamp = data.activity.events[0].timestamp;
+  const laps = session.laps;
+  
+  let fileHasStats = session.avg_power && session.avg_speed;
+
+  if (fileHasStats) {
+    return {
+      timestamp: timestamp,
+      total_distance: session.total_distance,
+      total_elapsed_time: session.total_elapsed_time,
+      avg_power: session.avg_power,
+      avg_speed: session.avg_speed
+    }
+  }
+  else {
+    // calculate stats from data
+    let sumPower = 0;
+    let sumSpeed = 0;
+    let recordCount = 0
+    let totalDistance = 0
+    let totalElapsedTime = 0
+    let lapStats = []
+
+    laps.forEach((lap) => {
+      
+      let lapSumPower = 0
+      let lapSumSpeed = 0
+        
+      lap.records.forEach((record) => {
+        recordCount++;
+        sumPower += record.power;
+        sumSpeed += record.speed;
+        lapSumPower += record.power
+        lapSumSpeed += record.speed
+        totalDistance = record.distance
+      })
+
+      lapStats.push({
+        avg_power: lapSumPower / lap.records.length,
+        avg_speed: lapSumSpeed / lap.records.length,
+      });
+    })
+
+    const avgPower = sumPower / recordCount;
+    const avgSpeed = sumSpeed / recordCount;
+
+    return {
+      timestamp: timestamp,
+      total_distance: totalDistance,
+      total_elapsed_time: totalElapsedTime,
+      avg_power: avgPower,
+      avg_speed: avgSpeed
+    }
+  }
+}
 
