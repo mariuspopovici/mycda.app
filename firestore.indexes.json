@@ -1,4 +1,37 @@
 {
-  "indexes": [],
+  "indexes": [
+    {
+      "collectionGroup": "activities",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "uid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "timestamp",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "segments",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "activity",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "range.start",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
   "fieldOverrides": []
 }
