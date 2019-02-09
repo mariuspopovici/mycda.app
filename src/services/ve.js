@@ -17,7 +17,8 @@ export default class VirtualElevation {
 
       let ve = 0
       if (i > 0) {
-        const interval = (this.timeDataPoints[i] - this.timeDataPoints[i - 1]) / 1000
+        let interval = (this.timeDataPoints[i] - this.timeDataPoints[i - 1]) / 1000
+        if (interval === 0) { interval = 1 }
         const previousVelocity = this.speedDataPoints[i - 1] / vFactor
         const a = (Math.pow(velocity, 2) - Math.pow(previousVelocity, 2)) / (2 * velocity * interval)
         const slope = power / (velocity * mass * g) - crr - (a / interval) / g - ((cda * rho * Math.pow(velocity, 2)) / (2 * mass * g))

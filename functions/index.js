@@ -138,46 +138,7 @@ app.get('/:activity', async (req, res) => {
     let fit = JSON.parse(content);
     console.log('Read and parsed contents.');  
 
-    let session = fit.activity.sessions[0];
-
-    let data = {
-      timestamp: fit.activity.timestamp,
-      start_time: session.start_time,
-      total_elapsed_time: session.total_elapsed_time,
-      avg_speed: session.avg_speed,
-      avg_cadence: session.avg_cadence,
-      avg_power: session.avg_power,
-      lap_count: session.laps.length,
-      total_distance: session.total_distance,
-      total_ascent: session.total_ascent,
-      total_descent: session.total_descent,
-      points: [],
-      laps: []
-    }
-
-    console.time('Extracting from .json object.')
-    session.laps.forEach((lap, i) => {
-      data.laps.push({
-        start_time: lap.start_time,
-        total_elapsed_time: lap.total_elapsed_time,
-        total_timer_time: lap.total_timer_time,
-        total_distance: lap.total_distance,
-        total_ascent: lap.total_ascent,
-        total_descent: lap.total_descent,
-        avg_power: lap.avg_power,
-        avg_speed: lap.avg_speed
-      });
-      session.laps[i].records.forEach((record) => {
-        data.points.push({
-          lap: i + 1,
-          timestamp: record.timestamp,
-          distance: record.distance,
-          power: record.power,
-          altitude: record.altitude,
-          speed: record.speed
-        })
-      });
-    });
+    let data = getActivityData(fit)
 
     console.log('Prepared response.');  
 
@@ -307,7 +268,9 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     }
     else {
       try {
-        const stats = getActivityStats(data)
+        const stats = getActivityData(data, {
+          includeDataPoints: false
+        });
         return docRef.update({
           // .fit file metadata
           timestamp: stats.timestamp,
@@ -334,21 +297,50 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
 })
 
 
-function getActivityStats(data) {
+function getActivityData(data, options = { includeDataPoints: true }) {
   const session = data.activity.sessions[0];
   const timestamp = data.activity.events[0].timestamp;
   const laps = session.laps;
-  
+  let stats = null
   let fileHasStats = session.avg_power && session.avg_speed;
 
   if (fileHasStats) {
-    return {
+    // file has stats such as session and lap averages 
+    stats = {
       timestamp: timestamp,
+      start_time: timestamp,
       total_distance: session.total_distance,
       total_elapsed_time: session.total_elapsed_time,
       avg_power: session.avg_power,
-      avg_speed: session.avg_speed
+      avg_speed: session.avg_speed,
+      lap_count: laps.length,
+      laps: [],
+      points: []
     }
+
+    laps.forEach((lap, i) => {
+      stats.laps.push({
+        start_time: lap.start_time,
+        total_elapsed_time: lap.total_elapsed_time,
+        total_distance: lap.total_distance,
+        avg_power: lap.avg_power,
+        avg_speed: lap.avg_speed
+      })
+
+      if (options.includeDataPoints) {
+        lap.records.forEach((record) => {
+          stats.points.push({
+            lap: i + 1,
+            timestamp: record.timestamp,
+            distance: record.distance,
+            power: record.power,
+            altitude: record.altitude,
+            speed: record.speed
+          })
+        });
+      }
+
+    });
   }
   else {
     // calculate stats from data
@@ -358,37 +350,63 @@ function getActivityStats(data) {
     let totalDistance = 0
     let totalElapsedTime = 0
     let lapStats = []
+    let dataPoints = []
 
-    laps.forEach((lap) => {
+    laps.forEach((lap, i) => {
       
       let lapSumPower = 0
       let lapSumSpeed = 0
-        
+      
+      let lapStartDistance = lap.records[0].distance
+      let lapStartElapsedTime = lap.records[0].elapsed_time
+
       lap.records.forEach((record) => {
         recordCount++;
         sumPower += record.power;
         sumSpeed += record.speed;
-        lapSumPower += record.power
-        lapSumSpeed += record.speed
-        totalDistance = record.distance
+        lapSumPower += record.power;
+        lapSumSpeed += record.speed;
+        totalDistance = record.distance;
+        totalElapsedTime = record.elapsed_time;
+
+        if (options.includeDataPoints) {
+          dataPoints.push({
+            lap: i + 1,
+            timestamp: record.timestamp,
+            distance: record.distance,
+            power: record.power,
+            altitude: record.altitude,
+            speed: record.speed
+          });
+        }
+
       })
 
       lapStats.push({
+        start_time: lap.start_time,
         avg_power: lapSumPower / lap.records.length,
         avg_speed: lapSumSpeed / lap.records.length,
+        total_distance: totalDistance - lapStartDistance,
+        total_elapsed_time: totalElapsedTime - lapStartElapsedTime
       });
     })
 
     const avgPower = sumPower / recordCount;
     const avgSpeed = sumSpeed / recordCount;
 
-    return {
+    stats = {
       timestamp: timestamp,
+      start_time: timestamp,
       total_distance: totalDistance,
       total_elapsed_time: totalElapsedTime,
       avg_power: avgPower,
-      avg_speed: avgSpeed
+      avg_speed: avgSpeed,
+      lap_count: laps.length,
+      laps: lapStats,
+      points: dataPoints
     }
   }
+
+  return stats;
 }
 
