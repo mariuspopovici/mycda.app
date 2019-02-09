@@ -252,14 +252,14 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
 
     // get the activity document which this file belongs to and attach it while setting status to 'Processed'
     let docRef = db.collection("activities").doc(activityId);
-    const session = data.activity.sessions[0];
 
-    if (session.sport !== 'cycling') {
+    let result = validateFileContents(data)
+    if (result.invalid) {
       try {
         return docRef.update({
           fitFile: jsonFilePath,
           status: 'Error',
-          statusMessage: `Invalid file. .FIT session sport type is not cycling but ${session.sport}.`
+          statusMessage: result.message
         });
       } catch (e) {
         console.log(e)
@@ -271,7 +271,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
         const stats = getActivityData(data, {
           includeDataPoints: false
         });
-        return docRef.update({
+        var doc = {
           // .fit file metadata
           timestamp: stats.timestamp,
           distance: stats.total_distance,
@@ -280,9 +280,11 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
           // location of converted .fit file
           fitFile: jsonFilePath,
           status: 'Processed'
-        });
+        };
+        return docRef.update(doc);
       } catch (e) {
-        console.error(e)
+        console.error(e);
+        console.log(doc);
         return docRef.update({
           fitFile: jsonFilePath,
           status: 'Error',
@@ -295,6 +297,34 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     return null;
   }
 })
+
+function validateFileContents(data) {
+  
+  let result = {
+    invalid: false,
+    message: ''
+  };
+
+  let session = data.activity.sessions[0];
+
+  if (session.sport !== 'cycling') {
+    result.invalid = true;
+    result.message = `Invalid file. .FIT session sport type is not cycling but ${session.sport}.`;
+  }
+  
+  let record = session.laps[0].records[0]
+  if (! ('speed' in record )) {
+    result.invalid = true;
+    result.message = 'Invalid file. Speed data is missing.';
+  }
+
+  if (! ('power' in record )) {
+    result.invalid = true;
+    result.message = 'Invalid file. Power data is missing.';
+  }
+
+  return result;
+}
 
 
 function getActivityData(data, options = { includeDataPoints: true }) {

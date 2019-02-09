@@ -435,7 +435,8 @@ export default {
         this.speed,
         this.altitude,
         this.time,
-        this.userPrefs.units)
+        this.userPrefs.units,
+        this.userPrefs.dloss)
       this.calculateCdA()
 
       this.loading = false

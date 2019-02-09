@@ -109,6 +109,15 @@
                         label-for="weight">
             <b-form-input id="crr" v-model="crr" type="number" step="0.0001" min="0" max="1" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
+          <b-form-group horizontal
+                        label="Drivetrain Loss (%):"
+                        description="Adjust power numbers down using an estimated drivetrain / friction factor.
+                          Typical values are in the 1% - 5% range depending on if a hub or crank based power meter
+                          is used, the condition of bearings, chain, type of lubricant used etc."
+                        label-class="text-sm-right"
+                        label-for="weight">
+            <b-form-input id="crr" v-model="dloss" type="number" step="1" min="0" max="5" v-on:input="enableSaveUserPrefs"></b-form-input>
+          </b-form-group>
           <b-form-group>
             <div align="right">
               <b-button align="right" variant="primary"
@@ -148,7 +157,8 @@ export default {
     cda: { between: between(0, 1) },
     crr: { between: between(0, 1) },
     bikeWeight: { between: between(0, 50) },
-    weight: { between: between(0, 300) }
+    weight: { between: between(0, 300) },
+    dloss: { between: between(0, 5) }
   },
   props: ['theme'],
   computed: {
@@ -179,7 +189,8 @@ export default {
       weight: 0.0,
       bikeWeight: 0.0,
       cda: 0.0,
-      crr: 0.0
+      crr: 0.0,
+      dloss: 1
     }
   },
   created: function () {
@@ -223,6 +234,7 @@ export default {
           this.bikeWeight = docData.bikeWeight
           this.cda = docData.cda
           this.crr = docData.crr
+          this.dloss = docData.dloss
         }
       }
     },
@@ -284,7 +296,8 @@ export default {
           weight: this.weight,
           bikeWeight: this.bikeWeight,
           cda: this.cda,
-          crr: this.crr
+          crr: this.crr,
+          dloss: this.dloss
         }
         // make sure we have an activity in firestore before the trigger is fired
         await userPrefs.doc(this.user.uid).set(doc)
