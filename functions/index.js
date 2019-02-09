@@ -384,15 +384,15 @@ function getActivityData(data, options = { includeDataPoints: true }) {
 
       lapStats.push({
         start_time: lap.start_time,
-        avg_power: lapSumPower / lap.records.length,
-        avg_speed: lapSumSpeed / lap.records.length,
-        total_distance: totalDistance - lapStartDistance,
+        avg_power: Math.ceil(lapSumPower / lap.records.length),
+        avg_speed: (lapSumSpeed / lap.records.length).toFixed(2),
+        total_distance: (totalDistance - lapStartDistance).toFixed(2),
         total_elapsed_time: totalElapsedTime - lapStartElapsedTime
       });
     })
 
-    const avgPower = sumPower / recordCount;
-    const avgSpeed = sumSpeed / recordCount;
+    const avgPower = Math.ceil(sumPower / recordCount);
+    const avgSpeed = (sumSpeed / recordCount).toFixed(2);
 
     stats = {
       timestamp: timestamp,

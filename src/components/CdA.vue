@@ -348,6 +348,7 @@ export default {
           this.mass = docData.mass
           this.rho = docData.rho
           this.cda = docData.cda
+          this.crr = docData.crr
           this.analysisName = docData.name
           this.analysisDescription = docData.description
 
