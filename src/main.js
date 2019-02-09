@@ -69,8 +69,6 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig)
 
 export const db = firebase.firestore()
-const dbSettings = { timestampsInSnapshots: true }
-db.settings(dbSettings)
 
 Vue.use(Vuelidate)
 Vue.use(BootstrapVue)
