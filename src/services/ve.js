@@ -10,7 +10,6 @@ export default class VirtualElevation {
 
   calculateVirtualElevation (rho, mass, crr, cda) {
     let veDataPoints = []
-    console.log(this.dloss)
     this.powerDataPoints.forEach((power, i) => {
       const vFactor = this.units === 'metric' ? 3.600 : 2.237
       const g = 9.81
