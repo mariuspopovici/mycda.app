@@ -299,11 +299,13 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
 })
 
 function validateFileContents(data) {
-  
-  if (data.type !== 'activity') {
+
+  console.log(data)
+
+  if (data.file_id.type !== 'activity') {
     return {
       invalid: true,
-      message: 'Invalid file. Not an .FIT activity file.'
+      message: 'Invalid file. Not a .FIT activity file.'
     };
   }
 
