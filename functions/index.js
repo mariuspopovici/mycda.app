@@ -300,30 +300,40 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
 
 function validateFileContents(data) {
   
-  let result = {
-    invalid: false,
-    message: ''
-  };
+  if (data.type !== 'activity') {
+    return {
+      invalid: true,
+      message: 'Invalid file. Not an .FIT activity file.'
+    };
+  }
 
   let session = data.activity.sessions[0];
-
   if (session.sport !== 'cycling') {
-    result.invalid = true;
-    result.message = `Invalid file. .FIT session sport type is not cycling but ${session.sport}.`;
+    return {
+      invalid: true,
+      message: `Invalid file. .FIT session sport type is not cycling but ${session.sport}.`
+    };
   }
   
   let record = session.laps[0].records[0]
   if (! ('speed' in record )) {
-    result.invalid = true;
-    result.message = 'Invalid file. Speed data is missing.';
+    return {
+      invalid: true,
+      message: 'Invalid file. Missing speed data.'
+    };
   }
 
   if (! ('power' in record )) {
-    result.invalid = true;
-    result.message = 'Invalid file. Power data is missing.';
+    return {
+      invalid: true,
+      message: 'Invalid file. Missing power data.'
+    };
   }
 
-  return result;
+  return {
+    invalid: false,
+    message: ''
+  };
 }
 
 
