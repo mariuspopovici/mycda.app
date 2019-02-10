@@ -1,4 +1,17 @@
+/**
+ * R. Chung's (rechung@gmail.com) Virtual elevation algorithm implementation.
+ * Described at http://anonymous.coward.free.fr/wattage/cda/indirect-cda.pdf
+ */
 export default class VirtualElevation {
+  /**
+   * Initializes a new instance of the VirtualElevation class
+   * @param {*} power power data point series
+   * @param {*} speed  speed data point series
+   * @param {*} elevation elevation data point series
+   * @param {*} time time data points series
+   * @param {*} units units of measurement (imperial vs metric)
+   * @param {*} dloss percentage drivetrain loss due to friction or measurement point (hub vs crank)
+   */
   constructor (power, speed, elevation, time, units = 'metric', dloss = 0) {
     this.powerDataPoints = power
     this.speedDataPoints = speed
@@ -8,17 +21,28 @@ export default class VirtualElevation {
     this.dloss = dloss
   }
 
+  /**
+   * Calculate virtual elevation points by solving the power equation for slope
+   * @param {*} rho air density
+   * @param {*} mass rider and bike mass
+   * @param {*} crr rolling restistance
+   * @param {*} cda coefficient of drag
+   *
+   * @returns an array of ve points
+   */
   calculateVirtualElevation (rho, mass, crr, cda) {
     let veDataPoints = []
+    const vFactor = this.units === 'metric' ? 3.600 : 2.237
+    const g = 9.81
+
     this.powerDataPoints.forEach((power, i) => {
-      const vFactor = this.units === 'metric' ? 3.600 : 2.237
-      const g = 9.81
       const speed = this.speedDataPoints[i]
       const velocity = speed / vFactor
       let ve = 0
       if (i > 0) {
         let interval = (this.timeDataPoints[i] - this.timeDataPoints[i - 1]) / 1000
         if (interval === 0) { interval = 1 }
+
         const previousVelocity = this.speedDataPoints[i - 1] / vFactor
         const a = (Math.pow(velocity, 2) - Math.pow(previousVelocity, 2)) / (2 * velocity * interval)
         const slope = (power * (1 - this.dloss / 100)) / (velocity * mass * g) - crr - (a / interval) / g - ((cda * rho * Math.pow(velocity, 2)) / (2 * mass * g))
@@ -27,7 +51,7 @@ export default class VirtualElevation {
 
         ve = elevationDelta + veDataPoints[i - 1]
       } else {
-        // set starting elevation to real elevation start
+        // set starting virtual elevation to real elevation starting point
         ve = this.elevationDataPoints[0]
       }
       veDataPoints.push(ve)

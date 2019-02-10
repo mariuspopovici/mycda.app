@@ -1,4 +1,17 @@
+/**
+ * Get's weather data for latitude and longitude.
+ * Uses openweathermap.org web services.
+ */
 export default class Weather {
+  /**
+   * Call web service.
+   * @param {Number} lat latitude
+   * @param {Number} long longitude
+   * @param {String} units units of measurement (metric / imperial)
+   * @param {*} config app config object containing openweathermap API keys
+   *
+   * @returns object {temperature, humidity, dewPoint, pressure}
+   */
   async sendRequest (lat, long, units = 'metric', config) {
     const rp = require('request-promise')
 

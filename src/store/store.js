@@ -6,6 +6,10 @@ import { db } from '../main'
 
 Vue.use(Vuex)
 
+/**
+ * Singleton. Holds and manager user object and user
+ * preferences and makes them available wherever needed in the application.
+ */
 export const store = new Vuex.Store({
   state: {
     user: null,

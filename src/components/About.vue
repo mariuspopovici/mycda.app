@@ -19,6 +19,10 @@
             Developer:
             <a href="mailto:marius@popovici.net">marius@popovici.net</a>
           </p>
+          <p>
+            Virtual Elevation method implementation based on <a href="http://anonymous.coward.free.fr/wattage/cda/indirect-cda.pdf">algorithm</a>
+            described by R. Chung (rechung@gmail.com) - <i>Estimating CdA with a power meter</i>.
+          </p>
           <div>
             FavIcons made by
             <a href="https://www.freepik.com/" title="Freepik">Freepik</a> from
