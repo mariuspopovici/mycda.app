@@ -4,7 +4,6 @@
     <div class="container" id="signup">
       <b-card :bg-variant="theme">
         <h2>Sign Up</h2>
-        <br>
         <b-alert
           variant="danger"
           dismissible
@@ -19,7 +18,9 @@
         >{{signUpMessage}}</b-alert>
         <b-form-group horizontal :label-cols="4" label-size="lg" label="Email:" label-for="email">
           <b-form-input v-on:input="$v.email.$touch()" id="email" size="lg" v-model="email"></b-form-input>
-          <br><b-alert v-if="$v.email.$dirty && $v.email.$invalid" show variant="danger">Email is required and must be a valid email address.</b-alert>
+          <div v-if="$v.email.$dirty && $v.email.$invalid">
+          <br><b-alert show variant="danger">Email is required and must be a valid email address.</b-alert>
+          </div>
         </b-form-group>
         <b-form-group
           horizontal
@@ -29,7 +30,9 @@
           label-for="password"
         >
           <b-form-input id="password" v-on:input="$v.password.$touch()" type="password" size="lg" v-model="password"></b-form-input>
-          <br><b-alert v-if="$v.password.$dirty && $v.password.$invalid" show variant="danger">Password is required and must be between 6 and 25 characters.</b-alert>
+          <div v-if="$v.password.$dirty && $v.password.$invalid">
+          <br><b-alert show variant="danger">Password is required and must be between 6 and 25 characters.</b-alert>
+          </div>
         </b-form-group>
         <b-form-group
           horizontal
@@ -39,7 +42,9 @@
           label-for="password2"
         >
           <b-form-input id="password2" v-on:input="$v.password2.$touch()" type="password" size="lg" v-model="password2"></b-form-input>
-          <br><b-alert v-if="$v.password2.$dirty && $v.password2.$invalid" show variant="danger">Repeat Password is required and must match Password.</b-alert>
+          <div v-if="$v.password2.$dirty && $v.password2.$invalid">
+            <br><b-alert show variant="danger">Repeat Password is required and must match Password.</b-alert>
+          </div>
         </b-form-group>
         <div align="left">
           <b-button size="lg" :disabled="$v.$invalid" variant="success" @click="signUp">Sign Up</b-button>

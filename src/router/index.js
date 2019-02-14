@@ -9,6 +9,9 @@ import Activity from '@/components/Activity'
 import CdA from '@/components/CdA'
 import Profile from '@/components/Profile'
 import RhoCalculator from '@/components/RhoCalculator'
+import ResetPassword from '@/components/ResetPassword'
+import SetPassword from '@/components/SetPassword'
+
 import { store } from '../store/store'
 
 Vue.config.productionTip = false
@@ -114,6 +117,22 @@ const router = new Router({
       path: '/signup',
       name: 'SignUp',
       component: SignUp,
+      meta: {
+        breadcrumbs: []
+      }
+    },
+    {
+      path: '/reset',
+      name: 'reset.password',
+      component: ResetPassword,
+      meta: {
+        breadcrumbs: []
+      }
+    },
+    {
+      path: '/auth/action',
+      name: 'set.password',
+      component: SetPassword,
       meta: {
         breadcrumbs: []
       }

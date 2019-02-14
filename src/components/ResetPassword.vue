@@ -1,34 +1,43 @@
 <template>
   <b-container fluid id="parent">
     <div id="fullscreen_bg" class="fullscreen_bg"/>
-    <div class="container" id="Login">
+    <div class="container" id="Reset">
       <b-row align-v="center">
         <b-col align-self="center" cols="12">
           <b-alert
             variant="danger"
             dismissible
-            :show="loginError"
-            @dismissed="loginError=false"
-          >{{loginMessage}}
+            :show="isError"
+            @dismissed="isError=false"
+          >{{errorMessage}}
+          </b-alert>
+          <b-alert
+            variant="success"
+            dismissible
+            :show="isSuccess"
+            @dismissed="isSuccess=false"
+          >{{successMessage}}
           </b-alert>
           <b-card :bg-variant="theme">
-            <h2>Sign In</h2>
+            <h2>Reset Password</h2>
             <b-form-group horizontal :label-cols="4" label-size="lg" label="Email:" label-for="email">
               <b-form-input id="email" size="lg" v-model="email"></b-form-input>
             </b-form-group>
-            <b-form-group
+            <b-form-group v-if="emailSent"
               horizontal
               :label-cols="4"
               label-size="lg"
-              label="Password:"
+              label="New Password:"
               label-for="password"
             >
-              <b-form-input id="password" type="password" @keyup.native.enter="login" size="lg" v-model="password"></b-form-input>
+              <b-form-input id="password" type="password" @keyup.native.enter="reset" size="lg" v-model="password"></b-form-input>
             </b-form-group>
             <div>
               <b-row>
-                <b-col>Not registered? <router-link to="/signup">Sign up</router-link> now.<p><router-link to="/reset">Trouble signing in?</router-link></p></b-col>
-                <b-col><div align='right'><b-button align='right' size="lg" variant="primary" @click="login">Login</b-button></div></b-col>
+                <b-col>
+                    <div v-if="!emailSent" align='right'><b-button align='right' size="lg" variant="primary" @click="sendEmail">Continue</b-button></div>
+                    <div v-if="emailSent" align='right'><b-button align='right' size="lg" variant="primary" @click="resetPassword">Set Password</b-button></div>
+                </b-col>
               </b-row>
             </div>
           </b-card>
@@ -43,31 +52,38 @@ import firebase from 'firebase/app'
 import 'firebase/auth'
 
 export default {
-  name: 'login',
+  name: 'reset',
   metaInfo: {
-    title: 'Login'
+    title: 'Recover Password'
   },
   props: ['theme'],
   data () {
     return {
       email: '',
       password: '',
-      loginError: false,
-      loginMessage: ''
+      isError: false,
+      errorMessage: '',
+      isSuccess: false,
+      successMessage: '',
+      emailSent: false
     }
   },
   methods: {
-    login: async function () {
+    sendEmail: async function () {
       try {
-        this.loginError = false
+        this.isError = false
         await firebase
           .auth()
-          .signInWithEmailAndPassword(this.email, this.password)
-        this.$router.replace('home')
+          .sendPasswordResetEmail(this.email)
+        this.successMessage = 'A password reset link was sent to the email address you provided.'
+        this.isSuccess = true
       } catch (e) {
-        this.loginError = true
-        this.loginMessage = e.message
+        this.isError = true
+        this.errorMessage = e.message
       }
+    },
+    resetPassword: async function () {
+
     }
   }
 }
@@ -77,7 +93,7 @@ export default {
 #parent {
   padding: 100px 0;
 }
-#Login {
+#Reset {
   max-width: 600px;
   position: absolute;
   top: 50%;
