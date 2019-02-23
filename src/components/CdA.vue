@@ -94,6 +94,9 @@
                         :max-rows="6">
                     </b-form-textarea>
                   </b-form-group>
+                  <b-form-group horizontal description="Mark this as the baseline segment. All other segments in this activity will be compared to this one.">
+                    <b-form-checkbox id="baseline" v-model="isBaseline">Baseline Segment</b-form-checkbox>
+                  </b-form-group>
 
                   <b-form-group horizontal v-if="$v.$invalid">
                     <b-alert show variant="danger">
@@ -103,6 +106,7 @@
                       <div v-if="$v.crr.$invalid">Rolling Resistance is required and must be between 0 and 1.</div>
                     </b-alert>
                   </b-form-group>
+
                   <b-form-group>
                     <div align="right">
                       <b-button v-on:click="exportData" variant="success">Export .CSV</b-button>
@@ -174,6 +178,7 @@ export default {
       segmentID: this.$route.params.sid,
       analysisDescription: '',
       analysisName: '',
+      isBaseline: false,
       time: [],
       power: [],
       altitude: [],
@@ -283,6 +288,7 @@ export default {
             power: this.power,
             speed: saveSpeed,
             altitude: saveAltitude,
+            isBaseline: this.isBaseline,
             ve: this.ve
           }
 
@@ -295,6 +301,7 @@ export default {
             crr: this.crr,
             name: this.analysisName,
             description: this.analysisDescription,
+            isBaseline: this.isBaseline,
             ve: this.ve
           }
           await segments.doc(this.segmentID).update(doc)
@@ -351,6 +358,7 @@ export default {
           this.crr = docData.crr
           this.analysisName = docData.name
           this.analysisDescription = docData.description
+          this.isBaseline = docData.isBaseline ? docData.isBaseline : false
 
           docData.time.forEach((x, i) => {
             if (docData.speed[i] !== 0 && docData.power[i] !== 0) {

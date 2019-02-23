@@ -92,11 +92,24 @@
         :items="segments"
         :fields="fields"
       >
+        <template slot="name" slot-scope="row">
+          <div v-if="row.item.isBaseline">
+            <u v-b-tooltip.hover title="Baseline Segment">{{row.item.name}}</u>
+          </div>
+          <div v-else>
+            {{row.item.name}}
+          </div>
+        </template>
         <template slot="rangeStart" slot-scope="row">
-          {{row.item.rangeStart.toLocaleString()}}
+          {{row.item.rangeStart.toLocaleTimeString()}}
         </template>
         <template slot="rangeEnd" slot-scope="row">
-          {{row.item.rangeEnd.toLocaleString()}}
+          {{row.item.rangeEnd.toLocaleTimeString()}}
+        </template>
+        <template slot="cda" slot-scope="row">
+          <span v-if="row.item.cdaDeltaPct < 0.0" class="text-danger"> {{row.item.cda}}</span>
+          <span v-else-if="row.item.cdaDeltaPct > 0" class="text-success"> {{row.item.cda}}</span>
+          <span v-else> {{row.item.cda}}</span>
         </template>
         <template slot="actions" slot-scope="row">
           <div align="center">
@@ -119,7 +132,11 @@
         </template>
         <template slot="bottom-row" slot-scope="row">
           <td :colspan="row.columns">
-            <div class="text-center"><strong>Mean:</strong> {{meanCdA.toFixed(3)}} <strong>SD:</strong> {{sdCdA.toFixed(3)}} <strong>CV:</strong> {{cvCdA.toFixed(3)}}</div>
+            <div class="text-center"><strong>Mean:</strong> {{meanCdA.toFixed(3)}} <strong>SD:</strong> {{sdCdA.toFixed(3)}} <strong>CV:</strong> {{cvCdA.toFixed(3)}}
+            </div>
+            <div class="text-center text-secondary">
+              <small> * Power/Time Savings Estimated @ 30 mph / 48.2 km/h</small>
+            </div>
           </td>
         </template>
       </b-table>
@@ -178,11 +195,15 @@ export default {
         {key: 'rangeEnd', label: 'End', sortable: true},
         {key: 'cda', label: 'CdA', class: 'text-right'},
         {key: 'crr', label: 'crr', class: 'text-right'},
+        {key: 'cdaDeltaPct', label: 'Δ CdA (%)', class: 'text-right'},
+        {key: 'wattsSaved', label: '* Watts Saved', class: 'text-right'},
+        {key: 'seconds40k', label: '* Sec/40km', class: 'text-right'},
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
       distanceUnits: 'km',
       speedUnits: 'km/h',
       utils: new Utils(),
+      baseLineCdA: 0,
       segments: [],
       segmentName: '',
       segmentID: '',
@@ -258,6 +279,24 @@ export default {
       this.fetchData(this.activityID)
       this.distanceUnits = this.userPrefs.units === 'metric' ? 'km' : 'mi'
       this.speedUnits = this.userPrefs.units === 'metric' ? 'km/h' : 'mph'
+    }
+  },
+  watch: {
+    segments: function () {
+      let _this = this
+      this.segments.forEach(segment => {
+        if (_this.baseLineCdA !== 0) {
+          segment.cdaDelta = _this.baseLineCdA - segment.cda
+          segment.cdaDeltaPct = ((segment.cdaDelta / ((_this.baseLineCdA + segment.cda) / 2)) * 100).toFixed(1)
+          segment.wattsSaved = ((segment.cdaDelta / 0.005) * 5).toFixed(1)
+          segment.seconds40k = Math.floor((segment.cdaDelta / 0.005) * 0.5 * 40)
+        } else {
+          segment.cdaDelta = 0
+          segment.cdaDeltaPct = 'N/A'
+          segment.wattsSaved = 'N/A'
+          segment.seconds40k = 'N/A'
+        }
+      })
     }
   },
   methods: {
@@ -472,6 +511,9 @@ export default {
             _this.segments = []
             querySnapshot.forEach(function (doc) {
               let docData = doc.data()
+              if (docData.isBaseline) {
+                _this.baseLineCdA = docData.cda
+              }
               _this.segments.push({
                 id: doc.id,
                 activity: docData.activity,
@@ -480,7 +522,8 @@ export default {
                 crr: docData.crr,
                 description: docData.description,
                 rangeStart: docData.range.start.toDate(),
-                rangeEnd: docData.range.end.toDate()
+                rangeEnd: docData.range.end.toDate(),
+                isBaseline: docData.isBaseline
               })
             })
           })
