@@ -58,7 +58,7 @@ Vue.component('font-awesome-icon', FontAwesomeIcon)
 
 Vue.use(VueGoogleMaps, {
   load: {
-    key: 'AIzaSyD056ZiuMo_ZSPTgFP-f_haaQKJIp8N4NY',
+    key: process.env.GOOGLE_MAPS_API_KEY,
     libraries: 'drawing'
   }
 })
@@ -71,7 +71,7 @@ const firebaseConfig = {
   databaseURL: process.env.FB_DATABASE_URL,
   projectId: process.env.FB_PROJECT_ID,
   storageBucket: process.env.FB_STORAGE_BUCKET,
-  messagingSenderId: process.envFB_MSG_SENDER_ID
+  messagingSenderId: process.env.FB_MSG_SENDER_ID
 }
 
 firebase.initializeApp(firebaseConfig)
