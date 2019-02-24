@@ -8,6 +8,7 @@
             estimate your drag coefficient (CdA) and /or rolling resistance (crr). Compare data across different runs in order
             to determine if an equipment or position change is beneficial or not.
           </p>
+          <p>MyCdA is free software.</p>
           <p>
             Determine how much faster or efficient a change in position or equipment will make you on race day by using a simple rule of thumb: reducing CdA
             by 0.005 is worth 5W or 0.5 s/km (40 seconds over 40 km) at 30mph*.
@@ -37,6 +38,7 @@
           <p/>
           <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/" aria-label="Fork mariuspopovici/mycda.app on GitHub">GitHub</a>
           <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/issues" data-icon="octicon-issue-opened" aria-label="Issue ntkme/github-buttons on GitHub">Report Issue</a>
+          <p>Have a question? Visit our <b-link href="#/faq">FAQ</b-link> section or <b-link href="https://groups.google.com/forum/#!forum/mycda" target="_new">join</b-link> our user comunity.</p>
         </b-jumbotron>
       </div>
     </div>

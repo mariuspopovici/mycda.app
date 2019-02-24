@@ -20,12 +20,11 @@
           </b-alert>
           <b-card :bg-variant="theme">
             <h2>Reset Password</h2>
-            <b-form-group horizontal :label-cols="4" label-size="lg" label="Email:" label-for="email">
+            <b-form-group label-cols-sm="4" label-size="lg" label="Email:" label-for="email">
               <b-form-input id="email" size="lg" v-model="email"></b-form-input>
             </b-form-group>
             <b-form-group v-if="emailSent"
-              horizontal
-              :label-cols="4"
+              label-cols-sm="4"
               label-size="lg"
               label="New Password:"
               label-for="password"

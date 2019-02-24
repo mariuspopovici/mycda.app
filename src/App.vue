@@ -16,6 +16,18 @@
           </b-navbar-nav>
 
           <b-navbar-nav>
+            <b-nav-item href="#/faq">
+              <i class="fa fa-question-circle"></i>&nbsp;FAQ
+            </b-nav-item>
+          </b-navbar-nav>
+
+          <b-navbar-nav>
+            <b-nav-item target="_new" href="https://groups.google.com/forum/#!forum/mycda">
+              <i class="fa fa-users"></i>&nbsp;Community
+            </b-nav-item>
+          </b-navbar-nav>
+
+          <b-navbar-nav>
             <b-nav-item href="#/about">
               <font-awesome-icon icon="info-circle"/>&nbsp;About
             </b-nav-item>
@@ -24,9 +36,10 @@
           <!-- Right aligned nav items -->
           <b-navbar-nav class="ml-auto">
             <b-nav-form>
+              <i class='fa fa-user'></i>&nbsp;
               <b-navbar-nav>
                 <b-nav-item-dropdown v-if="user" id="navUserOptionsDD"
-                  :text="`<i class='fa fa-user'></i>` + (menuCollapsed ? ' User' : '')"
+                  :text="(menuCollapsed ? ' User' : '')"
                   extra-toggle-classes="nav-link-custom" right>
                   <b-dropdown-header>{{user.displayName ? user.displayName : 'User Options'}}</b-dropdown-header>
                   <b-dropdown-item :to="{name: 'user.profile'}" >My Profile</b-dropdown-item>
@@ -64,6 +77,10 @@
               <li class="list-inline-item">&sdot;</li>
               <li class="list-inline-item">
                 <a href="mailto:support@mycda.app">Contact</a>
+              </li>
+              <li class="list-inline-item">&sdot;</li>
+              <li class="list-inline-item">
+                <b-link href="https://groups.google.com/forum/#!forum/mycda" target="_new">Community</b-link>
               </li>
             </ul>
             <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved. Build {{appVersion}}</p>

@@ -11,6 +11,7 @@ import Profile from '@/components/Profile'
 import RhoCalculator from '@/components/RhoCalculator'
 import ResetPassword from '@/components/ResetPassword'
 import SetPassword from '@/components/SetPassword'
+import Faq from '@/components/Faq'
 
 import { store } from '../store/store'
 
@@ -43,6 +44,15 @@ const router = new Router({
       component: Upload,
       meta: {
         requiresAuth: true,
+        breadcrumbs: []
+      }
+    },
+    {
+      path: '/faq',
+      name: 'faq',
+      component: Faq,
+      meta: {
+        requiresAuth: false,
         breadcrumbs: []
       }
     },

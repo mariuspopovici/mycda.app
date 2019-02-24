@@ -26,7 +26,7 @@
           @keyup.native.esc="cancelEdit" @keyup.native.enter="updateTitle" @blur.native="cancelEdit">
         </b-form-input>
         <b-input-group-append>
-          <b-btn variant="success" v-on:click="updateTitle" v-b-tooltip.hover title="Rename Activity"><i class="fa fa-check"></i></b-btn>
+          <b-button variant="success" v-on:click="updateTitle" v-b-tooltip.hover title="Rename Activity"><i class="fa fa-check"></i></b-button>
         </b-input-group-append>
       </b-input-group>
     </h2>
@@ -36,50 +36,86 @@
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions"
         :autoResize="true"
         v-on:relayout="onRelayout"/>
-      <b-card no-body :bg-variant="theme">
-        <b-tabs small pills card v-on:input="selectLap">
-          <b-tab title="Entire Activity" active>
-            <p class="card-text"><b>Date:</b> {{timestamp}}</p>
-            <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
-            <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance)}} {{distanceUnits}} </p>
-            <p class="card-text"><b>Avg Speed:</b> {{convertDistance(avgSpeed)}} {{speedUnits}}</p>
-            <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
-          </b-tab>
-          <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
-            <b-button v-if="!lapZoomedIn" size="sm" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
-            <b-button v-if="lapZoomedIn" size="sm" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
-            <b-button variant="success" size="sm" :to="{
-              name: 'activity.cda',
-              params: {
-                id: activityID,
-                range: getLapRange(index),
-                data: {time: time, speed: speed, power: power, altitude: altitude},
-                description: 'Lap ' + (index + 1)
-              }}">Analyze</b-button>
-            <p>
-            <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
-            <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
-            <p class="card-text"><b>Distance:</b> {{convertDistance(lap.total_distance)}} {{distanceUnits}} </p>
-            <p class="card-text"><b>Avg Speed:</b> {{convertDistance(lap.avg_speed)}} {{speedUnits}}</p>
-            <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
-          </b-tab>
-          <b-tab title="Selection" v-if="selectionActive" active>
-            <b-button size="sm" v-on:click="removeSelection" variant="secondary">Undo Selection</b-button>
-            <b-button variant="success" size="sm" :to="{
-              name: 'activity.cda',
-              params: {
-                id: activityID,
-                range: selectionXRange,
-                data: {time: time, speed: speed, power: power, altitude: altitude},
-                description: 'Selection'
-              }}">Analyze</b-button>
-              <p>
-              <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
-              <p class="card-text"><b>End Time:</b> {{selectionXRange.end.toLocaleString()}}</p>
-              <p class="card-text"><b>Duration (h:m:s):</b> {{utils.secondsToHms((this.selectionXRange.end - this.selectionXRange.start) / 1000)}}</p>
-          </b-tab>
-        </b-tabs>
-      </b-card>
+      <b-row>
+        <b-col>
+          <b-card no-body :bg-variant="theme">
+            <b-tabs small pills card v-on:input="selectLap">
+              <b-tab title="Entire Activity" active>
+                <p class="card-text"><b>Date:</b> {{timestamp}}</p>
+                <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
+                <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance)}} {{distanceUnits}} </p>
+                <p class="card-text"><b>Avg Speed:</b> {{convertDistance(avgSpeed)}} {{speedUnits}}</p>
+                <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
+              </b-tab>
+              <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
+                <b-button v-if="!lapZoomedIn" size="sm" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
+                <b-button v-if="lapZoomedIn" size="sm" v-on:click="zoomLap(-1)" variant="secondary">Reset Zoom</b-button>
+                <b-button variant="success" size="sm" :to="{
+                  name: 'activity.cda',
+                  params: {
+                    id: activityID,
+                    range: getLapRange(index),
+                    data: {time: time, speed: speed, power: power, altitude: altitude},
+                    description: 'Lap ' + (index + 1)
+                  }}">Analyze</b-button>
+                <p>
+                <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
+                <p class="card-text"><b>Duration (h:m:s):</b> {{(new Date(parseInt(lap.total_elapsed_time) * 1000)).toUTCString().match(/(\d\d:\d\d:\d\d)/)[0]}}</p>
+                <p class="card-text"><b>Distance:</b> {{convertDistance(lap.total_distance)}} {{distanceUnits}} </p>
+                <p class="card-text"><b>Avg Speed:</b> {{convertDistance(lap.avg_speed)}} {{speedUnits}}</p>
+                <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
+              </b-tab>
+              <b-tab title="Selection" v-if="selectionActive" active>
+                <b-button size="sm" v-on:click="removeSelection" variant="secondary">Undo Selection</b-button>
+                <b-button variant="success" size="sm" :to="{
+                  name: 'activity.cda',
+                  params: {
+                    id: activityID,
+                    range: selectionXRange,
+                    data: {time: time, speed: speed, power: power, altitude: altitude},
+                    description: 'Selection'
+                  }}">Analyze</b-button>
+                  <p>
+                  <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
+                  <p class="card-text"><b>End Time:</b> {{selectionXRange.end.toLocaleString()}}</p>
+                  <p class="card-text"><b>Duration (h:m:s):</b> {{utils.secondsToHms((this.selectionXRange.end - this.selectionXRange.start) / 1000)}}</p>
+              </b-tab>
+            </b-tabs>
+            </b-card>
+          </b-col>
+          <b-col md=8 v-if="showMap">
+            <GmapMap
+              id="map"
+              ref="map"
+              map-type-id="terrain"
+              :zoom="13"
+              style="width: 100%; height: 100%;"
+              :center="mapCenter"
+              :options="{
+                zoomControl: true,
+                mapTypeControl: false,
+                scaleControl: true,
+                streetViewControl: true,
+                rotateControl: false,
+                fullscreenControl: true,
+                disableDefaultUi: false
+              }"
+              >
+              <gmap-polyline v-if="location.length > 0" :path="location" ref="polyline"
+                :options="{
+                  strokeColor: '#FF0000',
+                  strokeWeight: 4
+                }"
+                ></gmap-polyline>
+              <gmap-polyline v-if="location.length > 0" :path="selectionLocation" ref="polyline"
+                :options="{
+                  strokeColor: '#0000FF',
+                  strokeWeight: 4
+                }"
+                ></gmap-polyline>
+            </GmapMap>
+          </b-col>
+        </b-row>
       <br>
       <b-table
         v-if="segments.length > 0"
@@ -107,9 +143,9 @@
           {{row.item.rangeEnd.toLocaleTimeString()}}
         </template>
         <template slot="cda" slot-scope="row">
-          <span v-if="row.item.cdaDeltaPct < 0.0" class="text-danger"> {{row.item.cda}}</span>
-          <span v-else-if="row.item.cdaDeltaPct > 0" class="text-success"> {{row.item.cda}}</span>
-          <span v-else> {{row.item.cda}}</span>
+          <span v-if="row.item.cdaDeltaPct < 0.0" class="text-danger"> <i class="fa fa-arrow-up"></i> {{row.item.cda}}</span>
+          <span v-else-if="row.item.cdaDeltaPct > 0" class="text-success"> <i class="fa fa-arrow-down"></i> {{row.item.cda}}</span>
+          <span v-else>{{row.item.cda}}</span>
         </template>
         <template slot="actions" slot-scope="row">
           <div align="center">
@@ -148,6 +184,7 @@
 import { db } from '../main'
 import VuePlotly from '@statnett/vue-plotly'
 import Utils from '@/services/utils'
+import { gmapApi } from 'vue2-google-maps'
 const rp = require('request-promise')
 
 export default {
@@ -160,6 +197,15 @@ export default {
   },
   props: ['theme'],
   computed: {
+    mapBounds () {
+      let bounds = new this.google.maps.LatLngBounds()
+      this.location.forEach(point => {
+        bounds.extend(point)
+      })
+
+      return bounds
+    },
+    google: gmapApi,
     user () {
       return this.$store.getters.getUser
     },
@@ -196,10 +242,11 @@ export default {
         {key: 'cda', label: 'CdA', class: 'text-right'},
         {key: 'crr', label: 'crr', class: 'text-right'},
         {key: 'cdaDeltaPct', label: 'Δ CdA (%)', class: 'text-right'},
-        {key: 'wattsSaved', label: '* Watts Saved', class: 'text-right'},
-        {key: 'seconds40k', label: '* Sec/40km', class: 'text-right'},
+        {key: 'wattsSaved', label: 'Watts Saved*', class: 'text-right'},
+        {key: 'seconds40k', label: 'Sec/40km TT*', class: 'text-right'},
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
+      showMap: false,
       distanceUnits: 'km',
       speedUnits: 'km/h',
       utils: new Utils(),
@@ -221,6 +268,7 @@ export default {
       timestamp: '',
       lapZoomedIn: false,
       laps: [],
+      mapCenter: {lat: -10, lng: -10},
       initXRange: null,
       selectionXRange: null,
       chartData: [],
@@ -228,6 +276,9 @@ export default {
       altitude: [],
       power: [],
       speed: [],
+      location: [],
+      selectionLocation: [],
+      mapSelectionBounds: null,
       chartLayout: {
         title: '',
         dragmode: 'zoom+select',
@@ -321,6 +372,7 @@ export default {
       this.$refs.confirmDeleteModal.show()
     },
     updateTitle: async function () {
+      console.log('update title')
       let docRef = db.collection('activities').doc(this.activityID)
       let _this = this
       try {
@@ -364,6 +416,7 @@ export default {
         range: [this.initXRange.start, this.initXRange.end]
       }
       this.chartLayout.title.text = 'Selection'
+      this.resetMapSelection()
     },
     onRelayout: function (event) {
       // check if this was triggered by a drag to zoom event
@@ -373,6 +426,7 @@ export default {
           start: new Date(event['xaxis.range[0]']),
           end: new Date(event['xaxis.range[1]'])
         }
+        this.setMapSelection(this.selectionXRange.start, this.selectionXRange.end)
         this.chartLayout.title.text = 'Selection'
       }
     },
@@ -381,6 +435,9 @@ export default {
         showgrid: false,
         range: [this.initXRange.start, this.initXRange.end]
       }
+
+      this.resetMapZoom()
+
       this.lapZoomedIn = false
     },
     getLapRange: function (index) {
@@ -411,6 +468,9 @@ export default {
           showgrid: false,
           range: [start, end]
         }
+
+        this.zoomMapSelection()
+
         this.lapZoomedIn = true
       }
     },
@@ -455,11 +515,56 @@ export default {
           range: [this.initXRange.start, this.initXRange.end]
         }
         this.lapZoomedIn = false
+        this.resetMapSelection()
         return
       }
 
       this.chartLayout.shapes = this.lapShape(index - 1)
       this.chartLayout.title.text = 'Lap ' + (index)
+
+      var lap = this.laps[index - 1]
+      var start = new Date(this.laps[index - 1].start_time)
+      var end = new Date(start)
+      end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
+
+      this.setMapSelection(start, end)
+    },
+    setMapSelection: function (start, end, zoomIn = false) {
+      if (this.showMap) {
+        this.mapSelectionBounds = new this.google.maps.LatLngBounds()
+        let lapCoordinates = this.location.filter((point, i) => {
+          if (start < this.time[i] && end > this.time[i]) {
+            this.mapSelectionBounds.extend(point)
+            return true
+          } else {
+            return false
+          }
+        })
+        this.selectionLocation = lapCoordinates
+        if (zoomIn) {
+          this.zoomMapSelection()
+        }
+      }
+    },
+    resetMapSelection: function () {
+      if (this.showMap) {
+        this.selectionLocation = []
+        this.$refs.map.$mapPromise.then((map) => {
+          map.fitBounds(this.mapBounds)
+        })
+      }
+    },
+    zoomMapSelection: function () {
+      this.$refs.map.$mapPromise.then((map) => {
+        map.fitBounds(this.mapSelectionBounds)
+      })
+    },
+    resetMapZoom: function () {
+      if (this.showMap) {
+        this.$refs.map.$mapPromise.then((map) => {
+          map.fitBounds(this.mapBounds)
+        })
+      }
     },
     fetchData: async function (id) {
       const token = await this.user.getIdToken(true)
@@ -544,15 +649,19 @@ export default {
       this.totalDistance = parseFloat(data.total_distance).toFixed(1)
       this.laps = data.laps
       let _this = this
-
       data.points.forEach(function (point) {
         if (point.power < 2000) { // eliminate ridiculous spikes
           _this.time.push(new Date(point.timestamp))
           _this.power.push(point.power)
           _this.altitude.push(point.altitude * 1000)
           _this.speed.push(point.speed)
+          _this.location.push({lat: parseFloat(point.lat), lng: parseFloat(point.long)})
         }
       })
+
+      if (this.location[0].lat && this.location[0].lng) {
+        this.showMap = true
+      }
 
       let chartSpeed = this.speed
       let chartAltitude = this.altitude
@@ -603,6 +712,15 @@ export default {
       // go chart this
       this.chartData = [tracePower, traceAltitude, traceSpeed]
       this.loading = false
+    },
+
+    centerMap: function (locationArray) {
+      var bounds = new this.google.maps.LatLngBounds()
+      locationArray.forEach(function (point) {
+        bounds.extend(point)
+      })
+
+      this.mapCenter = bounds.getCenter()
     }
   }
 }

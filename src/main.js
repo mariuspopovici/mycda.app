@@ -5,6 +5,7 @@ import App from './App'
 import router from './router'
 import BootstrapVue from 'bootstrap-vue'
 import Meta from 'vue-meta'
+import * as VueGoogleMaps from 'vue2-google-maps'
 
 import firebase from 'firebase/app'
 import 'firebase/firestore'
@@ -54,6 +55,13 @@ library.add(faClipboardCheck)
 library.add(faCloudUploadAlt)
 
 Vue.component('font-awesome-icon', FontAwesomeIcon)
+
+Vue.use(VueGoogleMaps, {
+  load: {
+    key: 'AIzaSyD056ZiuMo_ZSPTgFP-f_haaQKJIp8N4NY',
+    libraries: 'drawing'
+  }
+})
 
 Vue.config.productionTip = false
 

@@ -203,6 +203,10 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
   await mkdirp(tempLocalDir);
   
   try {
+    
+    // get the activity document which this file belongs to and attach it while setting status to 'Processed'
+    let docRef = db.collection("activities").doc(activityId);
+
     await bucket.file(filePath).download({destination: tempLocalFile});
     console.log('Downloaded activity .fit file locally in ' + tempLocalFile);
     
@@ -220,17 +224,25 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     });
 
     // can't promisify this because it depends on config passed through constructor of EasyFit
-    let data = await new Promise((resolve, reject) => {
-      easyFit.parse(content, (error, data) => {
-        if (error) {
-          reject(error)
-        } else {
-          console.log('Succesfully parsed .fit activity file.');
-          resolve(data);
-        }
+    try {
+      let data = await new Promise((resolve, reject) => {
+        easyFit.parse(content, (error, data) => {
+          if (error) {
+            reject(error)
+          } else {
+            console.log('Succesfully parsed .fit activity file.');
+            resolve(data);
+          }
+        });
       });
-    });
-    
+    } catch(error) {
+      console.log(error);
+      await docRef.update({
+        status: 'Error',
+        statusMessage: `An error occurred while parsing .FIT file. ${error}`
+      });
+      return null;
+    }
     
     // we store the serialized FIT data as a .json file in Firestore to avoid moving it across the network unless we really need the data
     // we will however keep some metadata in the activity document in firestore for convenience
@@ -249,9 +261,6 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     // once the file has been converted delete the local files to free up disk space.
     fs.unlinkSync(tempLocalJsonFile);
     fs.unlinkSync(tempLocalFile);
-
-    // get the activity document which this file belongs to and attach it while setting status to 'Processed'
-    let docRef = db.collection("activities").doc(activityId);
 
     let result = validateFileContents(data)
     if (result.invalid) {
@@ -341,7 +350,7 @@ function validateFileContents(data) {
 
 function getActivityData(data, options = { includeDataPoints: true }) {
   const session = data.activity.sessions[0];
-  const timestamp = data.activity.events[0].timestamp;
+  const timestamp = session.laps[0].records[0].timestamp;
   const laps = session.laps;
   let stats = null
   let fileHasStats = session.avg_power && session.avg_speed;
@@ -377,7 +386,9 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             distance: record.distance,
             power: record.power,
             altitude: record.altitude,
-            speed: record.speed
+            speed: record.speed,
+            lat: record.position_lat,
+            long: record.position_long
           })
         });
       }

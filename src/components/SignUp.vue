@@ -16,15 +16,14 @@
           :show="signUpSuccess"
           @dismissed="signUpSuccess=false"
         >{{signUpMessage}}</b-alert>
-        <b-form-group horizontal :label-cols="4" label-size="lg" label="Email:" label-for="email">
+        <b-form-group label-cols-sm="4" label-size="lg" label="Email:" label-for="email">
           <b-form-input v-on:input="$v.email.$touch()" id="email" size="lg" v-model="email"></b-form-input>
           <div v-if="$v.email.$dirty && $v.email.$invalid">
           <br><b-alert show variant="danger">Email is required and must be a valid email address.</b-alert>
           </div>
         </b-form-group>
         <b-form-group
-          horizontal
-          :label-cols="4"
+          label-cols-sm="4"
           label-size="lg"
           label="Password:"
           label-for="password"
@@ -35,8 +34,7 @@
           </div>
         </b-form-group>
         <b-form-group
-          horizontal
-          :label-cols="4"
+          label-cols-sm="4"
           label-size="lg"
           label="Repeat Password:"
           label-for="password2"

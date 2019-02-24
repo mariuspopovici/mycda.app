@@ -33,7 +33,7 @@
                 </b-form-group>
                 <b-form-group
                     description="Enter air density. Use the Rho Calculator to derive the value."
-                    label="Air Density (kg/m<sup>3</sup>)"
+                    label="Air Density (kg/m^3)"
                     label-for="rho"
                 >
                   <b-input-group>
@@ -71,19 +71,18 @@
             <b-col cols=12>
               <br>
               <b-card :bg-variant="theme">
-                <b-form-group horizontal
-                              breakpoint="lg"
+                <b-form-group label-cols-lg="3" label-cols-sm="4"
                               label="Notes"
                               label-size="lg"
                               label-class="font-weight-bold pt-0"
                               class="mb-0">
-                  <b-form-group horizontal
+                  <b-form-group label-cols-lg="3" label-cols-sm="4"
                                 label="Segment Name:"
                                 label-class="text-sm-right"
                                 label-for="name">
                     <b-form-input id="name" v-model="analysisName" v-on:input="setDirty"></b-form-input>
                   </b-form-group>
-                  <b-form-group horizontal
+                  <b-form-group label-cols-lg="3" label-cols-sm="4"
                                 label="Description:"
                                 label-class="text-sm-right"
                                 label-for="description">
@@ -94,11 +93,12 @@
                         :max-rows="6">
                     </b-form-textarea>
                   </b-form-group>
-                  <b-form-group horizontal description="Mark this as the baseline segment. All other segments in this activity will be compared to this one.">
+                  <b-form-group label-cols-lg="3" label-cols-sm="4"
+                    description="Mark this as the baseline segment. All other segments in this activity will be compared to this one.">
                     <b-form-checkbox id="baseline" v-model="isBaseline">Baseline Segment</b-form-checkbox>
                   </b-form-group>
 
-                  <b-form-group horizontal v-if="$v.$invalid">
+                  <b-form-group label-cols-lg="3" label-cols-sm="4" v-if="$v.$invalid">
                     <b-alert show variant="danger">
                       <div v-if="$v.analysisName.$invalid">Segment name is required and length must be between 1 and 255.</div>
                       <div v-if="$v.mass.$invalid">Total Mass is required and must be between 40 and 300.</div>
