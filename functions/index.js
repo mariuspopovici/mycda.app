@@ -223,9 +223,10 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
       mode: 'cascade',
     });
 
+    let data = null
     // can't promisify this because it depends on config passed through constructor of EasyFit
     try {
-      let data = await new Promise((resolve, reject) => {
+        data = await new Promise((resolve, reject) => {
         easyFit.parse(content, (error, data) => {
           if (error) {
             reject(error)

@@ -36,11 +36,12 @@
           <!-- Right aligned nav items -->
           <b-navbar-nav class="ml-auto">
             <b-nav-form>
-              <i class='fa fa-user'></i>&nbsp;
+              <i class='fa fa-user'></i>
               <b-navbar-nav>
                 <b-nav-item-dropdown v-if="user" id="navUserOptionsDD"
                   :text="(menuCollapsed ? ' User' : '')"
                   extra-toggle-classes="nav-link-custom" right>
+                  <b-tooltip v-if="!menuCollapsed" target="navUserOptionsDD" title="User Options"></b-tooltip>
                   <b-dropdown-header>{{user.displayName ? user.displayName : 'User Options'}}</b-dropdown-header>
                   <b-dropdown-item :to="{name: 'user.profile'}" >My Profile</b-dropdown-item>
                   <b-dropdown-item v-on:click="signOut"><font-awesome-icon icon="sign-out-alt"/>&nbsp;Sign Out</b-dropdown-item>
