@@ -555,9 +555,11 @@ export default {
       }
     },
     zoomMapSelection: function () {
-      this.$refs.map.$mapPromise.then((map) => {
-        map.fitBounds(this.mapSelectionBounds)
-      })
+      if (this.showMap) {
+        this.$refs.map.$mapPromise.then((map) => {
+          map.fitBounds(this.mapSelectionBounds)
+        })
+      }
     },
     resetMapZoom: function () {
       if (this.showMap) {
