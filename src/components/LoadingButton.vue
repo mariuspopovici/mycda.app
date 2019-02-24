@@ -1,7 +1,7 @@
 <template>
   <button class="btn btn-secondary" type="button" :disabled="loading">
     <div id="loadingButton" v-if="loading">
-      <font-awesome-icon icon="spinner" spin/>
+      <b-spinner small/>
       &nbsp;{{loadingCaption}}
     </div>
     <div id="loadingButton" v-else>

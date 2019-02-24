@@ -113,6 +113,7 @@
                       <b-button align="right" variant="primary"
                         :disabled="!dirty || $v.$invalid"
                         v-on:click="saveAnalysis">
+                        <b-spinner small v-if="saving"/>
                         <span v-if="dirty && !saving">Save</span><span v-else-if="saving">Saving...</span><span v-else>Saved</span
                         ></b-button>
                     </div>
