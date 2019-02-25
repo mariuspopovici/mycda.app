@@ -23,7 +23,7 @@
       <b-input-group v-if="editTitleEnabled">
         <b-form-input ref="editActivityTitle"
           v-model="activityName"
-          @keyup.native.esc="cancelEdit" @keyup.native.enter="updateTitle" @blur.native="cancelEdit">
+          @keyup.native.esc="cancelEdit" @keyup.native.enter="updateTitle">
         </b-form-input>
         <b-input-group-append>
           <b-button variant="success" v-on:click="updateTitle" v-b-tooltip.hover title="Rename Activity"><i class="fa fa-check"></i></b-button>

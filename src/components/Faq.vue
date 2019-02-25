@@ -53,7 +53,7 @@
               <li>type</li>
             </ul>
           </b-card-text>
-
+          <div class="text-right"><b-link v-on:click='scrollTop' href="#" class="card-link">Top</b-link></div>
         </b-card>
 
         <br>
@@ -107,6 +107,7 @@
               </li>
             </ul>
           </b-card-text>
+          <div class="text-right"><b-link v-on:click='scrollTop' href="#" class="card-link">Top</b-link></div>
         </b-card>
 
         <br>
@@ -125,6 +126,8 @@
           <br>
           <b-img src="./static/images/faq/cdaright.png" thumbnail center rounded fluid alt="CdA estimate about right"/>
           <figcaption class='text-center'>CdA estimate about right</figcaption>
+
+          <div class="text-right"><b-link v-on:click='scrollTop' href="#" class="card-link">Top</b-link></div>
         </b-card>
 
       </div>
@@ -144,6 +147,11 @@ export default {
     };
   },
   props: ["theme"],
-  methods: {}
+  methods: {
+    scrollTop: function() {
+      document.body.scrollTop = 0; // For Safari
+      document.documentElement.scrollTop = 0; // For Chrome, Firefox, IE and Opera
+    }
+  }
 };
 </script>
