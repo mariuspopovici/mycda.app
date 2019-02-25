@@ -355,7 +355,7 @@ export default {
       if (this.userPrefs.units !== 'metric') {
         return this.utils.kmToMi(d).toFixed(2)
       } else {
-        return d
+        return d.toFixed(2)
       }
     },
     onconfirmDeleteSegment: async function () {
