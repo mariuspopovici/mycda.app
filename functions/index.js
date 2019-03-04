@@ -319,6 +319,13 @@ function validateFileContents(data) {
     };
   }
 
+  if (session.length === 0) {
+    return {
+      invalid: true,
+      message: `Invalid file. Missing FIT session data.`
+    };
+  }
+
   let session = data.activity.sessions[0];
   if (session.sport !== 'cycling') {
     return {
@@ -327,6 +334,13 @@ function validateFileContents(data) {
     };
   }
   
+  if (session.laps.length === 0) {
+    return {
+      invalid: true,
+      message: `Invalid file. Missing lap data.`
+    };
+  }
+
   let record = session.laps[0].records[0]
   if (! ('speed' in record )) {
     return {

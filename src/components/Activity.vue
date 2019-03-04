@@ -35,7 +35,7 @@
     <div id='activityDetails' ref="activityDetails" v-else>
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions"
         :autoResize="true"
-        v-on:relayout="onRelayout"/>
+        v-on:relayout="onRelayout" v-on:hover="onChartHover"/>
       <b-row>
         <b-col>
           <b-card no-body :bg-variant="theme">
@@ -72,7 +72,7 @@
                   params: {
                     id: activityID,
                     range: selectionXRange,
-                    data: {time: time, speed: speed, power: power, altitude: altitude},
+                    data: {time: time, speed: speed, power: power, altitude: altitude, laps: laps},
                     description: 'Selection'
                   }}">Analyze</b-button>
                   <p>
@@ -90,6 +90,7 @@
               map-type-id="terrain"
               :zoom="13"
               style="width: 100%; height: 100%;"
+              :styles="mapStyles"
               :center="mapCenter"
               :options="{
                 zoomControl: true,
@@ -98,7 +99,8 @@
                 streetViewControl: true,
                 rotateControl: false,
                 fullscreenControl: true,
-                disableDefaultUi: false
+                disableDefaultUi: false,
+                styles: this.mapStyles
               }"
               >
               <gmap-polyline v-if="location.length > 0" :path="location" ref="polyline"
@@ -110,9 +112,44 @@
               <gmap-polyline v-if="location.length > 0" :path="selectionLocation" ref="polyline"
                 :options="{
                   strokeColor: '#0000FF',
-                  strokeWeight: 4
+                  strokeWeight: 5
                 }"
-                ></gmap-polyline>
+              ></gmap-polyline>
+              <GmapMarker
+                :position="mapMarker"
+                :clickable="false"
+                :draggable="false"
+                :icon="{
+                  path: this.google ? this.google.maps.SymbolPath.CIRCLE : '',
+                  scale: 7,
+                  fillColor: 'white',
+                  fillOpacity: 0.8,
+                }"
+              />
+              <GmapMarker
+                :position="startMapMarker"
+                :clickable="false"
+                :draggable="false"
+                :icon="{
+                  path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+                  scale: 1.5,
+                  fillColor: 'green',
+                  fillOpacity: 0.8,
+                  anchor: {x:12,y:24},
+                }"
+              />
+              <GmapMarker
+                :position="endMapMarker"
+                :clickable="false"
+                :draggable="false"
+                :icon="{
+                  path: 'M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z',
+                  scale: 1.5,
+                  fillColor: 'red',
+                  fillOpacity: 0.8,
+                  anchor: {x:12,y:24}
+                }"
+              />
             </GmapMap>
           </b-col>
         </b-row>
@@ -185,6 +222,7 @@ import { db } from '../main'
 import VuePlotly from '@statnett/vue-plotly'
 import Utils from '@/services/utils'
 import { gmapApi } from 'vue2-google-maps'
+import mapThemes from '../assets/mapthemes/activitymapstyle.json'
 const rp = require('request-promise')
 
 export default {
@@ -205,6 +243,7 @@ export default {
 
       return bounds
     },
+
     google: gmapApi,
     user () {
       return this.$store.getters.getUser
@@ -215,7 +254,7 @@ export default {
     meanCdA () {
       if (this.segments.length > 0) {
         return (this.segments.reduce(function (acc, curr) {
-          return acc + curr.cda
+          return acc + parseFloat(curr.cda)
         }, 0)) / this.segments.length
       }
     },
@@ -236,17 +275,18 @@ export default {
   data () {
     return {
       fields: [
-        {key: 'name', label: 'Segment Name', sortable: true},
+        {key: 'name', label: 'Segment Name'},
         {key: 'rangeStart', label: 'Start', sortable: true, sortDirection: 'asc'},
         {key: 'rangeEnd', label: 'End', sortable: true},
-        {key: 'cda', label: 'CdA', class: 'text-right'},
+        {key: 'cda', label: 'CdA', class: 'text-right', sortable: true},
         {key: 'crr', label: 'crr', class: 'text-right'},
-        {key: 'cdaDeltaPct', label: 'Δ CdA (%)', class: 'text-right'},
-        {key: 'wattsSaved', label: 'Watts Saved*', class: 'text-right'},
-        {key: 'seconds40k', label: 'Sec/40km TT*', class: 'text-right'},
+        {key: 'cdaDeltaPct', label: 'Δ CdA (%)', class: 'text-right', sortable: true},
+        {key: 'wattsSaved', label: 'Watts Saved*', class: 'text-right', sortable: true},
+        {key: 'seconds40k', label: 'Sec/40km TT*', class: 'text-right', sortable: true},
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
       showMap: false,
+      mapStyles: this.theme === 'dark' ? mapThemes.dark : mapThemes.light,
       distanceUnits: 'km',
       speedUnits: 'km/h',
       utils: new Utils(),
@@ -276,6 +316,9 @@ export default {
       altitude: [],
       power: [],
       speed: [],
+      mapMarker: {lat: 0, lng: 0},
+      startMapMarker: {lat: 0, lng: 0},
+      endMapMarker: {lat: 0, lng: 0},
       location: [],
       selectionLocation: [],
       mapSelectionBounds: null,
@@ -337,8 +380,8 @@ export default {
       let _this = this
       this.segments.forEach(segment => {
         if (_this.baseLineCdA !== 0) {
-          segment.cdaDelta = _this.baseLineCdA - segment.cda
-          segment.cdaDeltaPct = ((segment.cdaDelta / ((_this.baseLineCdA + segment.cda) / 2)) * 100).toFixed(1)
+          segment.cdaDelta = parseFloat(_this.baseLineCdA) - parseFloat(segment.cda)
+          segment.cdaDeltaPct = ((segment.cdaDelta / ((parseFloat(_this.baseLineCdA) + parseFloat(segment.cda)) / 2)) * 100).toFixed(1)
           segment.wattsSaved = ((segment.cdaDelta / 0.005) * 5).toFixed(1)
           segment.seconds40k = Math.floor((segment.cdaDelta / 0.005) * 0.5 * 40)
         } else {
@@ -428,6 +471,12 @@ export default {
         }
         this.setMapSelection(this.selectionXRange.start, this.selectionXRange.end)
         this.chartLayout.title.text = 'Selection'
+      }
+    },
+    onChartHover: function (hoverData) {
+      let pointNumber = hoverData.points[0].pointNumber
+      if (pointNumber && this.showMap) {
+        this.mapMarker = this.location[pointNumber]
       }
     },
     resetZoom: function () {
@@ -540,6 +589,8 @@ export default {
             return false
           }
         })
+        this.startMapMarker = lapCoordinates[0]
+        this.endMapMarker = lapCoordinates[lapCoordinates.length - 1]
         this.selectionLocation = lapCoordinates
         if (zoomIn) {
           this.zoomMapSelection()
@@ -552,6 +603,8 @@ export default {
         this.$refs.map.$mapPromise.then((map) => {
           map.fitBounds(this.mapBounds)
         })
+        this.startMapMarker = this.location[0]
+        this.endMapMarker = this.location[ this.location.length - 1 ]
       }
     },
     zoomMapSelection: function () {
@@ -663,6 +716,8 @@ export default {
 
       if (this.location[0].lat && this.location[0].lng) {
         this.showMap = true
+        this.startMapMarker = this.location[0]
+        this.endMapMarker = this.location[ this.location.length - 1 ]
       }
 
       let chartSpeed = this.speed
