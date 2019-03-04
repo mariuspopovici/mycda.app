@@ -9,8 +9,7 @@
       <RhoCalculator v-if="isCalculatorVisible" v-on:calculate="onCalculate" showClose calculateCaption="Apply"/>
     </b-modal>
     <div class="container-fluid">
-      <h2>CdA Analysis</h2>
-      <h4>{{analysisName}}</h4>
+      <h2>CdA Analysis ({{analysisName}})</h2>
       <h4 v-if="!loading">Enter rolling resistance, mass and air density. Use the CdA slider to align the virtual elevation profile.
       </h4>
       <span v-if="loading">Loading segment details, please wait...<font-awesome-icon icon="spinner" spin/></span>
@@ -62,8 +61,10 @@
                   v-bind:process-style="sliderStyle"
                   >
                 </vue-slider>
-                <br>
-                <b-form-checkbox id="hideElevation" v-on:change="onHideElevation" v-model="hideElevation">Hide Elevation</b-form-checkbox>
+                <b-row>
+                  <b-col><b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox></b-col>
+                  <b-col><b-form-checkbox id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox></b-col>
+                </b-row>
               </b-card>
             </b-col>
           </b-row>
@@ -166,7 +167,8 @@ export default {
   },
   data () {
     return {
-      hideElevation: false,
+      showElevation: true,
+      showLaps: false,
       weightUnits: '',
       isCalculatorVisible: false,
       saving: false,
@@ -185,6 +187,7 @@ export default {
       altitude: [],
       speed: [],
       ve: [],
+      laps: [],
       mass: 80,
       cda: 0.350,
       crr: 0.005,
@@ -290,7 +293,8 @@ export default {
             speed: saveSpeed,
             altitude: saveAltitude,
             isBaseline: this.isBaseline,
-            ve: this.ve
+            ve: this.ve,
+            laps: this.laps ? this.laps : []
           }
 
           await segments.doc(this.segmentID).set(doc)
@@ -360,6 +364,7 @@ export default {
           this.analysisName = docData.name
           this.analysisDescription = docData.description
           this.isBaseline = docData.isBaseline ? docData.isBaseline : false
+          this.laps = docData.laps
 
           docData.time.forEach((x, i) => {
             if (docData.speed[i] !== 0 && docData.power[i] !== 0) {
@@ -387,7 +392,6 @@ export default {
         // and we need to filter it by range
         this.savedRange = this.range
         let data = this.data
-
         let powerSeries = data.power
         let altitudeSeries = data.altitude
         let speedSeries = data.speed
@@ -414,6 +418,7 @@ export default {
         this.altitude = altitude
         this.power = power
         this.speed = speed
+        this.laps = data.laps
 
         // we load these from preferences if a new analysis is requested
         // otherwise we used the saved ones
@@ -450,10 +455,52 @@ export default {
 
       this.loading = false
     },
-    onHideElevation: function (checked) {
-      this.hideElevation = checked
+    onShowElevation: function (checked) {
+      this.showElevation = checked
       this.calculateCdA()
     },
+
+    onShowLaps: function (checked) {
+      this.showLaps = checked
+      if (checked && this.laps) {
+        // add a new shape to the chart layout
+        let shapes = []
+        let _this = this
+        let lapNumber = 0
+        this.laps.forEach(function (lap) {
+          let start = new Date(lap.start_time)
+          let end = new Date(start)
+          end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
+
+          if (start > _this.savedRange.start && end < _this.savedRange.end) {
+            lapNumber++
+            shapes.push({
+              type: 'rect',
+              xref: 'x',
+              yref: 'paper',
+              x0: start,
+              y0: 0,
+              x1: end,
+              y1: 1,
+              fillcolor: utils.LightenDarkenColor('#82149b', (lapNumber + 1) * 20),
+              opacity: 0.2,
+              line: {
+                width: 0.5
+              }
+            })
+          }
+        })
+        if (shapes.length > 0) {
+          this.chartLayout.shapes = shapes
+          this.calculateCdA()
+        }
+      } else {
+        console.log('hide laps')
+        this.chartLayout.shapes = []
+        this.calculateCdA()
+      }
+    },
+
     calculateCdA: function () {
       this.dirty = true
       // recalculate virtual elevation
@@ -463,7 +510,7 @@ export default {
       this.ve = this.veService.calculateVirtualElevation(this.rho, mass, this.crr, this.cda)
       let data = []
 
-      if (!this.hideElevation) {
+      if (this.showElevation) {
         data.push({
           x: this.time,
           y: this.altitude,
