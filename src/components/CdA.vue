@@ -471,24 +471,16 @@ export default {
           let start = new Date(lap.start_time)
           let end = new Date(start)
           end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
-
+          let newShape
           if (start > _this.savedRange.start && end < _this.savedRange.end) {
-            lapNumber++
-            shapes.push({
-              type: 'rect',
-              xref: 'x',
-              yref: 'paper',
-              x0: start,
-              y0: 0,
-              x1: end,
-              y1: 1,
-              fillcolor: utils.LightenDarkenColor('#82149b', (lapNumber + 1) * 20),
-              opacity: 0.2,
-              line: {
-                width: 0.5
-              }
-            })
+            newShape = _this.lapShape(start, end, lapNumber)
+          } else if (start < _this.savedRange.start && end >= _this.savedRange.start) {
+            newShape = _this.lapShape(_this.savedRange.start, end, lapNumber)
+          } else if (start < _this.savedRange.end && end >= _this.savedRange.end) {
+            newShape = _this.lapShape(start, _this.savedRange.end, lapNumber)
           }
+          lapNumber++
+          shapes.push(newShape)
         })
         if (shapes.length > 0) {
           this.chartLayout.shapes = shapes
@@ -498,6 +490,24 @@ export default {
         console.log('hide laps')
         this.chartLayout.shapes = []
         this.calculateCdA()
+      }
+    },
+
+    lapShape: function (start, end, index) {
+      return {
+        type: 'rect',
+        xref: 'x',
+        yref: 'paper',
+        x0: start,
+        y0: 0,
+        x1: end,
+        y1: 1,
+        fillcolor: utils.LightenDarkenColor('#82149b', (index + 1) * 20),
+        opacity: 0.2,
+        line: {
+          width: 0.5,
+          dash: 'longdash'
+        }
       }
     },
 
