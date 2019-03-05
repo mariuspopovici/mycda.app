@@ -63,7 +63,7 @@
                 </vue-slider>
                 <b-row>
                   <b-col><b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox></b-col>
-                  <b-col><b-form-checkbox id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox></b-col>
+                  <b-col><b-form-checkbox v-if="laps.length > 0" id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox></b-col>
                 </b-row>
               </b-card>
             </b-col>
@@ -474,6 +474,8 @@ export default {
           let newShape
           if (start > _this.savedRange.start && end < _this.savedRange.end) {
             newShape = _this.lapShape(start, end, lapNumber)
+          } else if (start < _this.savedRange.start && end >= _this.savedRange.end) {
+            newShape = _this.lapShape(_this.savedRange.start, _this.savedRange.end, lapNumber)
           } else if (start < _this.savedRange.start && end >= _this.savedRange.start) {
             newShape = _this.lapShape(_this.savedRange.start, end, lapNumber)
           } else if (start < _this.savedRange.end && end >= _this.savedRange.end) {
@@ -487,7 +489,6 @@ export default {
           this.calculateCdA()
         }
       } else {
-        console.log('hide laps')
         this.chartLayout.shapes = []
         this.calculateCdA()
       }
