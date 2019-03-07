@@ -55,7 +55,7 @@
                   params: {
                     id: activityID,
                     range: getLapRange(index),
-                    data: {time: time, speed: speed, power: power, altitude: altitude},
+                    data: {time: time, speed: speed, power: power, altitude: altitude, laps: laps},
                     description: 'Lap ' + (index + 1)
                   }}">Analyze</b-button>
                 <p>

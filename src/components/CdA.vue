@@ -364,7 +364,7 @@ export default {
           this.analysisName = docData.name
           this.analysisDescription = docData.description
           this.isBaseline = docData.isBaseline ? docData.isBaseline : false
-          this.laps = docData.laps
+          this.laps = docData.laps ? docData.laps : []
 
           docData.time.forEach((x, i) => {
             if (docData.speed[i] !== 0 && docData.power[i] !== 0) {
