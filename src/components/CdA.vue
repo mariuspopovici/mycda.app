@@ -167,6 +167,7 @@ export default {
   },
   data () {
     return {
+      showDistanceAxis: true,
       showElevation: true,
       showLaps: false,
       weightUnits: '',
@@ -186,6 +187,7 @@ export default {
       power: [],
       altitude: [],
       speed: [],
+      distance: [],
       ve: [],
       laps: [],
       mass: 80,
@@ -234,7 +236,9 @@ export default {
   },
   watch: {
     cda: function (val) {
-      this.calculateCdA()
+      if (this.veService) {
+        this.calculateCdA()
+      }
     }
   },
   created: function () {
@@ -266,9 +270,11 @@ export default {
       // convert units
       let saveSpeed = this.speed
       let saveAltitude = this.altitude
+      let saveDistance = this.distance
 
       if (this.units === 'imperial') {
         saveSpeed = this.speed.map(item => utils.miToKm(item))
+        saveDistance = this.distance.map(item => utils.miToKm(item))
         saveAltitude = this.altitude.map(item => utils.ftToM(item))
       }
 
@@ -290,6 +296,7 @@ export default {
             range: this.savedRange,
             time: this.time,
             power: this.power,
+            distance: saveDistance,
             speed: saveSpeed,
             altitude: saveAltitude,
             isBaseline: this.isBaseline,
@@ -332,14 +339,26 @@ export default {
     },
     exportData: function () {
       let csvContent = 'data:text/csv;charset=utf-8,'
-      csvContent += [
-        'Time,Speed,Power,Altitude',
-        ...this.time.map((item, i) => {
-          return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.power[i] + ',' + this.altitude[i]
-        })
-      ]
-        .join('\n')
-        .replace(/(^\[)|(\]$)/gm, '')
+
+      if (this.distance.length > 0) {
+        csvContent += [
+          'Time,Speed,Distance,Power,Altitude',
+          ...this.time.map((item, i) => {
+            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.distance[i] + ',' + this.power[i] + ',' + this.altitude[i]
+          })
+        ]
+          .join('\n')
+          .replace(/(^\[)|(\]$)/gm, '')
+      } else {
+        csvContent += [
+          'Time,Speed,Power,Altitude',
+          ...this.time.map((item, i) => {
+            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.power[i] + ',' + this.altitude[i]
+          })
+        ]
+          .join('\n')
+          .replace(/(^\[)|(\]$)/gm, '')
+      }
 
       const data = encodeURI(csvContent)
 
@@ -365,6 +384,7 @@ export default {
           this.analysisDescription = docData.description
           this.isBaseline = docData.isBaseline ? docData.isBaseline : false
           this.laps = docData.laps ? docData.laps : []
+          this.showDistanceAxis = docData.distance !== undefined
 
           docData.time.forEach((x, i) => {
             if (docData.speed[i] !== 0 && docData.power[i] !== 0) {
@@ -372,14 +392,20 @@ export default {
               this.power.push(docData.power[i])
               this.altitude.push(docData.altitude[i])
               this.speed.push(docData.speed[i])
+              if (this.showDistanceAxis) {
+                this.distance.push(docData.distance[i])
+              }
             }
           })
 
           this.ve = docData.ve
           this.savedRange = {
             start: docData.range.start.toDate(),
-            end: docData.range.end.toDate()
+            end: docData.range.end.toDate(),
+            startDistance: this.showDistanceAxis ? this.distance[0] : 0,
+            endDistance: this.showDistanceAxis ? this.distance[this.distance.length - 1] : 0
           }
+
           if (this.userPrefs) {
             this.units = this.userPrefs.units
           }
@@ -396,28 +422,33 @@ export default {
         let altitudeSeries = data.altitude
         let speedSeries = data.speed
         let timeSeries = data.time
+        let distanceSeries = data.distance
 
         let time = []
         let power = []
         let altitude = []
         let speed = []
+        let distance = []
 
         timeSeries.forEach((x, i) => {
         // filter out dropouts or zero speed, zero power points, power spikes
-          if (x >= this.savedRange.start && x <= this.savedRange.end &&
-            speedSeries[i] !== 0 && powerSeries[i] !== 0 &&
-            powerSeries[i] < 2000) {
+          if (x >= this.savedRange.start && x <= this.savedRange.end) {
             time.push(x)
             power.push(powerSeries[i])
             altitude.push(altitudeSeries[i])
             speed.push(speedSeries[i])
+            distance.push(distanceSeries[i])
           }
         })
+
+        this.savedRange.startDistance = distance[0]
+        this.savedRange.endDistance = distance[distance.length - 1]
 
         this.time = time
         this.altitude = altitude
         this.power = power
         this.speed = speed
+        this.distance = distance
         this.laps = data.laps
 
         // we load these from preferences if a new analysis is requested
@@ -433,7 +464,7 @@ export default {
 
       // now we have the data from whatever means it was obtained
       this.chartData = [{
-        x: this.time,
+        x: this.distance.length > 0 ? this.distance : this.time,
         y: this.altitude,
         mode: 'lines',
         name: 'Elevation'
@@ -442,6 +473,7 @@ export default {
       // convert units
       if (this.units === 'imperial') {
         this.speed = this.speed.map(item => utils.kmToMi(item))
+        this.distance = this.distance.map(item => utils.kmToMi(item))
         this.altitude = this.altitude.map(item => utils.mToFt(item))
       }
 
@@ -467,22 +499,40 @@ export default {
         let shapes = []
         let _this = this
         let lapNumber = 0
-        this.laps.forEach(function (lap) {
-          let start = new Date(lap.start_time)
-          let end = new Date(start)
-          end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
-          let newShape
-          if (start > _this.savedRange.start && end < _this.savedRange.end) {
-            newShape = _this.lapShape(start, end, lapNumber)
-          } else if (start < _this.savedRange.start && end >= _this.savedRange.end) {
-            newShape = _this.lapShape(_this.savedRange.start, _this.savedRange.end, lapNumber)
-          } else if (start < _this.savedRange.start && end >= _this.savedRange.start) {
-            newShape = _this.lapShape(_this.savedRange.start, end, lapNumber)
-          } else if (start < _this.savedRange.end && end >= _this.savedRange.end) {
-            newShape = _this.lapShape(start, _this.savedRange.end, lapNumber)
+        let end = 0
+        let start = 0
+        let rangeStart = 0
+        let rangeEnd = 0
+        this.laps.forEach(function (lap, i) {
+          if (_this.showDistanceAxis) {
+            rangeStart = _this.savedRange.startDistance
+            rangeEnd = _this.savedRange.endDistance
+            start = parseFloat(lap.start_distance)
+            end = start + parseFloat(lap.total_distance)
+          } else {
+            rangeStart = _this.savedRange.start
+            rangeEnd = _this.savedRange.end
+            start = new Date(lap.start_time)
+            end = new Date(start)
+            end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
           }
+
+          if (start && end) {
+            let newShape = null
+
+            if (start > rangeStart && end < rangeEnd) {
+              newShape = _this.lapShape(start, end, lapNumber)
+            } else if (start < rangeStart && end >= rangeEnd) {
+              newShape = _this.lapShape(rangeStart, rangeEnd, lapNumber)
+            } else if (start < rangeStart && end >= rangeStart) {
+              newShape = _this.lapShape(rangeStart, end, lapNumber)
+            } else if (start < rangeEnd && end >= rangeEnd) {
+              newShape = _this.lapShape(start, rangeEnd, lapNumber)
+            }
+            shapes.push(newShape)
+          }
+
           lapNumber++
-          shapes.push(newShape)
         })
         if (shapes.length > 0) {
           this.chartLayout.shapes = shapes
@@ -523,7 +573,7 @@ export default {
 
       if (this.showElevation) {
         data.push({
-          x: this.time,
+          x: this.distance.length > 0 ? this.distance : this.time,
           y: this.altitude,
           type: 'scatter',
           name: 'Elevation',
@@ -532,7 +582,7 @@ export default {
       }
       data.push(
         {
-          x: this.time,
+          x: this.distance.length > 0 ? this.distance : this.time,
           y: this.ve,
           type: 'scatter',
           name: 'Virtual Elevation',

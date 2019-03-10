@@ -44,12 +44,17 @@ export default class VirtualElevation {
         if (interval === 0) { interval = 1 }
 
         const previousVelocity = this.speedDataPoints[i - 1] / vFactor
-        const a = (Math.pow(velocity, 2) - Math.pow(previousVelocity, 2)) / (2 * velocity * interval)
-        const slope = (power * (1 - this.dloss / 100)) / (velocity * mass * g) - crr - (a / interval) / g - ((cda * rho * Math.pow(velocity, 2)) / (2 * mass * g))
 
-        const elevationDelta = slope * velocity * interval
+        if (velocity === 0) {
+          ve = this.elevationDataPoints[i - 1]
+        } else {
+          const a = (Math.pow(velocity, 2) - Math.pow(previousVelocity, 2)) / (2 * velocity * interval)
+          const slope = (power * (1 - this.dloss / 100)) / (velocity * mass * g) - crr - (a / interval) / g - ((cda * rho * Math.pow(velocity, 2)) / (2 * mass * g))
 
-        ve = elevationDelta + veDataPoints[i - 1]
+          const elevationDelta = slope * velocity * interval
+
+          ve = elevationDelta + veDataPoints[i - 1]
+        }
       } else {
         // set starting virtual elevation to real elevation starting point
         ve = this.elevationDataPoints[0]
