@@ -1,6 +1,6 @@
 {
   "name": "mycda.app",
-  "version": "1.0.31",
+  "version": "1.0.33",
   "description": "MyCdA.app lets you use data collected using a power meter, speed sensor and a cycling computer and estimate your drag coefficient (CdA) and /or rolling resistance (crr).",
   "author": "Marius Popovici ",
   "private": true,
@@ -18,7 +18,7 @@
     "@mariuspopovici/rho": "^0.1.1",
     "@statnett/vue-plotly": "https://github.com/mariuspopovici/vue-plotly/archive/master.tar.gz",
     "bootstrap": "^4.3.1",
-    "bootstrap-vue": "^2.0.0-rc.13",
+    "bootstrap-vue": "^2.0.0-rc.14",
     "firebase": "^5.8.0",
     "install": "^0.12.2",
     "jquery": "^3.3.1",

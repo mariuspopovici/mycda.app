@@ -55,7 +55,7 @@
                   params: {
                     id: activityID,
                     range: getLapRange(index),
-                    data: {time: time, speed: speed, power: power, altitude: altitude},
+                    data: {time: time, speed: speed, distance: distance, power: power, altitude: altitude, laps: laps},
                     description: 'Lap ' + (index + 1)
                   }}">Analyze</b-button>
                 <p>
@@ -72,7 +72,7 @@
                   params: {
                     id: activityID,
                     range: selectionXRange,
-                    data: {time: time, speed: speed, power: power, altitude: altitude, laps: laps},
+                    data: {time: time, speed: speed, distance: distance, power: power, altitude: altitude, laps: laps},
                     description: 'Selection'
                   }}">Analyze</b-button>
                   <p>
@@ -196,6 +196,13 @@
             ><i class="fa fa-edit fa-1x"></i></b-btn>
             <b-button
               size="sm"
+              variant="success"
+              v-b-tooltip.hover title="Zoom In"
+              v-on:click="onSegmentZoom(row.item.rangeStart, row.item.rangeEnd, row.item.name)"
+            ><i class="fa fa-search-plus fa-1x"></i>
+            </b-button>
+            <b-button
+              size="sm"
               variant="danger"
               v-b-tooltip.hover title="Delete Segment"
               v-on:click="showConfirmDelete(row.item)"
@@ -208,7 +215,7 @@
             <div class="text-center"><strong>Mean:</strong> {{meanCdA.toFixed(3)}} <strong>SD:</strong> {{sdCdA.toFixed(3)}} <strong>CV:</strong> {{cvCdA.toFixed(3)}}
             </div>
             <div class="text-center text-secondary">
-              <small> * Power/Time Savings Estimated @ 30 mph / 48.2 km/h</small>
+              <small> * Power/Time Savings Estimated @ 30 mph / 48.2 kmh</small>
             </div>
           </td>
         </template>
@@ -223,6 +230,7 @@ import VuePlotly from '@statnett/vue-plotly'
 import Utils from '@/services/utils'
 import { gmapApi } from 'vue2-google-maps'
 import mapThemes from '../assets/mapthemes/activitymapstyle.json'
+import Buffer from '@/services/buffer'
 const rp = require('request-promise')
 
 export default {
@@ -275,14 +283,14 @@ export default {
   data () {
     return {
       fields: [
-        {key: 'name', label: 'Segment Name'},
+        {key: 'name', label: 'Segment Name', thStyle: {width: '200px'}},
         {key: 'rangeStart', label: 'Start', sortable: true, sortDirection: 'asc'},
         {key: 'rangeEnd', label: 'End', sortable: true},
         {key: 'cda', label: 'CdA', class: 'text-right', sortable: true},
         {key: 'crr', label: 'crr', class: 'text-right'},
         {key: 'cdaDeltaPct', label: 'Δ CdA (%)', class: 'text-right', sortable: true},
         {key: 'wattsSaved', label: 'Watts Saved*', class: 'text-right', sortable: true},
-        {key: 'seconds40k', label: 'Sec/40km TT*', class: 'text-right', sortable: true},
+        {key: 'seconds40k', label: 'Sec/40k*', class: 'text-right', sortable: true},
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
       showMap: false,
@@ -316,6 +324,7 @@ export default {
       altitude: [],
       power: [],
       speed: [],
+      distance: [],
       mapMarker: {lat: 0, lng: 0},
       startMapMarker: {lat: 0, lng: 0},
       endMapMarker: {lat: 0, lng: 0},
@@ -473,6 +482,24 @@ export default {
         this.chartLayout.title.text = 'Selection'
       }
     },
+    onSegmentZoom: function (segmentStart, segmentEnd, segmentTitle) {
+      this.selectionActive = true
+      this.selectionXRange = {
+        start: segmentStart,
+        end: segmentEnd
+      }
+      this.setMapSelection(this.selectionXRange.start, this.selectionXRange.end)
+      this.chartLayout.shapes = [this.makeShape(this.selectionXRange.start, this.selectionXRange.end)]
+      this.chartLayout.title.text = `Segment - ${segmentTitle}`
+      this.chartLayout.xaxis = {
+        showgrid: false,
+        range: [segmentStart, segmentEnd]
+      }
+
+      let element = this.$refs.plotly
+      let top = element.offsetTop
+      window.scrollTo(0, top)
+    },
     onChartHover: function (hoverData) {
       let pointNumber = hoverData.points[0].pointNumber
       if (pointNumber && this.showMap) {
@@ -531,7 +558,12 @@ export default {
 
       // add a new shape to the chart layout
       let shapes = []
-      shapes.push({
+      shapes.push(this.makeShape(start, end))
+
+      return shapes
+    },
+    makeShape: function (start, end) {
+      return {
         type: 'rect',
         xref: 'x',
         yref: 'paper',
@@ -544,9 +576,7 @@ export default {
         line: {
           width: 0
         }
-      })
-
-      return shapes
+      }
     },
     selectLap: function (index) {
       if (this.selectionActive) {
@@ -703,15 +733,30 @@ export default {
       this.timestamp = new Date(data.timestamp).toLocaleString()
       this.totalDistance = parseFloat(data.total_distance).toFixed(1)
       this.laps = data.laps
+
       let _this = this
+
+      let spikeBuffer = new Buffer(5)
+      let power = 0
+
       data.points.forEach(function (point) {
-        if (point.power < 2000) { // eliminate ridiculous spikes
-          _this.time.push(new Date(point.timestamp))
-          _this.power.push(point.power)
-          _this.altitude.push(point.altitude * 1000)
-          _this.speed.push(point.speed)
-          _this.location.push({lat: parseFloat(point.lat), lng: parseFloat(point.long)})
+        // eliminate ridiculous spikes and replace them with an average of the last 5 known good values
+        if (point.power > 1500) {
+          // get an average of the last 5 legit power points
+          power = spikeBuffer.average()
+          console.debug(`Detected a spike of ${point.power}W and averaged it down to ${power}W`)
+        } else {
+          power = point.power
         }
+
+        spikeBuffer.add(power)
+
+        _this.time.push(new Date(point.timestamp))
+        _this.power.push(power !== undefined ? power : 0)
+        _this.altitude.push(point.altitude !== undefined ? point.altitude * 1000 : 0)
+        _this.speed.push(point.speed !== undefined ? point.speed : 0)
+        _this.distance.push(point.distance !== undefined ? point.distance : 0)
+        _this.location.push({lat: parseFloat(point.lat), lng: parseFloat(point.long)})
       })
 
       if (this.location[0].lat && this.location[0].lng) {
