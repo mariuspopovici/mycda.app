@@ -11,7 +11,7 @@
           <p>MyCdA is free software.</p>
           <p>
             Determine how much faster or efficient a change in position or equipment will make you on race day by using a simple rule of thumb: reducing CdA
-            by 0.005 is worth 5W or 0.5 s/km (40 seconds over 40 km) at 30mph*.
+            by 0.005 is worth 5W or 0.5 s/km (20 seconds over 40 km) at 30mph*.
           </p>
 
           <br>
