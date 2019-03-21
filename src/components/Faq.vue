@@ -89,6 +89,7 @@
                   <li><b>lat</b> Numeric. Optional column. Map latitude coordinate.</li>
                   <li><b>long</b> Numeric. Optional column. Map longitude coordinate.</li>
                   <li><b>airspeed</b> Numeric. Optional column. Air Speed in km/h. </li>
+                  <li><b>elevation</b> Numeric. Optional column. Elevation.</li>
                 </ul>
 
                 <p>Download an example .CSV from <a href="./static/testfiles/mycda.csv">here.</a></p>
