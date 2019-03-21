@@ -187,6 +187,7 @@ export default {
       power: [],
       altitude: [],
       speed: [],
+      airspeed: [],
       distance: [],
       ve: [],
       laps: [],
@@ -269,11 +270,13 @@ export default {
       // convert speed and elevation back to metric
       // convert units
       let saveSpeed = this.speed
+      let saveAirSpeed = this.airspeed
       let saveAltitude = this.altitude
       let saveDistance = this.distance
 
       if (this.units === 'imperial') {
         saveSpeed = this.speed.map(item => utils.miToKm(item))
+        saveAirSpeed = this.airspeed.map(item => utils.miToKm(item))
         saveDistance = this.distance.map(item => utils.miToKm(item))
         saveAltitude = this.altitude.map(item => utils.ftToM(item))
       }
@@ -298,6 +301,7 @@ export default {
             power: this.power,
             distance: saveDistance,
             speed: saveSpeed,
+            airspeed: saveAirSpeed,
             altitude: saveAltitude,
             isBaseline: this.isBaseline,
             ve: this.ve,
@@ -392,6 +396,7 @@ export default {
               this.power.push(docData.power[i])
               this.altitude.push(docData.altitude[i])
               this.speed.push(docData.speed[i])
+              this.airspeed.push(docData.airspeed ? docData.airspeed[i] : docData.speed[i])
               if (this.showDistanceAxis) {
                 this.distance.push(docData.distance[i])
               }
@@ -421,6 +426,7 @@ export default {
         let powerSeries = data.power
         let altitudeSeries = data.altitude
         let speedSeries = data.speed
+        let airSpeedSeries = data.airspeed
         let timeSeries = data.time
         let distanceSeries = data.distance
 
@@ -428,6 +434,7 @@ export default {
         let power = []
         let altitude = []
         let speed = []
+        let airspeed = []
         let distance = []
 
         timeSeries.forEach((x, i) => {
@@ -437,6 +444,7 @@ export default {
             power.push(powerSeries[i])
             altitude.push(altitudeSeries[i])
             speed.push(speedSeries[i])
+            airspeed.push(airSpeedSeries[i])
             distance.push(distanceSeries[i])
           }
         })
@@ -448,6 +456,7 @@ export default {
         this.altitude = altitude
         this.power = power
         this.speed = speed
+        this.airspeed = airspeed
         this.distance = distance
         this.laps = data.laps
 
@@ -473,12 +482,14 @@ export default {
       // convert units
       if (this.units === 'imperial') {
         this.speed = this.speed.map(item => utils.kmToMi(item))
+        this.airspeed = this.airspeed.map(item => utils.kmToMi(item))
         this.distance = this.distance.map(item => utils.kmToMi(item))
         this.altitude = this.altitude.map(item => utils.mToFt(item))
       }
 
       this.veService = new VirtualElevation(this.power,
         this.speed,
+        this.airspeed,
         this.altitude,
         this.time,
         this.userPrefs.units,

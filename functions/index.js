@@ -4,8 +4,10 @@ const functions = require('firebase-functions');
 
 admin.initializeApp(functions.config().firebase);
 
+
 const path = require('path');
 const EasyFit = require('easy-fit').default;
+const CSV = require ('./csv');
 const fs = require('fs');
 const os = require('os');
 const util = require('util');
@@ -170,18 +172,19 @@ exports.activity = functions.https.onRequest(app);
  * - saves some metadata in the activity document 
  */
 exports.processActivityFile = functions.storage.object().onFinalize(async (object) => {
-      
+  console.log('Processing activity file.');    
   const filePath = object.name;
   const fileName = path.basename(filePath); // just file name with extension
+  const fileExtension = path.extname(fileName);
 
-  if (!fileName.endsWith('fit')) {
-    console.log('A file was uploaded but it is not a valid .fit activity file.');
+  if (fileExtension !== '.fit' && fileExtension !== '.csv')  {
+    console.log('A file was uploaded but it is not a valid activity file.');
     return null;
   }
   else {
-    console.log('A new .fit file was uploaded.')
+    console.log(`A new ${fileExtension} file was uploaded.`);
   }
-
+  
   const baseFileName = path.basename(filePath, path.extname(filePath)); // file name without extension
   const fileDir = path.dirname(filePath);
   
@@ -208,48 +211,35 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
     let docRef = db.collection("activities").doc(activityId);
 
     await bucket.file(filePath).download({destination: tempLocalFile});
-    console.log('Downloaded activity .fit file locally in ' + tempLocalFile);
+    console.log(`Downloaded activity ${fileExtension} file locally in ${tempLocalFile}`);
     
     // read file content
     const readFile = util.promisify(fs.readFile);
     let content = await readFile(tempLocalFile);
+    let data = {};
     
-    let easyFit = new EasyFit({
-      force: true,
-      speedUnit: 'km/h',
-      lengthUnit: 'km',
-      temperatureUnit: 'kelvin',
-      elapsedRecordField: true,
-      mode: 'cascade',
-    });
-
-    let data = null
-    // can't promisify this because it depends on config passed through constructor of EasyFit
     try {
-        data = await new Promise((resolve, reject) => {
-        easyFit.parse(content, (error, data) => {
-          if (error) {
-            reject(error)
-          } else {
-            console.log('Succesfully parsed .fit activity file.');
-            resolve(data);
-          }
-        });
-      });
+      switch(fileExtension) {
+        case '.fit':
+          data = await parseFIT(content);
+          break;
+        case '.csv':
+          data = await parseCSV(content);
+          break;
+      }
     } catch(error) {
       console.log(error);
       await docRef.update({
         status: 'Error',
-        statusMessage: `An error occurred while parsing .FIT file. ${error}`
+        statusMessage: `An error occurred while parsing ${fileExtension} file. ${error}`
       });
       return null;
     }
     
     // we store the serialized FIT data as a .json file in Firestore to avoid moving it across the network unless we really need the data
     // we will however keep some metadata in the activity document in firestore for convenience
-    
-    let dataAsString = JSON.stringify(data);
-    const compressed = await gzip(dataAsString);
+    const dataAsJSON = JSON.stringify(data);
+    const compressed = await gzip(dataAsJSON);
 
     const writeFile = util.promisify(fs.writeFile);
     await writeFile(tempLocalJsonFile, compressed, 'utf-8');
@@ -294,7 +284,6 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
         return docRef.update(doc);
       } catch (e) {
         console.error(e);
-        console.log(doc);
         return docRef.update({
           fitFile: jsonFilePath,
           status: 'Error',
@@ -308,9 +297,46 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
   }
 })
 
-function validateFileContents(data) {
+function parseCSV(content) {
+  let csv = new CSV({
+    speedUnit: 'km/h'
+  });
+  return new Promise((resolve, reject) => {
+    csv.parse(content, (error, data) => {
+      if (error) {
+        reject(error)
+      } else {
+        console.log('Succesfully parsed .csv activity file.');
+        resolve(data);
+      }
+    });
+  });
+}
 
-  console.log(data)
+function parseFIT(content) {
+  let easyFit = new EasyFit({
+    force: true,
+    speedUnit: 'km/h',
+    lengthUnit: 'km',
+    temperatureUnit: 'kelvin',
+    elapsedRecordField: true,
+    mode: 'cascade',
+  });
+
+  return new Promise((resolve, reject) => {
+    easyFit.parse(content, (error, data) => {
+      if (error) {
+        reject(error)
+      } else {
+        console.log('Succesfully parsed .fit activity file.');
+        resolve(data);
+      }
+    });
+  });
+}
+
+
+function validateFileContents(data) {
 
   if (data.file_id.type !== 'activity') {
     return {
@@ -318,8 +344,9 @@ function validateFileContents(data) {
       message: 'Invalid file. Not a .FIT activity file.'
     };
   }
+  
 
-  if (session.length === 0) {
+  if (!data.activity.sessions || data.activity.sessions.length === 0) {
     return {
       invalid: true,
       message: `Invalid file. Missing FIT session data.`
@@ -327,6 +354,7 @@ function validateFileContents(data) {
   }
 
   let session = data.activity.sessions[0];
+  
   if (session.sport !== 'cycling') {
     return {
       invalid: true,
@@ -403,6 +431,7 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             power: record.power,
             altitude: record.altitude,
             speed: record.speed,
+            airspeed: record.air_speed,
             lat: record.position_lat,
             long: record.position_long
           })
@@ -445,7 +474,10 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             distance: record.distance,
             power: record.power,
             altitude: record.altitude,
-            speed: record.speed
+            speed: record.speed,
+            airspeed: record.air_speed,
+            lat: record.position_lat,
+            long: record.position_long
           });
         }
 

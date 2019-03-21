@@ -55,7 +55,7 @@
                   params: {
                     id: activityID,
                     range: getLapRange(index),
-                    data: {time: time, speed: speed, distance: distance, power: power, altitude: altitude, laps: laps},
+                    data: {time: time, speed: speed, airspeed: airspeed, distance: distance, power: power, altitude: altitude, laps: laps},
                     description: 'Lap ' + (index + 1)
                   }}">Analyze</b-button>
                 <p>
@@ -72,7 +72,7 @@
                   params: {
                     id: activityID,
                     range: selectionXRange,
-                    data: {time: time, speed: speed, distance: distance, power: power, altitude: altitude, laps: laps},
+                    data: {time: time, speed: speed, airspeed: airspeed, distance: distance, power: power, altitude: altitude, laps: laps},
                     description: 'Selection'
                   }}">Analyze</b-button>
                   <p>
@@ -324,6 +324,7 @@ export default {
       altitude: [],
       power: [],
       speed: [],
+      airspeed: [],
       distance: [],
       mapMarker: {lat: 0, lng: 0},
       startMapMarker: {lat: 0, lng: 0},
@@ -755,6 +756,7 @@ export default {
         _this.power.push(power !== undefined ? power : 0)
         _this.altitude.push(point.altitude !== undefined ? point.altitude * 1000 : 0)
         _this.speed.push(point.speed !== undefined ? point.speed : 0)
+        _this.airspeed.push(point.airspeed !== undefined ? point.airspeed : point.speed)
         _this.distance.push(point.distance !== undefined ? point.distance : 0)
         _this.location.push({lat: parseFloat(point.lat), lng: parseFloat(point.long)})
       })
