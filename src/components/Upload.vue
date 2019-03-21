@@ -48,7 +48,7 @@
     <div id="upload">
       <div id="head">
         <h2>Activities</h2>
-        <h4>Create a new activity by importing a .FIT file.</h4>
+        <h4>Create a new activity by importing a .FIT or .CSV file. Click <a href="#/faq">here</a> for .CSV specs.</h4>
       </div>
       <b-alert
         variant="danger"
@@ -163,7 +163,7 @@ export default {
         chunking: true,
         forceChuncking: true,
         chunkSize: 500, // bytes
-        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop .FIT file here or click to select one.`,
+        dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop .FIT or .CSV file here or click to select one.`,
         acceptedFiles: '.fit,.csv'
       },
       fields: [

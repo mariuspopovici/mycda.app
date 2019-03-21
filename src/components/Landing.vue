@@ -19,7 +19,8 @@
       <b-col md="4" xs="6">
         <font-awesome-icon icon="cloud-upload-alt" size="6x"/>
         <h3>Upload</h3>
-        <p>Upload your cycling activities in Garmin .FIT file format. View and analyze recorded data such as power, speed and elevation across an entire activity or individual laps.</p>
+        <p>Upload your cycling activities in Garmin .FIT or .CSV file format. View and analyze recorded data such as power,
+          speed and elevation across an entire activity, manual selection or individual laps.</p>
       </b-col>
       <b-col md="4" xs="6">
         <font-awesome-icon icon="chart-area" size="6x"/>
@@ -29,7 +30,7 @@
       <b-col md="4" xs="6">
         <font-awesome-icon icon="clipboard-check" size="6x"/>
         <h3>Compare</h3>
-        <p>Compare CdA / crr data across different segments belonging to the same activity.</p>
+        <p>Compare CdA / crr data across different segments belonging to the same activity using simple metrics such as watts saved or seconds/40k.</p>
       </b-col>
     </b-row>
     </section>

@@ -346,18 +346,18 @@ export default {
 
       if (this.distance.length > 0) {
         csvContent += [
-          'Time,Speed,Distance,Power,Altitude',
+          'Time,Speed,Airspeed,Distance,Power,Altitude',
           ...this.time.map((item, i) => {
-            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.distance[i] + ',' + this.power[i] + ',' + this.altitude[i]
+            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.distance[i] + ',' + this.power[i] + ',' + this.altitude[i]
           })
         ]
           .join('\n')
           .replace(/(^\[)|(\]$)/gm, '')
       } else {
         csvContent += [
-          'Time,Speed,Power,Altitude',
+          'Time,Speed,Airspeed,Power,Altitude',
           ...this.time.map((item, i) => {
-            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.power[i] + ',' + this.altitude[i]
+            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.power[i] + ',' + this.altitude[i]
           })
         ]
           .join('\n')

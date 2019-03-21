@@ -7,11 +7,11 @@ export default class VirtualElevation {
    * Initializes a new instance of the VirtualElevation class
    * @param {*} power power data point series
    * @param {*} speed  speed data point series
-   * @param {*} airspeed  air speed data point series
+   * @param {*} airspeed  air speed data point series - if airspeed is not known, use ground speed (speed) in this parameter
    * @param {*} elevation elevation data point series
    * @param {*} time time data points series
    * @param {*} units units of measurement (imperial vs metric)
-   * @param {*} dloss percentage drivetrain loss due to friction or measurement point (hub vs crank)
+   * @param {*} dloss percentage drivetrain loss due to friction (crank vs hub power measurement)
    */
   constructor (power, speed, airspeed, elevation, time, units = 'metric', dloss = 0) {
     this.powerDataPoints = power
@@ -41,7 +41,8 @@ export default class VirtualElevation {
       const speed = this.speedDataPoints[i]
       const airspeed = this.airSpeedDataPoints[i]
       const velocity = speed / vFactor
-      const windSpeed = airspeed / vFactor
+      // we use air speed in our calculation - if no air speed data is available airspeed = speed
+      const vair = airspeed / vFactor
 
       let ve = 0
       if (i > 0) {
@@ -55,7 +56,7 @@ export default class VirtualElevation {
         } else {
           const a = (Math.pow(velocity, 2) - Math.pow(previousVelocity, 2)) / (2 * velocity * interval)
           power *= (1 - this.dloss / 100) // adjust power by drivetrain loss %
-          const slope = power / (velocity * mass * g) - crr - (a / interval) / g - ((cda * rho * Math.pow(velocity, 2)) / (2 * mass * g))
+          const slope = power / (velocity * mass * g) - crr - (a / interval) / g - ((cda * rho * Math.pow(vair, 2)) / (2 * mass * g))
 
           const elevationDelta = slope * velocity * interval
 
