@@ -104,9 +104,16 @@
           </b-form-group>
           <b-form-group horizontal
                         label="crr:"
-                        description="Select your default coefficient of rolling resistance if you know it. Typical values are in the 0.003 - 0.008 range depending on road conditions and tires. A great collection of test data can be found <a href='https://docs.google.com/spreadsheets/d/1vTm2AQYKeDuabP8Qiv5_AjatJVNYSY_DRBOeFmO3-_8/edit?usp=sharing'>here.</a>"
                         label-class="text-sm-right"
                         label-for="weight">
+            <template slot="description">
+              Select your default coefficient of rolling resistance if you know it.
+              Typical values are in the 0.003 - 0.008 range depending on road conditions and tires.
+              Start with a value of 0.005 for average tires and good quality asphalt. A good set of tire crr roller test data
+              can be found <a href='https://docs.google.com/spreadsheets/d/1vTm2AQYKeDuabP8Qiv5_AjatJVNYSY_DRBOeFmO3-_8/edit?usp=sharing' target='_blank'>here</a>.
+              When using roller data, it's recommended to adjust crr by a factor of 1.8 for poor quality chipseal,
+              1.5 for good asphalt, cement 1.4, unpolished wood velodrome 1.2 and 1.1 for polished wooden velodrome.
+            </template>
             <b-form-input id="crr" v-model="crr" type="number" step="0.0001" min="0" max="1" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
           <b-form-group horizontal

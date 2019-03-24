@@ -35,7 +35,7 @@
     <div id='activityDetails' ref="activityDetails" v-else>
       <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions"
         :autoResize="true"
-        v-on:relayout="onRelayout" v-on:hover="onChartHover"/>
+        v-on:relayout="onRelayout" :watchShallow="false" v-on:hover="onChartHover"/>
       <b-row>
         <b-col>
           <b-card no-body :bg-variant="theme">
@@ -464,14 +464,19 @@ export default {
     removeSelection: function () {
       this.selectionActive = false
       this.selectionXRange = null
-      this.chartLayout.xaxis = {
-        showgrid: false,
-        range: [this.initXRange.start, this.initXRange.end]
+
+      let plotly = this.$refs.plotly
+      let layoutUpdate = {
+        'xaxis.showgrid': false,
+        'xaxis.range': [this.initXRange.start, this.initXRange.end],
+        title: 'Selection'
       }
-      this.chartLayout.title.text = 'Selection'
+      plotly.relayout(layoutUpdate)
+
       this.resetMapSelection()
     },
     onRelayout: function (event) {
+      console.log(event)
       // check if this was triggered by a drag to zoom event
       if ('xaxis.range[0]' in event && 'xaxis.range[1]' in event) {
         this.selectionActive = true
@@ -480,7 +485,12 @@ export default {
           end: new Date(event['xaxis.range[1]'])
         }
         this.setMapSelection(this.selectionXRange.start, this.selectionXRange.end)
-        this.chartLayout.title.text = 'Selection'
+
+        let plotly = this.$refs.plotly
+        let layoutUpdate = {
+          title: 'Selection'
+        }
+        plotly.relayout(layoutUpdate)
       }
     },
     onSegmentZoom: function (segmentStart, segmentEnd, segmentTitle) {
@@ -490,15 +500,17 @@ export default {
         end: segmentEnd
       }
       this.setMapSelection(this.selectionXRange.start, this.selectionXRange.end)
-      this.chartLayout.shapes = [this.makeShape(this.selectionXRange.start, this.selectionXRange.end)]
-      this.chartLayout.title.text = `Segment - ${segmentTitle}`
-      this.chartLayout.xaxis = {
-        showgrid: false,
-        range: [segmentStart, segmentEnd]
-      }
 
-      let element = this.$refs.plotly
-      let top = element.offsetTop
+      let plotly = this.$refs.plotly
+      let layoutUpdate = {
+        shapes: [this.makeShape(this.selectionXRange.start, this.selectionXRange.end)],
+        title: `Segment - ${segmentTitle}`,
+        'xaxis.showgrid': false,
+        'xaxis.range': [segmentStart, segmentEnd]
+      }
+      plotly.relayout(layoutUpdate)
+
+      let top = plotly.offsetTop
       window.scrollTo(0, top)
     },
     onChartHover: function (hoverData) {
@@ -508,13 +520,14 @@ export default {
       }
     },
     resetZoom: function () {
-      this.chartLayout.xaxis = {
-        showgrid: false,
-        range: [this.initXRange.start, this.initXRange.end]
+      let plotly = this.$refs.plotly
+      let layoutUpdate = {
+        'xaxis.showgrid': false,
+        'xaxis.range': [this.initXRange.start, this.initXRange.end]
       }
+      plotly.relayout(layoutUpdate)
 
       this.resetMapZoom()
-
       this.lapZoomedIn = false
     },
     getLapRange: function (index) {
@@ -539,15 +552,16 @@ export default {
         let end = new Date(start)
         end.setSeconds(start.getSeconds() + parseInt(lap.total_elapsed_time))
 
-        this.chartLayout.shapes = []
-        this.chartLayout.title.text = 'Zoom Lap ' + (index + 1)
-        this.chartLayout.xaxis = {
-          showgrid: false,
-          range: [start, end]
+        let plotly = this.$refs.plotly
+        let layoutUpdate = {
+          shapes: [],
+          title: 'Zoom Lap ' + (index + 1),
+          'xaxis.showgrid': false,
+          'xaxis.range': [start, end]
         }
+        plotly.relayout(layoutUpdate)
 
         this.zoomMapSelection()
-
         this.lapZoomedIn = true
       }
     },
@@ -585,22 +599,24 @@ export default {
         return
       }
 
-      this.resetZoom()
+      let plotly = this.$refs.plotly
+      let layoutUpdate = {
+        'xaxis.showgrid': false,
+        'xaxis.range': [this.initXRange.start, this.initXRange.end]
+      }
 
       if (index === 0) {
-        this.chartLayout.shapes = []
-        this.chartLayout.title.text = 'Entire Activity'
-        this.chartLayout.xaxis = {
-          showgrid: false,
-          range: [this.initXRange.start, this.initXRange.end]
-        }
+        layoutUpdate.shapes = []
+        layoutUpdate.title = 'Entire Activity'
+        plotly.relayout(layoutUpdate)
         this.lapZoomedIn = false
         this.resetMapSelection()
         return
       }
 
-      this.chartLayout.shapes = this.lapShape(index - 1)
-      this.chartLayout.title.text = 'Lap ' + (index)
+      layoutUpdate.shapes = this.lapShape(index - 1)
+      layoutUpdate.title = 'Lap ' + (index)
+      plotly.relayout(layoutUpdate)
 
       var lap = this.laps[index - 1]
       var start = new Date(this.laps[index - 1].start_time)
