@@ -425,7 +425,6 @@ export default {
       this.$refs.confirmDeleteModal.show()
     },
     updateTitle: async function () {
-      console.log('update title')
       let docRef = db.collection('activities').doc(this.activityID)
       let _this = this
       try {
@@ -476,7 +475,6 @@ export default {
       this.resetMapSelection()
     },
     onRelayout: function (event) {
-      console.log(event)
       // check if this was triggered by a drag to zoom event
       if ('xaxis.range[0]' in event && 'xaxis.range[1]' in event) {
         this.selectionActive = true
@@ -596,7 +594,12 @@ export default {
     selectLap: function (index) {
       if (this.selectionActive) {
         // don't do any of this if there's a manual selection active
-        return
+        if (index < this.laps.length) {
+          // remove manual selection if moving to a lap selection
+          this.removeSelection()
+        } else {
+          return
+        }
       }
 
       let plotly = this.$refs.plotly
