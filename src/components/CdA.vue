@@ -505,6 +505,7 @@ export default {
 
     onShowLaps: function (checked) {
       this.showLaps = checked
+      let plotly = this.$refs.plotly
       if (checked && this.laps) {
         // add a new shape to the chart layout
         let shapes = []
@@ -546,11 +547,17 @@ export default {
           lapNumber++
         })
         if (shapes.length > 0) {
-          this.chartLayout.shapes = shapes
+          let layoutUpdate = {
+            shapes: shapes
+          }
+          plotly.relayout(layoutUpdate)
           this.calculateCdA()
         }
       } else {
-        this.chartLayout.shapes = []
+        let layoutUpdate = {
+          shapes: []
+        }
+        plotly.relayout(layoutUpdate)
         this.calculateCdA()
       }
     },
