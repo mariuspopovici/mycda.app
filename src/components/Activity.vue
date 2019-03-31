@@ -41,6 +41,14 @@
           <b-card no-body :bg-variant="theme">
             <b-tabs small pills card v-on:input="selectLap">
               <b-tab title="Entire Activity" active>
+                <b-dropdown v-if="showMap" dropright split id="showLoopsDD" v-on:click="findLoops"
+                  variant="secondary" :text="this.showLoops ? 'Hide Loops' : 'Show Loops'"
+                  ref="loopsDropDown" size="sm">
+                  <b-dropdown-form style="width: 300px;">
+                    <LoopFinderPrefs minDuration=30 maxDuration=600 precision='medium' v-on:change='onLoopFinderPrefsChange'/>
+                  </b-dropdown-form>
+                </b-dropdown>
+                <p>
                 <p class="card-text"><b>Date:</b> {{timestamp}}</p>
                 <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
                 <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance)}} {{distanceUnits}} </p>
@@ -55,7 +63,11 @@
                   params: {
                     id: activityID,
                     range: getLapRange(index),
-                    data: {time: time, speed: speed, airspeed: airspeed, distance: distance, power: power, altitude: altitude, laps: laps},
+                    data: { time: time, speed: speed, airspeed: airspeed,
+                      distance: distance, power: power,
+                      altitude: altitude, laps: laps,
+                      location: location
+                    },
                     description: 'Lap ' + (index + 1)
                   }}">Analyze</b-button>
                 <p>
@@ -72,7 +84,10 @@
                   params: {
                     id: activityID,
                     range: selectionXRange,
-                    data: {time: time, speed: speed, airspeed: airspeed, distance: distance, power: power, altitude: altitude, laps: laps},
+                    data: {time: time, speed: speed, airspeed: airspeed,
+                      distance: distance, power: power, altitude: altitude, laps: laps,
+                      location: location
+                    },
                     description: 'Selection'
                   }}">Analyze</b-button>
                   <p>
@@ -231,6 +246,8 @@ import Utils from '@/services/utils'
 import { gmapApi } from 'vue2-google-maps'
 import mapThemes from '../assets/mapthemes/activitymapstyle.json'
 import Buffer from '@/services/buffer'
+import LoopFinderPrefs from '@/components/LoopFinderPrefs'
+import LoopFinder from '@/services/loopdetect'
 const rp = require('request-promise')
 
 export default {
@@ -239,7 +256,8 @@ export default {
     title: 'Activity Details'
   },
   components: {
-    VuePlotly
+    VuePlotly,
+    LoopFinderPrefs
   },
   props: ['theme'],
   computed: {
@@ -294,10 +312,13 @@ export default {
         {key: 'actions', label: 'Actions', class: 'text-center'}
       ],
       showMap: false,
+      showLoops: false,
       mapStyles: this.theme === 'dark' ? mapThemes.dark : mapThemes.light,
       distanceUnits: 'km',
       speedUnits: 'km/h',
       utils: new Utils(),
+      loopFinder: null,
+      loops: [],
       baseLineCdA: 0,
       segments: [],
       segmentName: '',
@@ -341,7 +362,7 @@ export default {
           bgcolor: 'transparent'
         },
         font: { family: 'Roboto', color: '#b0bec5' },
-        colorway: ['#f4a433', '#828893', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39'],
+        colorway: ['#f4a433', '#4d4b4f', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39'],
         hoverlabel: {
           bgcolor: 'transparent'
         },
@@ -404,6 +425,11 @@ export default {
     }
   },
   methods: {
+    onLoopFinderPrefsChange: function (args) {
+      this.showLoops = true
+      this.findLoops(args, true)
+      this.$refs.loopsDropDown.hide(true)
+    },
     convertDistance: function (d) {
       if (this.userPrefs.units !== 'metric') {
         return this.utils.kmToMi(d).toFixed(2)
@@ -575,7 +601,7 @@ export default {
 
       return shapes
     },
-    makeShape: function (start, end) {
+    makeShape: function (start, end, color = '#82149b') {
       return {
         type: 'rect',
         xref: 'x',
@@ -584,12 +610,54 @@ export default {
         y0: 0,
         x1: end,
         y1: 1,
-        fillcolor: '#82149b',
+        fillcolor: color,
         opacity: 0.2,
         line: {
           width: 0
         }
       }
+    },
+    findLoops: function (params, refresh = false) {
+      let layoutUpdate = {
+        shapes: []
+      }
+      if (this.showLoops && !refresh) {
+        // hide
+        this.showLoops = false
+      } else {
+        // show
+        this.showLoops = true
+
+        if (params) {
+          let precision
+          switch (params.precision) {
+            case 'low':
+              precision = 3
+              break
+            case 'medium':
+              precision = 4
+              break
+            case 'high':
+              precision = 5
+              break
+            default:
+              precision = 4
+          }
+          this.loops = this.loopFinder.findLoops(precision, params.minDuration, params.maxDuration)
+        } else {
+          this.loops = this.loopFinder.findLoops()
+        }
+
+        this.loops.forEach((loop, index) => {
+          let color = index % 2 === 0 ? '#7549a0' : this.utils.LightenDarkenColor('#7549a0', 40)
+          let start = this.time[loop.startIndex]
+          let end = this.time[loop.endIndex]
+          layoutUpdate.shapes.push(this.makeShape(start, end, color))
+        })
+      }
+
+      let plotly = this.$refs.plotly
+      plotly.relayout(layoutUpdate)
     },
     selectLap: function (index) {
       if (this.selectionActive) {
@@ -699,7 +767,7 @@ export default {
         console.timeEnd('Document')
 
         console.time('Cloud Call')
-        // get activity .fit file as JSON
+        // get activity file as JSON
         const result = await rp(
           'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
           options
@@ -777,13 +845,17 @@ export default {
         _this.speed.push(point.speed !== undefined ? point.speed : 0)
         _this.airspeed.push(point.airspeed !== undefined ? point.airspeed : point.speed)
         _this.distance.push(point.distance !== undefined ? point.distance : 0)
-        _this.location.push({lat: parseFloat(point.lat), lng: parseFloat(point.long)})
+        if ('lat' in point && 'long' in point) {
+          _this.location.push({lat: parseFloat(point.lat), lng: parseFloat(point.long)})
+        }
       })
 
-      if (this.location[0].lat && this.location[0].lng) {
+      if (this.location.length > 0 && this.location[0].lat && this.location[0].lng) {
         this.showMap = true
         this.startMapMarker = this.location[0]
         this.endMapMarker = this.location[ this.location.length - 1 ]
+        let coordinates = this.location.map(a => Object.assign({}, a))
+        this.loopFinder = new LoopFinder(coordinates, this.google)
       }
 
       let chartSpeed = this.speed

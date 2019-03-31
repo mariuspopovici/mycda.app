@@ -39,6 +39,9 @@
           <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/" aria-label="Fork mariuspopovici/mycda.app on GitHub">GitHub</a>
           <a class="github-button" href="https://github.com/mariuspopovici/mycda.app/issues" data-icon="octicon-issue-opened" aria-label="Issue ntkme/github-buttons on GitHub">Report Issue</a>
           <p>Have a question? Visit our <b-link href="#/faq">FAQ</b-link> section or <b-link href="https://groups.google.com/forum/#!forum/mycda" target="_new">join</b-link> our user comunity.</p>
+          <br>
+          <h4>Follow Us</h4>
+          <a href="https://www.instagram.com/mycda.app/" target="_blank"><i class="fa fa-instagram fa-3x"></i></a>
         </b-jumbotron>
       </div>
     </div>
@@ -68,8 +71,3 @@ export default {
   methods: {}
 };
 </script>
-
-
-
-
- 

@@ -1,7 +1,7 @@
 /**
  * Implements a GPS track loop detection algorithm.
  */
-export default class Buffer {
+export default class LoopFinder {
   /**
      * Initializes a new instance.
      * @param {Array} coordinates
@@ -14,9 +14,10 @@ export default class Buffer {
      * Extracts loops.
      * @param {Number} precision (3 - neighborhood, street, 4 - individual street, land parcel,  5 - individual trees, door entrance)
      * @param {Number} minLoopDuration in recording rate x # of intervals (seconds).
+     * @param {Number} maxLoopDuration in recording rate x # of intervals (seconds).
      * @returns {Object []} an array of loops {coordinates, startIndex in coordinate array, endIndex in coordinate array, distance in coordinate array}.
      */
-  findLoops (precision = 4, minLoopDuration = 50) {
+  findLoops (precision = 4, minLoopDuration = 80, maxLoopDuration = 200) {
     let coordHash = {}
     let loops = []
 
@@ -27,7 +28,8 @@ export default class Buffer {
       let key = element.lat + element.lng
 
       if (coordHash[key]) {
-        if (coordHash[key].count > 0 && (index - coordHash[key].index > minLoopDuration)) {
+        let duration = index - coordHash[key].index
+        if (coordHash[key].count > 0 && (duration > minLoopDuration && duration < maxLoopDuration)) {
           coordHash[key].count++
           loops.push({
             coords: element,
@@ -45,5 +47,7 @@ export default class Buffer {
         }
       }
     })
+
+    return loops
   }
 }

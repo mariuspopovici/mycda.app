@@ -17,7 +17,25 @@
         <b-container fluid>
           <b-row>
             <b-col sm="9">
-              <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+                <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
+                <b-row align-h="center" align-v="center">
+                  <b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox>
+                  &nbsp;&nbsp;
+                  <b-form-checkbox v-if="laps.length > 0" id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox>
+                  &nbsp;&nbsp;
+                  <b-form-checkbox v-if="hasLocation" id="findLoopsCheckBox" v-on:change="onFindLoops" v-model="showLoops">Find Loops</b-form-checkbox>
+                  &nbsp;&nbsp;
+                  <b-dropdown v-if="showLoops" droptop id="showLoopsDD" no-caret
+                    variant="primary" v-b-tooltip.hover title="Loop Finder Preferences"
+                    ref="loopsDropDown" size="sm">
+                    <template slot='text'>
+                      <i class="fa fa-cog"></i>
+                    </template>
+                    <b-dropdown-form style="width: 300px;">
+                      <LoopFinderPrefs minDuration=30 maxDuration=600 precision='medium' v-on:change='onLoopFinderPrefsChange'/>
+                    </b-dropdown-form>
+                  </b-dropdown>
+                </b-row>
             </b-col>
             <b-col sm="3">
               <b-card :bg-variant="theme">
@@ -61,10 +79,6 @@
                   v-bind:process-style="sliderStyle"
                   >
                 </vue-slider>
-                <b-row>
-                  <b-col><b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox></b-col>
-                  <b-col><b-form-checkbox v-if="laps.length > 0" id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox></b-col>
-                </b-row>
               </b-card>
             </b-col>
           </b-row>
@@ -137,7 +151,8 @@ import RhoCalculator from '@/components/RhoCalculator'
 import { required, between, minLength, maxLength } from 'vuelidate/lib/validators'
 import { db } from '../main'
 import Utils from '@/services/utils'
-
+import LoopFinder from '@/services/loopdetect'
+import LoopFinderPrefs from '@/components/LoopFinderPrefs'
 const utils = new Utils()
 
 export default {
@@ -148,7 +163,8 @@ export default {
   components: {
     VuePlotly,
     vueSlider,
-    RhoCalculator
+    RhoCalculator,
+    LoopFinderPrefs
   },
   computed: {
     user () {
@@ -167,9 +183,11 @@ export default {
   },
   data () {
     return {
+      loopFinder: null,
       showDistanceAxis: true,
       showElevation: true,
       showLaps: false,
+      showLoops: false,
       weightUnits: '',
       isCalculatorVisible: false,
       saving: false,
@@ -191,6 +209,9 @@ export default {
       distance: [],
       ve: [],
       laps: [],
+      loops: [],
+      location: [],
+      hasLocation: false,
       mass: 80,
       cda: 0.350,
       crr: 0.005,
@@ -204,6 +225,12 @@ export default {
       chartLayout: {
         title: 'Virtual Elevation',
         paper_bgcolor: 'transparent',
+        autoResize: true,
+        height: 400,
+        margin: {
+          t: 80,
+          b: 40
+        },
         plot_bgcolor: 'transparent',
         modebar: {
           bgcolor: 'transparent'
@@ -275,6 +302,7 @@ export default {
       let saveDistance = this.distance
 
       if (this.units === 'imperial') {
+        console.log('converting')
         saveSpeed = this.speed.map(item => utils.miToKm(item))
         saveAirSpeed = this.airspeed.map(item => utils.miToKm(item))
         saveDistance = this.distance.map(item => utils.miToKm(item))
@@ -303,6 +331,7 @@ export default {
             speed: saveSpeed,
             airspeed: saveAirSpeed,
             altitude: saveAltitude,
+            location: this.location,
             isBaseline: this.isBaseline,
             ve: this.ve,
             laps: this.laps ? this.laps : []
@@ -391,15 +420,16 @@ export default {
           this.showDistanceAxis = docData.distance !== undefined
 
           docData.time.forEach((x, i) => {
-            if (docData.speed[i] !== 0 && docData.power[i] !== 0) {
-              this.time.push(x.toDate())
-              this.power.push(docData.power[i])
-              this.altitude.push(docData.altitude[i])
-              this.speed.push(docData.speed[i])
-              this.airspeed.push(docData.airspeed ? docData.airspeed[i] : docData.speed[i])
-              if (this.showDistanceAxis) {
-                this.distance.push(docData.distance[i])
-              }
+            this.time.push(x.toDate())
+            this.power.push(docData.power[i])
+            this.altitude.push(docData.altitude[i])
+            this.speed.push(docData.speed[i])
+            this.airspeed.push(docData.airspeed ? docData.airspeed[i] : docData.speed[i])
+            if (this.showDistanceAxis) {
+              this.distance.push(docData.distance[i])
+            }
+            if (docData.location) {
+              this.location.push(docData.location[i])
             }
           })
 
@@ -429,6 +459,7 @@ export default {
         let airSpeedSeries = data.airspeed
         let timeSeries = data.time
         let distanceSeries = data.distance
+        let locationSeries = data.location
 
         let time = []
         let power = []
@@ -436,6 +467,9 @@ export default {
         let speed = []
         let airspeed = []
         let distance = []
+        let location = []
+
+        let hasLocation = locationSeries && locationSeries.length > 0
 
         timeSeries.forEach((x, i) => {
         // filter out dropouts or zero speed, zero power points, power spikes
@@ -446,6 +480,9 @@ export default {
             speed.push(speedSeries[i])
             airspeed.push(airSpeedSeries[i])
             distance.push(distanceSeries[i])
+            if (hasLocation) {
+              location.push(locationSeries[i])
+            }
           }
         })
 
@@ -459,6 +496,7 @@ export default {
         this.airspeed = airspeed
         this.distance = distance
         this.laps = data.laps
+        this.location = location
 
         // we load these from preferences if a new analysis is requested
         // otherwise we used the saved ones
@@ -470,6 +508,8 @@ export default {
         }
         this.analysisName = this.description
       }
+
+      this.hasLocation = this.location.length > 0
 
       // now we have the data from whatever means it was obtained
       this.chartData = [{
@@ -494,7 +534,12 @@ export default {
         this.time,
         this.userPrefs.units,
         this.userPrefs.dloss)
+
       this.calculateCdA()
+
+      if (this.hasLocation) {
+        this.loopFinder = new LoopFinder(this.location)
+      }
 
       this.loading = false
     },
@@ -502,9 +547,55 @@ export default {
       this.showElevation = checked
       this.calculateCdA()
     },
+    onFindLoops: function (checked) {
+      this.showLoops = checked
+      if (checked && this.laps) {
+        this.findLoops()
+      }
+    },
+    findLoops: function (params) {
+      let layoutUpdate = {
+        shapes: []
+      }
+      this.showLaps = false
+      if (params) {
+        let precision
+        switch (params.precision) {
+          case 'low':
+            precision = 3
+            break
+          case 'medium':
+            precision = 4
+            break
+          case 'high':
+            precision = 5
+            break
+          default:
+            precision = 4
+        }
+        this.loops = this.loopFinder.findLoops(precision, params.minDuration, params.maxDuration)
+      } else {
+        this.loops = this.loopFinder.findLoops()
+      }
+      this.loops.forEach((loop, index) => {
+        let start = this.distance[loop.startIndex]
+        let end = this.distance[loop.endIndex]
+        layoutUpdate.shapes.push(this.lapShape(start, end, index))
+      })
 
+      let plotly = this.$refs.plotly
+      plotly.relayout(layoutUpdate)
+      this.calculateCdA()
+    },
+    onLoopFinderPrefsChange: function (params) {
+      this.findLoops(params)
+      this.$refs.loopsDropDown.hide(true)
+    },
     onShowLaps: function (checked) {
       this.showLaps = checked
+      if (checked) {
+        this.showLoops = false
+      }
       let plotly = this.$refs.plotly
       if (checked && this.laps) {
         // add a new shape to the chart layout
@@ -571,7 +662,7 @@ export default {
         y0: 0,
         x1: end,
         y1: 1,
-        fillcolor: utils.LightenDarkenColor('#82149b', (index + 1) * 20),
+        fillcolor: index % 2 === 0 ? '#7549a0' : utils.LightenDarkenColor('#7549a0', 40),
         opacity: 0.2,
         line: {
           width: 0.5,
@@ -611,6 +702,42 @@ export default {
 
         }
       )
+
+      if (this.showLoops) {
+        let x = []
+        let y = []
+        let text = []
+        this.loops.forEach((loop, index) => {
+          x.push(this.distance[loop.startIndex])
+          y.push(this.ve[loop.startIndex])
+          text.push('Loop ' + parseInt(index + 1))
+          if (index === this.loops.length - 1) {
+            x.push(this.distance[loop.endIndex])
+            y.push(this.ve[loop.endIndex])
+            text.push('End Loop ' + parseInt(index + 1))
+          }
+        })
+
+        data.push(
+          {
+            x: x,
+            y: y,
+            type: 'scatter',
+            mode: 'markers+text',
+            text: text,
+            textposition: 'bottom center',
+            marker: {
+              line: {
+                color: 'rgb(231, 99, 250)',
+                width: 6
+              }
+            },
+            name: 'Loop Markers',
+            showlegend: false
+          }
+        )
+      }
+
       this.chartData = data
     }
   }
