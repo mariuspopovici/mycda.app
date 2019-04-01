@@ -36,8 +36,8 @@ export default {
   props: {
     theme: { type: String },
     precision: { type: String },
-    minDuration: { type: String },
-    maxDuration: { type: String }
+    minDuration: { type: Number },
+    maxDuration: { type: Number }
   },
   watch: {
   },
