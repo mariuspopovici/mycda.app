@@ -32,7 +32,9 @@
                       <i class="fa fa-cog"></i>
                     </template>
                     <b-dropdown-form style="width: 300px;">
-                      <LoopFinderPrefs minDuration=30 maxDuration=600 precision='medium' v-on:change='onLoopFinderPrefsChange'/>
+                      <LoopFinderPrefs :minDuration="loopFinderPrefs.minDuration"
+                        :maxDuration="loopFinderPrefs.maxDuration"
+                        :precision="loopFinderPrefs.precision" v-on:change='onLoopFinderPrefsChange'/>
                     </b-dropdown-form>
                   </b-dropdown>
                 </b-row>
@@ -174,7 +176,7 @@ export default {
       return this.$store.getters.getUserPrefs
     }
   },
-  props: ['theme', 'range', 'data', 'description'],
+  props: ['theme', 'range', 'data', 'description', 'loopPrefs'],
   validations: {
     mass: { required, between: between(40, 300) },
     rho: { required, between: between(0, 2) },
@@ -210,6 +212,11 @@ export default {
       ve: [],
       laps: [],
       loops: [],
+      loopFinderPrefs: {
+        precision: 'low',
+        minDuration: 60,
+        maxDuration: 1000
+      },
       location: [],
       hasLocation: false,
       mass: 80,
@@ -279,6 +286,9 @@ export default {
     }
 
     this.weightUnits = this.userPrefs.units === 'metric' ? 'kg' : 'lbs'
+    if (this.loopPrefs) {
+      this.loopFinderPrefs = this.loopPrefs
+    }
   },
   methods: {
     setDirty: function () {
@@ -553,30 +563,29 @@ export default {
         this.findLoops()
       }
     },
-    findLoops: function (params) {
+    findLoops: function () {
       let layoutUpdate = {
         shapes: []
       }
       this.showLaps = false
-      if (params) {
-        let precision
-        switch (params.precision) {
-          case 'low':
-            precision = 3
-            break
-          case 'medium':
-            precision = 4
-            break
-          case 'high':
-            precision = 5
-            break
-          default:
-            precision = 4
-        }
-        this.loops = this.loopFinder.findLoops(precision, params.minDuration, params.maxDuration)
-      } else {
-        this.loops = this.loopFinder.findLoops()
+
+      let precision = 4
+      switch (this.loopFinderPrefs.precision) {
+        case 'low':
+          precision = 3
+          break
+        case 'medium':
+          precision = 4
+          break
+        case 'high':
+          precision = 5
+          break
+        default:
+          precision = 4
       }
+
+      this.loops = this.loopFinder.findLoops(precision, this.loopFinderPrefs.minDuration, this.loopFinderPrefs.maxDuration)
+
       this.loops.forEach((loop, index) => {
         let start = this.distance[loop.startIndex]
         let end = this.distance[loop.endIndex]
@@ -588,7 +597,8 @@ export default {
       this.calculateCdA()
     },
     onLoopFinderPrefsChange: function (params) {
-      this.findLoops(params)
+      this.loopFinderPrefs = params
+      this.findLoops()
       this.$refs.loopsDropDown.hide(true)
     },
     onShowLaps: function (checked) {

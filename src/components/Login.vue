@@ -27,7 +27,13 @@
             <div>
               <b-row>
                 <b-col>Not registered? <router-link to="/signup">Sign up</router-link> now.<p><router-link to="/reset">Trouble signing in?</router-link></p></b-col>
-                <b-col><div align='right'><b-button align='right' size="lg" variant="primary" @click="login">Login</b-button></div></b-col>
+                <b-col>
+                  <div align='right'>
+                    <b-button align='right' size="lg" variant="primary" @click="login">
+                      <b-spinner v-if="waiting" small></b-spinner> Login
+                    </b-button>
+                  </div>
+                </b-col>
               </b-row>
             </div>
           </b-card>
@@ -49,6 +55,7 @@ export default {
   props: ['theme'],
   data () {
     return {
+      waiting: false,
       email: '',
       password: '',
       loginError: false,
@@ -58,12 +65,15 @@ export default {
   methods: {
     login: async function () {
       try {
+        this.waiting = true
         this.loginError = false
         await firebase
           .auth()
           .signInWithEmailAndPassword(this.email, this.password)
+        this.waiting = false
         this.$router.replace('home')
       } catch (e) {
+        this.waiting = false
         this.loginError = true
         this.loginMessage = e.message
       }

@@ -41,11 +41,14 @@
           <b-card no-body :bg-variant="theme">
             <b-tabs small pills card v-on:input="selectLap">
               <b-tab title="Entire Activity" active>
-                <b-dropdown v-if="showMap" dropright split id="showLoopsDD" v-on:click="findLoops"
+                <b-dropdown v-if="showMap" dropright split id="showLoopsDD" v-on:click="findLoops(false)"
                   variant="secondary" :text="this.showLoops ? 'Hide Loops' : 'Show Loops'"
                   ref="loopsDropDown" size="sm">
                   <b-dropdown-form style="width: 300px;">
-                    <LoopFinderPrefs minDuration=30 maxDuration=600 precision='medium' v-on:change='onLoopFinderPrefsChange'/>
+                    <LoopFinderPrefs :minDuration="loopFinderPrefs.minDuration"
+                      :maxDuration="loopFinderPrefs.maxDuration"
+                      :precision="loopFinderPrefs.precision"
+                      v-on:change='onLoopFinderPrefsChange'/>
                   </b-dropdown-form>
                 </b-dropdown>
                 <p>
@@ -66,9 +69,10 @@
                     data: { time: time, speed: speed, airspeed: airspeed,
                       distance: distance, power: power,
                       altitude: altitude, laps: laps,
-                      location: location
+                      location: location, loopPrefs: loopFinderPrefs
                     },
-                    description: 'Lap ' + (index + 1)
+                    description: 'Lap ' + (index + 1),
+                    loopPrefs: loopFinderPrefs
                   }}">Analyze</b-button>
                 <p>
                 <p class="card-text"><b>Start Time:</b> {{new Date(lap.start_time).toLocaleString()}}</p>
@@ -88,7 +92,8 @@
                       distance: distance, power: power, altitude: altitude, laps: laps,
                       location: location
                     },
-                    description: 'Selection'
+                    description: 'Selection',
+                    loopPrefs: loopFinderPrefs
                   }}">Analyze</b-button>
                   <p>
                   <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
@@ -319,6 +324,11 @@ export default {
       utils: new Utils(),
       loopFinder: null,
       loops: [],
+      loopFinderPrefs: {
+        precision: 'low',
+        minDuration: 60,
+        maxDuration: 1000
+      },
       baseLineCdA: 0,
       segments: [],
       segmentName: '',
@@ -426,8 +436,9 @@ export default {
   },
   methods: {
     onLoopFinderPrefsChange: function (args) {
+      this.loopFinderPrefs = args
       this.showLoops = true
-      this.findLoops(args, true)
+      this.findLoops(true)
       this.$refs.loopsDropDown.hide(true)
     },
     convertDistance: function (d) {
@@ -617,36 +628,34 @@ export default {
         }
       }
     },
-    findLoops: function (params, refresh = false) {
+    findLoops: function (refresh = false) {
       let layoutUpdate = {
         shapes: []
       }
+
       if (this.showLoops && !refresh) {
         // hide
+        console.log('hide!')
         this.showLoops = false
       } else {
         // show
         this.showLoops = true
 
-        if (params) {
-          let precision
-          switch (params.precision) {
-            case 'low':
-              precision = 3
-              break
-            case 'medium':
-              precision = 4
-              break
-            case 'high':
-              precision = 5
-              break
-            default:
-              precision = 4
-          }
-          this.loops = this.loopFinder.findLoops(precision, params.minDuration, params.maxDuration)
-        } else {
-          this.loops = this.loopFinder.findLoops()
+        let precision = 3
+        switch (this.loopFinderPrefs.precision) {
+          case 'low':
+            precision = 3
+            break
+          case 'medium':
+            precision = 4
+            break
+          case 'high':
+            precision = 5
+            break
+          default:
+            precision = 4
         }
+        this.loops = this.loopFinder.findLoops(precision, this.loopFinderPrefs.minDuration, this.loopFinderPrefs.maxDuration)
 
         this.loops.forEach((loop, index) => {
           let color = index % 2 === 0 ? '#7549a0' : this.utils.LightenDarkenColor('#7549a0', 40)

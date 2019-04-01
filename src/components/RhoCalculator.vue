@@ -82,6 +82,32 @@
           </div>
 
           <div class="form-group row">
+            <label for="example-text-input" class="col-4 col-form-label">Altitude:</label>
+            <div class="col-8">
+              <input
+                class="form-control"
+                type="text"
+                id="altitude"
+                maxlength="6"
+                v-model.trim="$v.altitude.$model"
+                @blur="$v.altitude.$touch()"
+                autocomplete="off"
+                :placeholder="altitudeUnits"
+              >
+              <div v-if="$v.altitude.$error">
+                <p
+                  class="alert alert-danger"
+                  v-if="!$v.altitude.required"
+                >The altitude field is required!</p>
+                <p
+                  class="alert alert-danger"
+                  v-if="!$v.altitude.decimal"
+                >The altitude field is numeric!</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group row">
             <div class="offset-4 col-8 text-right">
               <div class="form-check form-check-inline">
                 <label class="form-check-label">
@@ -168,10 +194,12 @@
 <script>
 import { required, decimal } from 'vuelidate/lib/validators'
 import WeatherService from '@/services/weather'
+import Mapping from '@/services/mapping'
 import Utils from '@/services/utils'
 import LoadingButton from '@/components/LoadingButton'
 const rhoCalc = require('@mariuspopovici/rho')
 const weatherService = new WeatherService()
+const mappingService = new Mapping()
 const utils = new Utils()
 
 export default {
@@ -206,10 +234,12 @@ export default {
       temperature: '',
       dewpoint: '',
       pressure: '',
+      altitude: 0,
       rho: '',
       rho_lbcuft: '',
       temperatureUnits: '°C',
       pressureUnits: 'hPa',
+      altitudeUnits: 'm',
       lat: '',
       long: '',
       loadingLocation: false
@@ -227,6 +257,10 @@ export default {
     pressure: {
       required,
       decimal
+    },
+    altitude: {
+      required,
+      decimal
     }
   },
   watch: {
@@ -241,6 +275,7 @@ export default {
             if (this.temperature !== '') { this.temperature = utils.toFahrenheit(this.temperature) }
             if (this.dewpoint !== '') { this.dewpoint = utils.toFahrenheit(this.dewpoint) }
             if (this.pressure !== '') { this.pressure = utils.hpaToInHg(this.pressure) }
+            if (this.altitude !== '') { this.altitude = utils.mToFt(this.altitude) }
           }
           break
         case 'metric':
@@ -252,6 +287,7 @@ export default {
             if (this.temperature !== '') { this.temperature = utils.toCelcius(this.temperature) }
             if (this.dewpoint !== '') { this.dewpoint = utils.toCelcius(this.dewpoint) }
             if (this.pressure !== '') { this.pressure = utils.inHgTohpa(this.pressure) }
+            if (this.altitude !== '') { this.altitude = utils.ftToM(this.altitude) }
           }
           break
         default:
@@ -287,6 +323,11 @@ export default {
       this.long = position.coords.longitude
 
       try {
+        const elevationData = await mappingService.sendRequest(this.lat, this.long, this.units, process.env)
+        if (elevationData) {
+          this.altitude = elevationData.elevation
+        }
+
         const weatherData = await weatherService.sendRequest(
           this.lat,
           this.long,
@@ -311,7 +352,8 @@ export default {
           parseFloat(this.temperature),
           parseFloat(this.pressure),
           parseFloat(this.dewpoint),
-          this.units
+          this.units,
+          parseFloat(this.altitude)
         )
         this.rho = parseFloat(result).toFixed(4)
         this.rho_lbcuft = result.toPoundsPerCubicFeet().toFixed(4)
