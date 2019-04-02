@@ -231,7 +231,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
       console.log(error);
       await docRef.update({
         status: 'Error',
-        statusMessage: `An error occurred while parsing ${fileExtension} file. ${error}`
+        statusMessage: `An error occurred while parsing ${fileExtension} file. For more information please read the MyCdA FAQ section on supported file types.`
       });
       return null;
     }
