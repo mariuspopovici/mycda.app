@@ -63,6 +63,7 @@
       <br>
       <!-- Activities Table -->
       <b-table
+        id="activities-table"
         :dark="isDark"
         :head-variant="theme"
         striped
@@ -71,6 +72,8 @@
         responsive
         :items="activities"
         :fields="fields"
+        :per-page="perPage"
+        :current-page="currentPage"
       >
         <template slot="status" slot-scope="row">
           <div id='newStatus' v-if="row.item.status === 'New'">
@@ -130,6 +133,19 @@
           </div>
         </template>
       </b-table>
+      <b-pagination v-if="activities.length >= perPage"
+        :variant="theme"
+        align="center"
+        hide-goto-end-buttons
+        v-model="currentPage"
+        :total-rows="rows"
+        :per-page="perPage"
+        aria-controls="activities-table"
+        first-text="First"
+        prev-text="Prev"
+        next-text="Next"
+        last-text="Last"
+      ></b-pagination>
     </div>
   </div>
 </template>
@@ -166,10 +182,12 @@ export default {
         dictDefaultMessage: `<i class='fa fa-cloud-upload fa-4x'></i><p>Drop .FIT or .CSV file here or click to select one.`,
         acceptedFiles: '.fit,.csv'
       },
+      perPage: 10,
+      currentPage: 1,
       fields: [
         {key: 'status', label: 'Status', class: 'text-center'},
         {key: 'name', label: 'Name', sortable: true},
-        {key: 'timestamp', label: 'Date Time', sortable: true, sortDirection: 'desc'},
+        {key: 'activity_date', label: 'Date Time', sortable: true, sortDirection: 'desc'},
         {key: 'distance', label: 'Distance', class: 'text-right'},
         {key: 'avgSpeed', label: 'Avg. Speed', class: 'text-right'},
         {key: 'avgPower', label: 'Avg. Power', class: 'text-right'},
@@ -190,6 +208,9 @@ export default {
     }
   },
   computed: {
+    rows () {
+      return this.activities.length
+    },
     user () {
       return this.$store.getters.getUser
     },
@@ -293,7 +314,7 @@ export default {
             id: _this.activityID,
             uid: _this.user.uid,
             status: 'New',
-            timestamp: null,
+            timestamp: new Date(),
             name: 'New Activity',
             distance: null,
             averageSpeed: null,
@@ -339,6 +360,7 @@ export default {
             _this.activities.push({
               id: doc.id,
               name: docData.name,
+              activity_date: docData.activity_date.toDate().toLocaleString(),
               timestamp: docData.timestamp.toDate().toLocaleString(),
               distance: parseFloat(docData.distance).toFixed(1),
               avgPower: parseInt(docData.averagePower),
@@ -470,5 +492,18 @@ function uploadToStorage (userId, activityId, file, data, dz, callback, onErrorC
   transition: opacity 0.2s linear;
   text-align: center;
   background: #313131;
+}
+</style>
+
+<style>
+.page-item .page-link {
+  margin: 0 4px;
+  background-color: transparent;
+  border: #313131;
+}
+.page-item.disabled .page-link {
+  margin: 0 4px;
+  background-color: transparent;
+  border: transparent;
 }
 </style>

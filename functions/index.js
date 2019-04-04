@@ -231,7 +231,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
       console.log(error);
       await docRef.update({
         status: 'Error',
-        statusMessage: `An error occurred while parsing ${fileExtension} file. ${error}`
+        statusMessage: `An error occurred while parsing ${fileExtension} file. Please read the FAQ for additional information about supported file types.`
       });
       return null;
     }
@@ -273,7 +273,8 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
         });
         var doc = {
           // .fit file metadata
-          timestamp: stats.timestamp,
+          timestamp: new Date(),
+          activity_date: stats.timestamp,
           distance: stats.total_distance,
           averagePower: stats.avg_power,
           averageSpeed: stats.avg_speed,
