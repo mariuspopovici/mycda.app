@@ -13,7 +13,8 @@ class CSV {
      */
     parse(content, callback) {
       let _this = this;
-      this.csv(content, { 
+      this.csv(content.replace(/^\uFEFF/, ''), { 
+        bom: true,
         columns: true, 
         trim: true,
         skip_empty_lines: true,
@@ -34,7 +35,6 @@ class CSV {
               return value;
           }
         },
-        trim: true
       }, (err, records) => {
         if(err) {
             return callback(err, null);
@@ -133,7 +133,7 @@ class CSV {
       }
   
       let firstRecord = records[0];
-      
+      console.log(firstRecord)
       // validate required columns
       if (!(firstRecord.hasOwnProperty('time'))) {
         return {
@@ -141,7 +141,7 @@ class CSV {
           message: 'Missing required <time> column'
         }
       }
-      if (!(firstRecord..hasOwnProperty('power'))) {
+      if (!(firstRecord.hasOwnProperty('power'))) {
         return {
           isValid: false,
           message: 'Missing required <time> column'

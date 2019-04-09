@@ -412,7 +412,8 @@ export default {
 function uploadToStorage (userId, activityId, file, data, dz, callback, onErrorCallback) {
   // this is the dropzone's file preview progressbar, we're going to use this to let the user know how firebase upload is doing
   let dzProgressBar = file.previewElement.children[2]
-  let fileExtension = file.type.endsWith('csv') ? '.csv' : '.fit'
+  console.log(file)
+  let fileExtension = file.name.endsWith('csv') ? '.csv' : '.fit'
   // create a unique id for the file to be uploaded - this will be the activity id from now on
   let path = 'userdata/' + userId + '/activities/' + activityId + fileExtension
 
