@@ -224,7 +224,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
           data = await parseFIT(content);
           break;
         case '.csv':
-          data = await parseCSV(content);
+          data = await parseCSV(content.toString());
           break;
       }
     } catch(error) {
