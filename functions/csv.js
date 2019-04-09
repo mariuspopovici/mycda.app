@@ -15,6 +15,8 @@ class CSV {
       let _this = this;
       this.csv(content, { 
         columns: true, 
+        trim: true,
+        skip_empty_lines: true,
         cast: function(value, context) {
           switch (context.column) {
             case 'time':
@@ -130,22 +132,22 @@ class CSV {
         }
       }
   
-      let firstRecord = records[0]
+      let firstRecord = records[0];
       
       // validate required columns
-      if (!('time' in  firstRecord)) {
+      if (!(firstRecord.hasOwnProperty('time'))) {
         return {
           isValid: false,
           message: 'Missing required <time> column'
         }
       }
-      if (!('power' in  firstRecord)) {
+      if (!(firstRecord..hasOwnProperty('power'))) {
         return {
           isValid: false,
           message: 'Missing required <time> column'
         }
       }
-      if (!('speed' in  firstRecord)) {
+      if (!(firstRecord.hasOwnProperty('speed'))) {
         return {
           isValid: false,
           message: 'Missing required <speed> column'
