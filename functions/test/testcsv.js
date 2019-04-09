@@ -1,7 +1,7 @@
 const CSV = require ('../csv');
 const fs = require('fs');
 
-fs.readFile('mycdatest.csv', "utf8", (err, content) => {
+fs.readFile('mytest.csv', "utf8", (err, content) => {
   if (err) {
     console.log(err);
   } else {

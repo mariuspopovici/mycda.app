@@ -108,7 +108,7 @@ class CSV {
           distance: distance,
           position_lat: record.lat,
           position_long: record.long,
-          altitude: record.elevation,
+          altitude: record.elevation / 1000, // transform to km to be consistent with .FIT file parsing
           air_speed: record.airspeed
         })
 
