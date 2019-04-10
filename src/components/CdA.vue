@@ -16,30 +16,30 @@
       <div id='virtualElevation' ref="virtualElevation" v-else>
         <b-container fluid>
           <b-row>
-            <b-col sm="9">
-                <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" :autoResize="true"/>
-                <b-row align-h="center" align-v="center">
-                  <b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox>
-                  &nbsp;&nbsp;
-                  <b-form-checkbox v-if="laps.length > 0" id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox>
-                  &nbsp;&nbsp;
-                  <b-form-checkbox v-if="hasLocation" id="findLoopsCheckBox" v-on:change="onFindLoops" v-model="showLoops">Find Loops</b-form-checkbox>
-                  &nbsp;&nbsp;
-                  <b-dropdown v-if="showLoops" droptop id="showLoopsDD" no-caret
-                    variant="primary" v-b-tooltip.hover title="Loop Finder Preferences"
-                    ref="loopsDropDown" size="sm">
-                    <template slot='text'>
-                      <i class="fa fa-cog"></i>
-                    </template>
-                    <b-dropdown-form style="width: 300px;">
-                      <LoopFinderPrefs :minDuration="loopFinderPrefs.minDuration"
-                        :maxDuration="loopFinderPrefs.maxDuration"
-                        :precision="loopFinderPrefs.precision" v-on:change='onLoopFinderPrefsChange'/>
-                    </b-dropdown-form>
-                  </b-dropdown>
-                </b-row>
+            <b-col lg="9">
+              <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" autoResize="true"/>
+              <b-row align-h="center" align-v="center">
+                <b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox>
+                &nbsp;&nbsp;
+                <b-form-checkbox v-if="laps.length > 0" id="showLaps" v-on:change="onShowLaps" v-model="showLaps">Laps</b-form-checkbox>
+                &nbsp;&nbsp;
+                <b-form-checkbox v-if="hasLocation" id="findLoopsCheckBox" v-on:change="onFindLoops" v-model="showLoops">Find Loops</b-form-checkbox>
+                &nbsp;&nbsp;
+                <b-dropdown v-if="showLoops" droptop id="showLoopsDD" no-caret
+                  variant="primary" v-b-tooltip.hover title="Loop Finder Preferences"
+                  ref="loopsDropDown" size="sm">
+                  <template slot='text'>
+                    <i class="fa fa-cog"></i>
+                  </template>
+                  <b-dropdown-form style="width: 300px;">
+                    <LoopFinderPrefs :minDuration="loopFinderPrefs.minDuration"
+                      :maxDuration="loopFinderPrefs.maxDuration"
+                      :precision="loopFinderPrefs.precision" v-on:change='onLoopFinderPrefsChange'/>
+                  </b-dropdown-form>
+                </b-dropdown>
+              </b-row>
             </b-col>
-            <b-col sm="3">
+            <b-col lg="3">
               <b-card :bg-variant="theme">
                 <b-form-group
                     description="Enter rider mass including bike."
@@ -385,7 +385,7 @@ export default {
 
       if (this.distance.length > 0) {
         csvContent += [
-          'Time,Speed,Airspeed,Distance,Power,Altitude',
+          'time,speed,airspeed,distance,power,elevation',
           ...this.time.map((item, i) => {
             return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.distance[i] + ',' + this.power[i] + ',' + this.altitude[i]
           })
@@ -394,7 +394,7 @@ export default {
           .replace(/(^\[)|(\]$)/gm, '')
       } else {
         csvContent += [
-          'Time,Speed,Airspeed,Power,Altitude',
+          'time,speed,airspeed,power,elevation',
           ...this.time.map((item, i) => {
             return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.power[i] + ',' + this.altitude[i]
           })

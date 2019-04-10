@@ -68,7 +68,7 @@
         :head-variant="theme"
         striped
         hover
-        stacked="sm"
+        stacked="lg"
         responsive
         :items="activities"
         :fields="fields"
@@ -98,39 +98,43 @@
             <span v-if="data.value">{{convertDistance(data.value)}} {{speedUnits}}</span>
         </template>
         <template slot="actions" slot-scope="row">
-          <div align="center">
-            <span v-if="row.item.status === 'Error'">
-              <b-button
+          <b-container fluid>
+            <b-row align-h="center">
+            <b-col>
+              <span v-if="row.item.status === 'Error'">
+                <b-button
+                  size="sm"
+                  variant="danger"
+                  :id="'errorDetails-' + row.index"
+                >Error Details</b-button>
+                <b-popover :target="'errorDetails-' + row.index"
+                      placement="left"
+                      title="Error Details"
+                      triggers="hover focus"
+                      :content="row.item.statusMessage">
+                </b-popover>
+              </span>
+              <b-button v-if="row.item.status === 'Processed'"
+                size="sm"
+                variant="primary"
+                :to="{name: 'activity.details', params: { id: row.item.id }}"
+              >Details</b-button>
+              <b-btn v-if="row.item.status === 'Processed'"
+                size="sm"
+                variant="secondary"
+                v-b-tooltip.hover title="Rename Activity"
+                v-on:click="showEditActivity(row.item)"
+              ><i class="fa fa-edit fa-1x"></i></b-btn>
+              <b-button v-if="row.item.status === 'Processed' || row.item.status === 'Error'"
                 size="sm"
                 variant="danger"
-                :id="'errorDetails-' + row.index"
-              >Error Details</b-button>
-              <b-popover :target="'errorDetails-' + row.index"
-                    placement="left"
-                    title="Error Details"
-                    triggers="hover focus"
-                    :content="row.item.statusMessage">
-              </b-popover>
-            </span>
-            <b-button v-if="row.item.status === 'Processed'"
-              size="sm"
-              variant="primary"
-              :to="{name: 'activity.details', params: { id: row.item.id }}"
-            >Details</b-button>
-            <b-btn v-if="row.item.status === 'Processed'"
-              size="sm"
-              variant="secondary"
-              v-b-tooltip.hover title="Rename Activity"
-              v-on:click="showEditActivity(row.item)"
-            ><i class="fa fa-edit fa-1x"></i></b-btn>
-            <b-button v-if="row.item.status === 'Processed' || row.item.status === 'Error'"
-              size="sm"
-              variant="danger"
-              v-b-tooltip.hover title="Delete Activity"
-              v-on:click="showConfirmDelete(row.item)"
-            ><i class="fa fa-trash fa-1x"></i>
-            </b-button>
-          </div>
+                v-b-tooltip.hover title="Delete Activity"
+                v-on:click="showConfirmDelete(row.item)"
+              ><i class="fa fa-trash fa-1x"></i>
+              </b-button>
+            </b-col>
+            </b-row>
+          </b-container>
         </template>
       </b-table>
       <b-pagination v-if="activities.length >= perPage"
@@ -454,7 +458,7 @@ function uploadToStorage (userId, activityId, file, data, dz, callback, onErrorC
 <style>
 
 #uploadDropZone {
-  height: 160px;
+  height: 190px;
   padding: 10px;
   color: #b1aeae;
   background: transparent;

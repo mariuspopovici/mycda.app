@@ -13,7 +13,7 @@ class CSV {
      */
     parse(content, callback) {
       let _this = this;
-      this.csv(content.replace(/^\uFEFF/, ''), { 
+      this.csv(content, { 
         bom: true,
         columns: true, 
         trim: true,

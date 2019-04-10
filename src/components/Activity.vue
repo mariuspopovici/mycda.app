@@ -180,7 +180,7 @@
         :head-variant="theme"
         striped
         hover
-        stacked="sm"
+        stacked="lg"
         responsive
         :items="segments"
         :fields="fields"
