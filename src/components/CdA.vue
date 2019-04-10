@@ -387,7 +387,8 @@ export default {
         csvContent += [
           'time,speed,airspeed,distance,power,elevation',
           ...this.time.map((item, i) => {
-            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.distance[i] + ',' + this.power[i] + ',' + this.altitude[i]
+            let timeString = item.getMinutes() + ':' + item.getSeconds() + '.' + item.getMilliseconds()
+            return timeString + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.distance[i] + ',' + this.power[i] + ',' + this.altitude[i]
           })
         ]
           .join('\n')
@@ -396,7 +397,8 @@ export default {
         csvContent += [
           'time,speed,airspeed,power,elevation',
           ...this.time.map((item, i) => {
-            return item.toLocaleTimeString() + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.power[i] + ',' + this.altitude[i]
+            let timeString = item.getMinutes() + ':' + item.getSeconds() + '.' + item.getMilliseconds()
+            return timeString + ',' + this.speed[i] + ',' + this.airspeed[i] + ',' + this.power[i] + ',' + this.altitude[i]
           })
         ]
           .join('\n')

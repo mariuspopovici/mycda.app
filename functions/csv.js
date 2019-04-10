@@ -13,8 +13,7 @@ class CSV {
      */
     parse(content, callback) {
       let _this = this;
-      this.csv(content, { 
-        bom: true,
+      this.csv(content.replace(/^\uFEFF/, ''), { 
         columns: true, 
         trim: true,
         skip_empty_lines: true,
@@ -133,7 +132,7 @@ class CSV {
       }
   
       let firstRecord = records[0];
-      console.log(firstRecord)
+
       // validate required columns
       if (!(firstRecord.hasOwnProperty('time'))) {
         return {
@@ -163,12 +162,11 @@ class CSV {
     parseTime(timeString) {
       if (timeString && timeString.includes(':')) {
         let parts = timeString.split(':')
-        let seconds = parseInt(parts.pop());
+        let seconds = parseFloat(parts.pop());
         let minutes = parseFloat(parts.pop());
         let date = new Date();
         date.setMinutes(minutes);
         date.setSeconds(seconds);
-
         return date;
       }
       else {
