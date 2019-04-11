@@ -47,7 +47,7 @@
         <div align="left">
           <b-button size="lg" :disabled="$v.$invalid" variant="success" @click="signUp">Sign Up</b-button>
           <span>or go back to
-            <router-link to="/login">Login</router-link>.
+            <router-link to="/login">Sign In</router-link>.
           </span>
         </div>
       </b-card>

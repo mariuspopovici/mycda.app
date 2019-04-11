@@ -30,7 +30,7 @@
                 <b-col>
                   <div align='right'>
                     <b-button align='right' size="lg" variant="primary" @click="login">
-                      <b-spinner v-if="waiting" small></b-spinner> Login
+                      <b-spinner v-if="waiting" small></b-spinner> Sign In
                     </b-button>
                   </div>
                 </b-col>

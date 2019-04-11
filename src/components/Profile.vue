@@ -9,7 +9,7 @@
              dismissible
              :show="showUserInfoSuccessAlert"
              @dismissed="showUserInfoSuccessAlert=false">
-        You user information was saved succesfully. Please <b-link v-on:click="signOut">log out</b-link> and log back in for changes to take effect.
+        You user information was saved succesfully. Please <b-link v-on:click="signOut">sign out</b-link> and sign back in for changes to take effect.
       </b-alert>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
@@ -64,7 +64,7 @@
              dismissible
              :show="showUserPrefsSuccessAlert"
              @dismissed="showUserPrefsSuccessAlert=false">
-        Your preferences were saved succesfully. Please <b-link v-on:click="signOut">log out</b-link> and log back in for changes to take effect.
+        Your preferences were saved succesfully. Please <b-link v-on:click="signOut">sign out</b-link> and sign back in for changes to take effect.
       </b-alert>
       <b-card :bg-variant="theme">
         <b-form-group horizontal
@@ -128,7 +128,7 @@
           <b-form-group>
             <div align="right">
               <b-button align="right" variant="primary"
-                v-b-tooltip.hover title="Log out and log back in for changes to take effect."
+                v-b-tooltip.hover title="Sign out and sign back in for changes to take effect."
                 :disabled="!saveUserPrefsEnabled"
                 v-on:click="updateUserPrefs">{{saveUserPrefsCaption}}</b-button>
             </div>
