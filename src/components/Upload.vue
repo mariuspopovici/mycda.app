@@ -159,7 +159,7 @@ import vueDropzone from 'vue2-dropzone'
 import firebase from 'firebase/app'
 import 'firebase/storage'
 import Utils from '@/services/utils'
-import 'vue2-dropzone/dist/vue2Dropzone.css'
+import 'vue2-dropzone/dist/vue2Dropzone.min.css'
 
 import { db } from '../main'
 

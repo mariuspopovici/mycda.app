@@ -17,7 +17,7 @@
         <b-container fluid>
           <b-row>
             <b-col lg="9">
-              <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" autoResize="true"/>
+              <vue-plotly id="plotly" ref="plotly" :data="chartData" :layout="chartLayout" :options="chartOptions" autoResize/>
               <b-row align-h="center" align-v="center">
                 <b-form-checkbox id="showElevation" v-on:change="onShowElevation" v-model="showElevation">Elevation</b-form-checkbox>
                 &nbsp;&nbsp;
