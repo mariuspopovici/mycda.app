@@ -81,7 +81,11 @@
               </li>
               <li class="list-inline-item">&sdot;</li>
               <li class="list-inline-item">
-                <b-link href="https://groups.google.com/forum/#!forum/mycda" target="_new">Community</b-link>
+                <a href="#/privacy">Privacy Policy</a>
+              </li>
+              <li class="list-inline-item">&sdot;</li>
+              <li class="list-inline-item">
+                <b-link href="#/terms">Terms and Conditions</b-link>
               </li>
             </ul>
             <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved. Build {{appVersion}}</p>

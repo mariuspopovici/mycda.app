@@ -11,6 +11,8 @@ import Profile from '@/components/Profile'
 import RhoCalculator from '@/components/RhoCalculator'
 import ResetPassword from '@/components/ResetPassword'
 import SetPassword from '@/components/SetPassword'
+import Privacy from '@/components/Privacy'
+import Terms from '@/components/Terms'
 import Faq from '@/components/Faq'
 
 import { store } from '../store/store'
@@ -51,6 +53,24 @@ const router = new Router({
       path: '/faq',
       name: 'faq',
       component: Faq,
+      meta: {
+        requiresAuth: false,
+        breadcrumbs: []
+      }
+    },
+    {
+      path: '/privacy',
+      name: 'privacy',
+      component: Privacy,
+      meta: {
+        requiresAuth: false,
+        breadcrumbs: []
+      }
+    },
+    {
+      path: '/terms',
+      name: 'terms',
+      component: Terms,
       meta: {
         requiresAuth: false,
         breadcrumbs: []

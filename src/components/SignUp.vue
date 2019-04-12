@@ -44,6 +44,17 @@
             <br><b-alert show variant="danger">Repeat Password is required and must match Password.</b-alert>
           </div>
         </b-form-group>
+        <b-form-group>
+          <div align="right">
+          <b-form-checkbox
+            id="terms"
+            v-model="terms"
+            name="terms"
+          >
+            I accept the <a target="_blank" href="#/terms">Terms and Conditions.</a>
+          </b-form-checkbox>
+          </div>
+        </b-form-group>
         <div align="left">
           <b-button size="lg" :disabled="$v.$invalid" variant="success" @click="signUp">Sign Up</b-button>
           <span>or go back to
@@ -68,10 +79,12 @@ export default {
   validations: {
     password: { required, minLength: minLength(6), maxLength: maxLength(25) },
     password2: { minLength: minLength(6), maxLength: maxLength(25), sameAs: sameAs('password') },
-    email: { email, required }
+    email: { email, required },
+    terms: { required, sameAs: sameAs(() => true) }
   },
   data () {
     return {
+      terms: false,
       email: '',
       password: '',
       password2: '',
