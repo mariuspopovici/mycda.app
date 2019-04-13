@@ -563,6 +563,13 @@ export default {
       this.showLoops = checked
       if (checked && this.laps) {
         this.findLoops()
+      } else {
+        let layoutUpdate = {
+          shapes: []
+        }
+        let plotly = this.$refs.plotly
+        plotly.relayout(layoutUpdate)
+        this.calculateCdA()
       }
     },
     findLoops: function () {
