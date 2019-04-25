@@ -147,7 +147,7 @@ app.get('/:activity', async (req, res) => {
     res.status(200).json(data);
     return;
   } catch (error) {
-    console.log(error);
+    console.log('Get Activity Error', error);
     res.status(500).send('An error occurred.');
     return;
   }
@@ -227,12 +227,12 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
           data = await parseCSV(content.toString());
           break;
       }
-    } catch(error) {
-      console.log(error);
+    } catch(error) {    
       await docRef.update({
         status: 'Error',
         statusMessage: `An error occurred while parsing ${fileExtension} file. Please read the FAQ for additional information about supported file types.`
       });
+      console.log('Parse Error', error);
       return null;
     }
     
@@ -262,7 +262,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
           statusMessage: result.message
         });
       } catch (e) {
-        console.log(e)
+        console.log('Validation Status Update Error', e)
         return null;
       }
     }
@@ -284,7 +284,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
         };
         return docRef.update(doc);
       } catch (e) {
-        console.error(e);
+        console.error('Get Activity Data Error', e);
         return docRef.update({
           fitFile: jsonFilePath,
           status: 'Error',
@@ -293,7 +293,7 @@ exports.processActivityFile = functions.storage.object().onFinalize(async (objec
       }
     }
   } catch (error) {
-    console.error(error);
+    console.error('Processing Error', error);
     return null;
   }
 })
