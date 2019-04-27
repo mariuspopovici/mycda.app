@@ -193,12 +193,12 @@
 
 <script>
 import { required, decimal } from 'vuelidate/lib/validators'
-import WeatherService from '@/services/weather'
+import WeatherServiceFactory from '@/services/weather'
 import Mapping from '@/services/mapping'
 import Utils from '@/services/utils'
 import LoadingButton from '@/components/LoadingButton'
 const rhoCalc = require('@mariuspopovici/rho')
-const weatherService = new WeatherService()
+const weatherService = WeatherServiceFactory.create(process.env)
 const mappingService = new Mapping()
 const utils = new Utils()
 
@@ -275,7 +275,7 @@ export default {
             if (this.temperature !== '') { this.temperature = utils.toFahrenheit(this.temperature) }
             if (this.dewpoint !== '') { this.dewpoint = utils.toFahrenheit(this.dewpoint) }
             if (this.pressure !== '') { this.pressure = utils.hpaToInHg(this.pressure) }
-            if (this.altitude !== '') { this.altitude = utils.mToFt(this.altitude) }
+            if (this.altitude !== '') { this.altitude = utils.mToFt(this.altitude.toFixed(2)) }
           }
           break
         case 'metric':
@@ -287,7 +287,7 @@ export default {
             if (this.temperature !== '') { this.temperature = utils.toCelcius(this.temperature) }
             if (this.dewpoint !== '') { this.dewpoint = utils.toCelcius(this.dewpoint) }
             if (this.pressure !== '') { this.pressure = utils.inHgTohpa(this.pressure) }
-            if (this.altitude !== '') { this.altitude = utils.ftToM(this.altitude) }
+            if (this.altitude !== '') { this.altitude = utils.ftToM(this.altitude).toFixed(2) }
           }
           break
         default:
@@ -331,8 +331,7 @@ export default {
         const weatherData = await weatherService.sendRequest(
           this.lat,
           this.long,
-          this.units,
-          process.env
+          this.units
         )
         if (weatherData) {
           this.temperature = weatherData.temperature

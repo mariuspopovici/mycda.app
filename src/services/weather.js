@@ -1,69 +1,66 @@
-/**
- * Get's weather data for latitude and longitude.
- * Uses openweathermap.org web services.
- */
-export default class Weather {
-  /**
-   * Call web service.
-   * @param {Number} lat latitude
-   * @param {Number} long longitude
-   * @param {String} units units of measurement (metric / imperial)
-   * @param {*} config app config object containing openweathermap API keys
-   *
-   * @returns object {temperature, humidity, dewPoint, pressure}
-   */
-  async sendRequest (lat, long, units = 'metric', config) {
-    const rp = require('request-promise')
+export default class WeatherServiceFactory {
+  static create (config) {
+    switch (config.WEATHER_API) {
+      case 'OpenWeatherMap':
+        return new OpenWeatherMapService(config)
+      case 'DarkSky':
+        return new DarkSkyWeatherService(config)
+    }
+  }
+}
 
-    const options = {
-      method: 'GET',
-      headers: {},
-      qs: {
-        lat: lat,
-        lon: long,
-        appid: config.OW_API_KEY,
-        units: units
-      },
-      json: true
+class WeatherServiceResponse {
+  constructor (temperature, humidity, dewPoint, pressure) {
+    this._temperature = temperature
+    this._humidity = humidity
+    this._dewPoint = dewPoint
+    this._pressure = pressure
+  }
+
+  set temperature (temperature) {
+    this._temperature = temperature
+  }
+
+  get temperature () {
+    return this._temperature
+  }
+
+  set humidity (humidity) {
+    this._humidity = humidity
+  }
+
+  get humidity () {
+    return this._humidity
+  }
+
+  set dewPoint (dewPoint) {
+    this._dewPoint = dewPoint
+  }
+
+  get dewPoint () {
+    return this._dewPoint
+  }
+
+  set pressure (pressure) {
+    this._pressure = pressure
+  }
+
+  get pressure () {
+    return this._pressure
+  }
+}
+
+export class WeatherService {
+  constructor () {
+    if (new.target === WeatherService) {
+      throw new TypeError('Cannot instantiate WeatherService directly.')
     }
 
-    try {
-      // use a proxy for CORS requests when in production mode
-      const cors =
-        config.NODE_ENV === 'production'
-          ? 'https://cors-anywhere.herokuapp.com/'
-          : ''
-      const result = await rp(
-        cors + 'http://api.openweathermap.org/data/2.5/weather',
-        options
-      )
-      if (result) {
-        const tempInCelcius =
-          units === 'imperial'
-            ? this.toCelcius(result.main.temp)
-            : result.main.temp
-        const dewPointInCelcius = (
-          tempInCelcius -
-          (100 - result.main.humidity) / 5
-        ).toFixed(2)
-
-        return {
-          temperature: result.main.temp,
-          humidity: result.main.humidity,
-          dewPoint:
-            units === 'imperial'
-              ? this.toFahrenheit(dewPointInCelcius)
-              : dewPointInCelcius,
-          pressure:
-            units === 'imperial'
-              ? this.hpaToInHg(result.main.pressure)
-              : result.main.pressure
-        }
-      }
-    } catch (e) {
-      console.log(e)
-      throw new Error('Cannot get weather data.')
+    if (this.sendRequest === undefined) {
+      throw new TypeError('Must implement sendRequest method')
     }
+
+    this.rp = require('request-promise')
   }
 
   toFahrenheit (temp) {
@@ -78,7 +75,121 @@ export default class Weather {
     return (pressure / 33.863886666667).toFixed(2)
   }
 
-  inHgToC (pressure) {
+  inHgTohPa (pressure) {
     return (pressure * 33.863886666667).toFixed(2)
+  }
+}
+
+/**
+ * Get's weather data for latitude and longitude.
+ * Uses darksky.net web services.
+ */
+export class DarkSkyWeatherService extends WeatherService {
+  constructor (config) {
+    super()
+    this.config = config
+  }
+
+  /**
+   * Call web service.
+   * @param {Number} lat latitude
+   * @param {Number} long longitude
+   * @param {String} units units of measurement (metric / imperial)
+   *
+   * @returns {WeatherServiceResponse} response
+   */
+  async sendRequest (lat, long, units = 'metric') {
+    const options = {
+      method: 'GET',
+      headers: {
+        'Access-Control-Allow-Origin': '*'
+      },
+      qs: {},
+      json: true
+    }
+
+    try {
+      const cors = 'https://cors-anywhere.herokuapp.com/'
+      const url = cors + 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long
+
+      const result = await this.rp(
+        url,
+        options
+      )
+
+      if (result) {
+        return new WeatherServiceResponse(
+          units === 'metric' ? this.toCelcius(result.currently.temperature) : result.currently.temperature,
+          result.currently.humidity,
+          units === 'metric' ? this.toCelcius(result.currently.dewPoint) : result.currently.dewPoint,
+          units === 'metric' ? result.currently.pressure : this.hpaToInHg(result.currently.pressure)
+        )
+      }
+    } catch (e) {
+      console.log(e)
+      throw new Error('Cannot get weather data.')
+    }
+  }
+}
+
+/**
+ * Get's weather data for latitude and longitude.
+ * Uses openweathermap.org web services.
+ */
+export class OpenWeatherMapService extends WeatherService {
+  constructor (config) {
+    super()
+    this.config = config
+  }
+
+  /**
+   * Call web service.
+   * @param {Number} lat latitude
+   * @param {Number} long longitude
+   * @param {String} units units of measurement (metric / imperial)
+   *
+   * @returns {WeatherServiceResponse} response
+   */
+  async sendRequest (lat, long, units = 'metric') {
+    const options = {
+      method: 'GET',
+      headers: {},
+      qs: {
+        lat: lat,
+        lon: long,
+        appid: this.config.OW_API_KEY,
+        units: units
+      },
+      json: true
+    }
+
+    try {
+      // use a proxy for CORS requests when in production mode
+      const cors =
+        this.config.NODE_ENV === 'production'
+          ? 'https://cors-anywhere.herokuapp.com/'
+          : ''
+      const result = await this.rp(
+        cors + 'http://api.openweathermap.org/data/2.5/weather',
+        options
+      )
+      if (result) {
+        const tempInCelcius =
+          units === 'imperial'
+            ? this.toCelcius(result.main.temp)
+            : result.main.temp
+
+        const dewPointInCelcius = (tempInCelcius - (100 - result.main.humidity) / 5).toFixed(2)
+
+        return new WeatherServiceResponse(result.main.temp,
+          result.main.humidity,
+          units === 'imperial' ? this.toFahrenheit(dewPointInCelcius) : dewPointInCelcius,
+          units === 'imperial' ? this.hpaToInHg(result.main.pressure) : result.main.pressure
+        )
+      }
+    } catch (e) {
+      console.log(e)
+      throw new Error('Cannot get weather data.')
+    }
   }
 }

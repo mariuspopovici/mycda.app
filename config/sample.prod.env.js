@@ -1,7 +1,9 @@
 "use strict";
 module.exports = {
   NODE_ENV: `"production"`,
-  OW_API_KEY: `"your OpenWeather API key here between quotes"`,
+  WEATHER_API: `"DarkSky"`, // OpenWeatherMap or DarkSky
+  DS_API_KEY: `"your Dark Sky API key here"`,
+  OW_API_KEY: `"your OpenWeatherMap API key here"`,
   FB_API_KEY: `"Firebase API key here"`,
   FB_AUTH_DOMAIN: `"Firebase auth domain"`,
   FB_DATABASE_URL: `"Firebase database url"`,
