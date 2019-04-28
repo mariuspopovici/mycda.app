@@ -118,10 +118,7 @@ export class DarkSkyWeatherService extends WeatherService {
     }
 
     try {
-      const cors =
-        this.config.NODE_ENV === 'development'
-          ? 'https://cors-anywhere.herokuapp.com/'
-          : ''
+      const cors = 'https://cors-anywhere.herokuapp.com/'
       const url = cors + 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long + ',' + timeString
 
       const result = await this.rp(
@@ -179,10 +176,7 @@ export class OpenWeatherMapService extends WeatherService {
 
     try {
       // use a proxy for CORS requests when in production mode
-      const cors =
-        this.config.NODE_ENV === 'development'
-          ? 'https://cors-anywhere.herokuapp.com/'
-          : ''
+      const cors = 'https://cors-anywhere.herokuapp.com/'
       const result = await this.rp(
         cors + 'http://api.openweathermap.org/data/2.5/weather',
         options
