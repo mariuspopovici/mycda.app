@@ -332,7 +332,6 @@ export default {
       }
     },
     getActivityLocation: function () {
-      console.log(this.activityInfo)
       if (this.activityInfo) {
         this.loadingLocation = true
         this.setPosition({
@@ -345,8 +344,6 @@ export default {
       }
     },
     setPosition: async function (position) {
-      console.log(position)
-
       this.lat = position.coords.latitude
       this.long = position.coords.longitude
       let time = new Date()

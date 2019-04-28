@@ -319,7 +319,6 @@ export default {
       let saveDistance = this.distance
 
       if (this.units === 'imperial') {
-        console.log('converting')
         saveSpeed = this.speed.map(item => utils.miToKm(item))
         saveAirSpeed = this.airspeed.map(item => utils.miToKm(item))
         saveDistance = this.distance.map(item => utils.miToKm(item))
