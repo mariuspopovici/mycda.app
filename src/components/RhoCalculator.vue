@@ -174,12 +174,21 @@
 
           <div class="form-group row">
             <div class="col col-12 text-right">
-              <LoadingButton
-                :loading="loadingLocation"
-                caption="My Location"
-                loadingCaption="Please wait..."
-                v-on:click.native="getLocation"
-              ></LoadingButton>
+              <b-dropdown id="dropdownLocation">
+                <template slot="text">
+                  <span v-if="loadingLocation">
+                    <b-spinner small></b-spinner>
+                  </span>
+                  <span>&nbsp;Location</span>
+                </template>
+                <b-dropdown-item-btn v-on:click.native="getLocation">
+                  <i class="fa fa-location-arrow"></i> Current Location
+                </b-dropdown-item-btn>
+                <b-dropdown-item-btn :disabled="this.activityInfo === null || !this.activityInfo.hasLocation"
+                  v-on:click.native="getActivityLocation">
+                  <i class="fa fa-map"></i> Activity Location / Time
+                </b-dropdown-item-btn>
+              </b-dropdown>
               <button type="submit" class="btn btn-primary">
                 <font-awesome-icon icon="check"/>&nbsp;{{calculateCaption}}
               </button>
@@ -226,6 +235,10 @@ export default {
     calculateCaption: {
       type: String,
       default: 'Calculate'
+    },
+    activityInfo: {
+      type: Object,
+      default: null
     }
   },
   data () {
@@ -318,9 +331,28 @@ export default {
         alert('Geolocation is not supported')
       }
     },
+    getActivityLocation: function () {
+      console.log(this.activityInfo)
+      if (this.activityInfo) {
+        this.loadingLocation = true
+        this.setPosition({
+          coords: {
+            latitude: this.activityInfo.location.lat,
+            longitude: this.activityInfo.location.lng
+          },
+          time: this.activityInfo.time
+        })
+      }
+    },
     setPosition: async function (position) {
+      console.log(position)
+
       this.lat = position.coords.latitude
       this.long = position.coords.longitude
+      let time = new Date()
+      if ('time' in position) {
+        time = position.time
+      }
 
       try {
         const elevationData = await mappingService.sendRequest(this.lat, this.long, this.units, process.env)
@@ -331,7 +363,8 @@ export default {
         const weatherData = await weatherService.sendRequest(
           this.lat,
           this.long,
-          this.units
+          this.units,
+          time
         )
         if (weatherData) {
           this.temperature = weatherData.temperature

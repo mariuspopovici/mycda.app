@@ -98,19 +98,31 @@ export class DarkSkyWeatherService extends WeatherService {
    *
    * @returns {WeatherServiceResponse} response
    */
-  async sendRequest (lat, long, units = 'metric') {
+  async sendRequest (lat, long, units = 'metric', time) {
     const options = {
       method: 'GET',
       headers: {
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': 'https://mycda.app'
       },
       qs: {},
       json: true
     }
 
+    let timeString = parseInt((new Date()).getTime() / 1000).toString()
+    if (time) {
+      if (time instanceof Date) {
+        timeString = parseInt(time.getTime() / 1000).toString()
+      } else if (time instanceof String) {
+        timeString = time
+      }
+    }
+
     try {
-      const cors = 'https://cors-anywhere.herokuapp.com/'
-      const url = cors + 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long
+      const cors =
+        this.config.NODE_ENV === 'development'
+          ? 'https://cors-anywhere.herokuapp.com/'
+          : ''
+      const url = cors + 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long + ',' + timeString
 
       const result = await this.rp(
         url,
@@ -153,7 +165,9 @@ export class OpenWeatherMapService extends WeatherService {
   async sendRequest (lat, long, units = 'metric') {
     const options = {
       method: 'GET',
-      headers: {},
+      headers: {
+        'Access-Control-Allow-Origin': 'https://mycda.app'
+      },
       qs: {
         lat: lat,
         lon: long,
@@ -166,7 +180,7 @@ export class OpenWeatherMapService extends WeatherService {
     try {
       // use a proxy for CORS requests when in production mode
       const cors =
-        this.config.NODE_ENV === 'production'
+        this.config.NODE_ENV === 'development'
           ? 'https://cors-anywhere.herokuapp.com/'
           : ''
       const result = await this.rp(

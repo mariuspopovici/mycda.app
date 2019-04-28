@@ -6,7 +6,7 @@
       :header-text-variant="modalHeaderTextVariant"
       v-on:hidden="onHideCalculator"
       centered title="Air Density Calculator">
-      <RhoCalculator v-if="isCalculatorVisible" v-on:calculate="onCalculate" showClose calculateCaption="Apply"/>
+      <RhoCalculator v-if="isCalculatorVisible" v-on:calculate="onCalculate" :activityInfo="getActivityInfo()" showClose calculateCaption="Apply"/>
     </b-modal>
     <div class="container-fluid">
       <h2>CdA Analysis ({{analysisName}})</h2>
@@ -291,6 +291,13 @@ export default {
     }
   },
   methods: {
+    getActivityInfo: function () {
+      return {
+        hasLocation: this.hasLocation,
+        location: this.location[0],
+        time: this.time[0]
+      }
+    },
     setDirty: function () {
       this.dirty = true
     },
@@ -521,7 +528,7 @@ export default {
         this.analysisName = this.description
       }
 
-      this.hasLocation = this.location.length > 0
+      this.hasLocation = this.location.length > 0 && this.location[0] !== undefined
 
       // now we have the data from whatever means it was obtained
       this.chartData = [{
