@@ -288,7 +288,7 @@ export default {
             if (this.temperature !== '') { this.temperature = utils.toFahrenheit(this.temperature) }
             if (this.dewpoint !== '') { this.dewpoint = utils.toFahrenheit(this.dewpoint) }
             if (this.pressure !== '') { this.pressure = utils.hpaToInHg(this.pressure) }
-            if (this.altitude !== '') { this.altitude = utils.mToFt(this.altitude.toFixed(2)) }
+            if (this.altitude !== '') { this.altitude = utils.mToFt(this.altitude).toFixed(2) }
           }
           break
         case 'metric':
