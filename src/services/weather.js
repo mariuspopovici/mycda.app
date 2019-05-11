@@ -10,11 +10,13 @@ export default class WeatherServiceFactory {
 }
 
 class WeatherServiceResponse {
-  constructor (temperature, humidity, dewPoint, pressure) {
+  constructor (temperature, humidity, dewPoint, pressure, windSpeed, windDirection) {
     this._temperature = temperature
     this._humidity = humidity
     this._dewPoint = dewPoint
     this._pressure = pressure
+    this._windSpeed = windSpeed
+    this._windDirection = windDirection
   }
 
   set temperature (temperature) {
@@ -48,6 +50,22 @@ class WeatherServiceResponse {
   get pressure () {
     return this._pressure
   }
+
+  set windDirection (windDirection) {
+    this._windDirection = windDirection
+  }
+
+  get windDirection () {
+    return this._windDirection
+  }
+
+  set windSpeed (windSpeed) {
+    this._windSpeed = windSpeed
+  }
+
+  get windSpeed () {
+    return this._windSpeed
+  }
 }
 
 export class WeatherService {
@@ -77,6 +95,14 @@ export class WeatherService {
 
   inHgTohPa (pressure) {
     return (pressure * 33.863886666667).toFixed(2)
+  }
+
+  kmToMi (km) {
+    return (km / 1.609344).toFixed(2)
+  }
+
+  miToKm (mi) {
+    return (mi * 1.609344).toFixed(2)
   }
 }
 
@@ -127,12 +153,30 @@ export class DarkSkyWeatherService extends WeatherService {
       )
 
       if (result) {
-        return new WeatherServiceResponse(
+        let response = new WeatherServiceResponse(
           units === 'metric' ? this.toCelcius(result.currently.temperature) : result.currently.temperature,
           result.currently.humidity,
           units === 'metric' ? this.toCelcius(result.currently.dewPoint) : result.currently.dewPoint,
-          units === 'metric' ? result.currently.pressure : this.hpaToInHg(result.currently.pressure)
+          units === 'metric' ? result.currently.pressure : this.hpaToInHg(result.currently.pressure),
+          units === 'metric' ? this.miToKm(result.currently.windSpeed) : parseFloat(result.currently.windSpeed),
+          result.currently.windBearing
         )
+
+        if (result.hourly && result.hourly.data.length > 0) {
+          response.hours = []
+          let _this = this
+          result.hourly.data.forEach(hourlyForecast => {
+            response.hours.push(new WeatherServiceResponse(
+              units === 'metric' ? _this.toCelcius(hourlyForecast.temperature) : hourlyForecast.temperature,
+              result.currently.humidity,
+              units === 'metric' ? _this.toCelcius(hourlyForecast.dewPoint) : hourlyForecast.dewPoint,
+              units === 'metric' ? hourlyForecast.pressure : this.hpaToInHg(hourlyForecast.pressure),
+              units === 'metric' ? this.miToKm(hourlyForecast.windSpeed) : parseFloat(hourlyForecast.windSpeed),
+              hourlyForecast.windBearing))
+          })
+        }
+
+        return response
       }
     } catch (e) {
       console.log(e)
@@ -192,7 +236,9 @@ export class OpenWeatherMapService extends WeatherService {
         return new WeatherServiceResponse(result.main.temp,
           result.main.humidity,
           units === 'imperial' ? this.toFahrenheit(dewPointInCelcius) : dewPointInCelcius,
-          units === 'imperial' ? this.hpaToInHg(result.main.pressure) : result.main.pressure
+          units === 'imperial' ? this.hpaToInHg(result.main.pressure) : result.main.pressure,
+          units === 'imperial' ? this.kmToMi(result.main.wind.speed) : result.main.wind.speed,
+          units === result.main.wind.deg
         )
       }
     } catch (e) {

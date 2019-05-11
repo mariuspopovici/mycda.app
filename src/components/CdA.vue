@@ -37,6 +37,9 @@
                       :precision="loopFinderPrefs.precision" v-on:change='onLoopFinderPrefsChange'/>
                   </b-dropdown-form>
                 </b-dropdown>
+                <span v-if="showLoops">&nbsp;&nbsp;</span>
+                <b-form-checkbox v-if="hasLocation" id="useWindModel" v-on:change="onUseWindModel" v-model="useWindModel">Wind Model</b-form-checkbox>
+                &nbsp;&nbsp;
               </b-row>
             </b-col>
             <b-col lg="3">
@@ -149,14 +152,20 @@
 import VuePlotly from '@statnett/vue-plotly'
 import vueSlider from 'vue-slider-component'
 import VirtualElevation from '@/services/ve'
+import WindModel from '@/services/windmodel'
+import WeatherServiceFactory from '@/services/weather'
 import RhoCalculator from '@/components/RhoCalculator'
 import { required, between, minLength, maxLength } from 'vuelidate/lib/validators'
 import { db } from '../main'
 import Utils from '@/services/utils'
 import LoopFinder from '@/services/loopdetect'
 import LoopFinderPrefs from '@/components/LoopFinderPrefs'
-const utils = new Utils()
+import Mapping from '@/services/mapping'
 
+const utils = new Utils()
+const weatherService = WeatherServiceFactory.create(process.env)
+const rhoCalc = require('@mariuspopovici/rho')
+const mappingService = new Mapping()
 export default {
   name: 'CdA',
   metaInfo: {
@@ -185,6 +194,7 @@ export default {
   },
   data () {
     return {
+      useWindModel: false,
       loopFinder: null,
       showDistanceAxis: true,
       showElevation: true,
@@ -208,6 +218,7 @@ export default {
       altitude: [],
       speed: [],
       airspeed: [],
+      windModelAirSpeed: [],
       distance: [],
       ve: [],
       laps: [],
@@ -243,7 +254,7 @@ export default {
           bgcolor: 'transparent'
         },
         font: { family: 'Roboto', color: '#b0bec5' },
-        colorway: ['#f4a433', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39'],
+        colorway: ['#f4a433', '#2196f3', '#cc145d', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39'],
         hoverlabel: {
           bgcolor: 'transparent'
         },
@@ -258,6 +269,12 @@ export default {
           showgrid: false,
           overlaying: 'y',
           tickfont: { color: '#f4a433' }
+        },
+        yaxis3: {
+          side: 'right',
+          showgrid: false,
+          overlaying: 'y',
+          tickfont: { color: '#a0a0a0' }
         },
         xaxis: {
           showgrid: false
@@ -565,6 +582,75 @@ export default {
       this.showElevation = checked
       this.calculateCdA()
     },
+    onUseWindModel: async function (checked) {
+      this.useWindModel = checked
+
+      let layoutUpdate = {
+        title: checked ? 'Virtual Elevation (Wind Model)' : 'Virtual Elevation'
+      }
+      let plotly = this.$refs.plotly
+      plotly.relayout(layoutUpdate)
+
+      if (checked && this.windModelAirSpeed.length === 0) {
+        const location = this.location[0]
+
+        let altitude = 0
+        const elevationData = await mappingService.sendRequest(location.lat, location.lng, this.units, process.env).catch((err) => {
+          console.log('Cannot get elevation data.', err)
+          altitude = 0
+        })
+
+        if (elevationData) {
+          altitude = elevationData.elevation
+        }
+
+        let activityLocation = this.location[0]
+        const weatherData = await weatherService.sendRequest(
+          activityLocation.lat,
+          activityLocation.lng,
+          this.units,
+          this.time[0]
+        ).catch((err) => {
+          console.log('Cannot get weather data', err)
+        })
+
+        if (!weatherData) {
+          return
+        }
+
+        let windSpeed = []
+        let windDirection = []
+        if (weatherData.hours && weatherData.hours.length > 0) {
+          this.time.forEach(timestamp => {
+            let hourForecast = weatherData.hours[timestamp.getHours()]
+            windSpeed.push(parseFloat(hourForecast.windSpeed))
+            windDirection.push(hourForecast.windDirection)
+          })
+
+          const rhoResult = rhoCalc(
+            parseFloat(weatherData.temperature),
+            parseFloat(weatherData.pressure),
+            parseFloat(weatherData.dewPoint),
+            this.units,
+            parseFloat(altitude)
+          )
+
+          const rho = parseFloat(rhoResult).toFixed(4)
+          const rhoLbCuFt = rhoResult.toPoundsPerCubicFeet().toFixed(4)
+
+          this.rho = (this.units === 'metric' ? rho : rhoLbCuFt)
+        }
+
+        const windModel = new WindModel(this.time, this.location, this.speed, windSpeed, windDirection)
+        const effectiveAirspeed = windModel.calculateAirSpeed()
+        this.windModelAirSpeed = []
+        effectiveAirspeed.forEach((airSpeedInfo) => {
+          this.windModelAirSpeed.push(airSpeedInfo.airspeed)
+        })
+      }
+
+      this.calculateCdA()
+    },
     onFindLoops: function (checked) {
       this.showLoops = checked
       if (checked && this.laps) {
@@ -702,6 +788,12 @@ export default {
       // use mass in kg for ve calculations
       let mass = this.units === 'metric' ? this.mass : utils.lbsToKg(this.mass)
 
+      if (this.useWindModel && this.windModelAirSpeed.length > 0) {
+        this.veService.setAirSpeed(this.windModelAirSpeed)
+      } else {
+        this.veService.setAirSpeed(this.airspeed)
+      }
+
       this.ve = this.veService.calculateVirtualElevation(this.rho, mass, this.crr, this.cda)
       let data = []
 
@@ -727,6 +819,31 @@ export default {
 
         }
       )
+
+      if (this.useWindModel) {
+        data.push(
+          {
+            x: this.distance.length > 0 ? this.distance : this.time,
+            y: this.windModelAirSpeed,
+            yaxis: 'y3',
+            type: 'scatter',
+            mode: 'lines',
+            line: { color: '#6d6d6d' },
+            marker: {
+              symbols: 'triangle-down',
+              maxdisplayed: 10,
+              size: 20,
+              color: '#ffffff',
+              line: {
+                color: '#a0a0a0',
+                width: 2
+              }
+            },
+            name: 'Air Speed',
+            showlegend: true
+          }
+        )
+      }
 
       if (this.showLoops) {
         let x = []

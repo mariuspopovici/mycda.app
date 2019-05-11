@@ -23,11 +23,15 @@ export default class VirtualElevation {
     this.dloss = dloss
   }
 
+  setAirSpeed (airspeed) {
+    this.airSpeedDataPoints = airspeed
+  }
+
   /**
    * Calculate virtual elevation points by solving the power equation for slope
    * @param {*} rho air density
    * @param {*} mass rider and bike mass
-   * @param {*} crr rolling restistance
+   * @param {*} crr rolling resistance
    * @param {*} cda coefficient of drag
    *
    * @returns an array of ve points
