@@ -40,7 +40,6 @@ export default class VirtualElevation {
     let veDataPoints = []
     const vFactor = this.units === 'metric' ? 3.600 : 2.237
     const g = 9.81
-
     this.powerDataPoints.forEach((power, i) => {
       const speed = this.speedDataPoints[i]
       const airspeed = this.airSpeedDataPoints[i]

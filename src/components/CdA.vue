@@ -38,7 +38,9 @@
                   </b-dropdown-form>
                 </b-dropdown>
                 <span v-if="showLoops">&nbsp;&nbsp;</span>
-                <b-form-checkbox v-if="hasLocation" id="useWindModel" v-on:change="onUseWindModel" v-model="useWindModel">Wind Model</b-form-checkbox>
+                <b-form-checkbox v-if="hasLocation" id="useWindModel" v-on:change="onUseWindModel" v-model="useWindModel">Wind Model
+                  <b-spinner small v-if="windModelInProgress"/>
+                </b-form-checkbox>
                 &nbsp;&nbsp;
               </b-row>
             </b-col>
@@ -195,6 +197,7 @@ export default {
   data () {
     return {
       useWindModel: false,
+      windModelInProgress: false,
       loopFinder: null,
       showDistanceAxis: true,
       showElevation: true,
@@ -592,10 +595,18 @@ export default {
       plotly.relayout(layoutUpdate)
 
       if (checked && this.windModelAirSpeed.length === 0) {
+        this.windModelInProgress = true
         const location = this.location[0]
 
         let altitude = 0
         const elevationData = await mappingService.sendRequest(location.lat, location.lng, this.units, process.env).catch((err) => {
+          this.$bvToast.toast('Failed to determine elevation at activity location. Air density will not be adjusted for elevation.', {
+            title: `Warning`,
+            variant: 'warning',
+            autoHideDelay: 3000,
+            toaster: 'b-toaster-top-center',
+            solid: true
+          })
           console.log('Cannot get elevation data.', err)
           altitude = 0
         })
@@ -612,6 +623,13 @@ export default {
           this.time[0]
         ).catch((err) => {
           console.log('Cannot get weather data', err)
+          this.$bvToast.toast('Failed to fetch activity weather data.', {
+            title: `Warning`,
+            variant: 'warning',
+            autoHideDelay: 3000,
+            toaster: 'b-toaster-top-center',
+            solid: true
+          })
         })
 
         if (!weatherData) {
@@ -634,11 +652,20 @@ export default {
             this.units,
             parseFloat(altitude)
           )
+          if (!isNaN(rhoResult)) {
+            const rho = parseFloat(rhoResult).toFixed(4)
+            const rhoLbCuFt = rhoResult.toPoundsPerCubicFeet().toFixed(4)
 
-          const rho = parseFloat(rhoResult).toFixed(4)
-          const rhoLbCuFt = rhoResult.toPoundsPerCubicFeet().toFixed(4)
-
-          this.rho = (this.units === 'metric' ? rho : rhoLbCuFt)
+            this.rho = (this.units === 'metric' ? rho : rhoLbCuFt)
+          } else {
+            this.$bvToast.toast('Unable to calculate air density from weather data. Please enter manually.', {
+              title: `Warning`,
+              variant: 'warning',
+              autoHideDelay: 3000,
+              toaster: 'b-toaster-top-center',
+              solid: true
+            })
+          }
         }
 
         const windModel = new WindModel(this.time, this.location, this.speed, windSpeed, windDirection)
@@ -650,6 +677,7 @@ export default {
       }
 
       this.calculateCdA()
+      this.windModelInProgress = false
     },
     onFindLoops: function (checked) {
       this.showLoops = checked

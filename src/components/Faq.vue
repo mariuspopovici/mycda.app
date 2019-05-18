@@ -24,26 +24,45 @@
               </b-card-text>
               <b-card-text>
                 <p>Here's an overview of the .FIT file attributes required by MyCdA.</p>
+
+                <p><b> Top Level </b></p>
                 <b>file_id</b>
                 <ul>
                   <li>manufacturer</li>
                   <li>product</li>
                   <li>time_created</li>
+                  <li>type (activity)</li>
+                  <li>activity</li>
                 </ul>
+
+                <p><b> Activity Level </b></p>
+
+                <b>activity</b>
+                <ul>
+                  <li>sessions (collection)</li>
+                </ul>
+
+                <p><b> Session Level </b></p>
                 <b>session</b>
                 <ul>
-                  <li>sport </li>
+                  <li>sport</li>
                   <li>total_elapsed_time</li>
                   <li>total_timer_time</li>
-                  <li>total_distance </li>
+                  <li>total_distance</li>
+                  <li>laps (collections)</li>
                 </ul>
+
+                <p><b> Lap Level </b></p>
                 <b>lap</b>
                 <ul>
                   <li>timestamp</li>
                   <li>total_elapsed_time</li>
                   <li>total_timer_time</li>
                   <li>total_distance</li>
+                  <li>records (collection)</li>
                 </ul>
+
+                <p><b> Record Level </b></p>
                 <b>record</b>
                 <ul>
                   <li>timestamp</li>
@@ -54,11 +73,7 @@
                   <li>power</li>
                   <li>speed</li>
                 </ul>
-                <b>event</b>
-                <ul>
-                  <li>timestamp</li>
-                  <li>type</li>
-                </ul>
+
               </b-card-text>
               <div class="text-right"><b-link v-on:click='scrollTop' href="#" class="card-link">Top</b-link></div>
             </b-collapse>
