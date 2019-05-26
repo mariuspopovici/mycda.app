@@ -432,7 +432,7 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             power: record.power,
             altitude: record.altitude,
             speed: record.speed,
-            airspeed: record.air_speed,
+            airspeed: record.air_speed ? record.air_speed : record.saturated_hemoglobin_percent,
             lat: record.position_lat,
             long: record.position_long
           })
@@ -476,7 +476,7 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             power: record.power,
             altitude: record.altitude,
             speed: record.speed,
-            airspeed: record.air_speed,
+            airspeed: record.air_speed ? record.air_speed : record.saturated_hemoglobin_percent,
             lat: record.position_lat,
             long: record.position_long
           });

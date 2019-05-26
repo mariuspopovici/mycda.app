@@ -12,39 +12,39 @@
         You user information was saved succesfully. Please <b-link v-on:click="signOut">sign out</b-link> and sign back in for changes to take effect.
       </b-alert>
       <b-card :bg-variant="theme">
-        <b-form-group horizontal
-                      breakpoint="lg"
+        <b-form-group
+                      label-cols-lg="3"
                       label="User Information"
                       label-size="lg"
                       label-class="font-weight-bold pt-0"
                       class="mb-0">
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         label="Display Name:"
                         label-class="text-sm-right"
                         label-for="name">
             <b-form-input id="name" v-on:input="enableSaveUserInfo" v-model.trim="displayName"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         label="Email Address:"
                         label-class="text-sm-right"
                         label-for="email">
             <b-form-input id="email" v-on:input="enableSaveUserInfo" type="email" v-model.trim="email"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         description="Enter your existing password to save any of the values in this section."
                         label="Current Password:"
                         label-class="text-sm-right"
                         label-for="password">
             <b-form-input id="password" v-on:input="enableSaveUserInfo" type="password" maxLength="25" required v-model.trim="password"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         description="Enter your new password in case you want to change it."
                         label="New Password:"
                         label-class="text-sm-right"
                         label-for="password1">
             <b-form-input id="password1" v-on:input="enableSaveUserInfo" type="password" maxLength="25" v-model.trim="password1"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         description="Re-enter your new password. It must match the previous entry."
                         label="Repeat Password:"
                         label-class="text-sm-right"
@@ -67,13 +67,12 @@
         Your preferences were saved succesfully. Please <b-link v-on:click="signOut">sign out</b-link> and sign back in for changes to take effect.
       </b-alert>
       <b-card :bg-variant="theme">
-        <b-form-group horizontal
-                      breakpoint="lg"
+        <b-form-group label-cols-lg="3"
                       label="Preferences"
                       label-size="lg"
                       label-class="font-weight-bold pt-0"
                       class="mb-0">
-            <b-form-group horizontal
+            <b-form-group label-cols-lg="3"
                         description="Select your preferred units of measurement type."
                         label="Units of Measurement:"
                         label-class="text-sm-right"
@@ -81,28 +80,28 @@
             <b-form-radio-group class="pt-2" id="units" v-on:change="onUnitsChanged" v-model="units" :options="[{text: 'Imperial', value: 'imperial'}, {text: 'Metric', value: 'metric'}]"
               v-on:input="enableSaveUserPrefs" />
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         :label="'Weight (' + weightUnits + '):'"
                         description="Enter your weight including cycling kit, shoes, helmet etc."
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input type="number" min="0" max="300" step="0.1" id="weight" v-model="weight" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         description="Enter bike weight as set up for testing, including any accessories such as hydration, flat kit etc.."
                         :label="'Bike Weight (' + weightUnits + '):'"
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input type="number" min="0" max="50" step="0.1" id="bikeWeight" v-model="bikeWeight" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         label="CdA:"
                         description="Select your default coefficient of drag (CdA) if you know it. Typical values are in the 0.200 - 0.350 range with very fast positions under in the 0.170 - 0.200 range."
                         label-class="text-sm-right"
                         label-for="weight">
             <b-form-input id="cda" v-model="cda" type="number" min="0" max="1" step="0.001" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         label="crr:"
                         label-class="text-sm-right"
                         label-for="weight">
@@ -116,7 +115,7 @@
             </template>
             <b-form-input id="crr" v-model="crr" type="number" step="0.0001" min="0" max="1" v-on:input="enableSaveUserPrefs"></b-form-input>
           </b-form-group>
-          <b-form-group horizontal
+          <b-form-group label-cols-lg="3"
                         label="Drivetrain Loss (%):"
                         description="Adjust power numbers down using an estimated drivetrain / friction factor.
                           Typical values are in the 1% - 5% range depending on if a hub or crank based power meter
