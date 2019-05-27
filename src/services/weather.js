@@ -1,10 +1,10 @@
 export default class WeatherServiceFactory {
-  static create (config) {
+  static create (config, user) {
     switch (config.WEATHER_API) {
       case 'OpenWeatherMap':
-        return new OpenWeatherMapService(config)
+        return new OpenWeatherMapService(config, user)
       case 'DarkSky':
-        return new DarkSkyWeatherService(config)
+        return new DarkSkyWeatherService(config, user)
     }
   }
 }
@@ -111,9 +111,10 @@ export class WeatherService {
  * Uses darksky.net web services.
  */
 export class DarkSkyWeatherService extends WeatherService {
-  constructor (config) {
+  constructor (config, user) {
     super()
     this.config = config
+    this.user = user
   }
 
   /**
@@ -125,12 +126,6 @@ export class DarkSkyWeatherService extends WeatherService {
    * @returns {WeatherServiceResponse} response
    */
   async sendRequest (lat, long, units = 'metric', time) {
-    const options = {
-      method: 'GET',
-      qs: {},
-      json: true
-    }
-
     let timeString = parseInt((new Date()).getTime() / 1000).toString()
     if (time) {
       if (time instanceof Date) {
@@ -140,12 +135,21 @@ export class DarkSkyWeatherService extends WeatherService {
       }
     }
 
-    try {
-      const cors = 'https://cors-anywhere.herokuapp.com/'
-      const url = cors + 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long + ',' + timeString
+    const url = 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long + ',' + timeString
+    const token = await this.user.getIdToken(true)
+    const options = {
+      method: 'GET',
+      qs: { url: url },
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+      },
+      json: true
+    }
 
+    try {
       const result = await this.rp(
-        url,
+        'https://us-central1-mycda-c43c6.cloudfunctions.net/api/cors',
         options
       )
 
@@ -187,9 +191,10 @@ export class DarkSkyWeatherService extends WeatherService {
  * Uses openweathermap.org web services.
  */
 export class OpenWeatherMapService extends WeatherService {
-  constructor (config) {
+  constructor (config, user) {
     super()
     this.config = config
+    this.user = user
   }
 
   /**
@@ -201,23 +206,27 @@ export class OpenWeatherMapService extends WeatherService {
    * @returns {WeatherServiceResponse} response
    */
   async sendRequest (lat, long, units = 'metric') {
-    const options = {
-      method: 'GET',
-      qs: {
-        lat: lat,
-        lon: long,
-        appid: this.config.OW_API_KEY,
-        units: units
-      },
-      json: true
+    const params = {
+      lat: lat,
+      lon: long,
+      appid: this.config.OW_API_KEY,
+      units: units
     }
-
+    const url = 'https://api.openweathermap.org/data/2.5/weather?' + this._encodeData(params)
+    const token = await this.user.getIdToken(true)
     try {
       // use a proxy for CORS requests when in production mode
-      const cors = 'https://cors-anywhere.herokuapp.com/'
       const result = await this.rp(
-        cors + 'http://api.openweathermap.org/data/2.5/weather',
-        options
+        'https://us-central1-mycda-c43c6.cloudfunctions.net/api/cors',
+        {
+          method: 'GET',
+          qs: { url: url },
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+          },
+          json: true
+        }
       )
       if (result) {
         const tempInCelcius =
@@ -239,5 +248,11 @@ export class OpenWeatherMapService extends WeatherService {
       console.log(e)
       throw new Error('Cannot get weather data.')
     }
+  }
+
+  _encodeData (data) {
+    return Object.keys(data).map(function (key) {
+      return [key, data[key]].map(encodeURIComponent).join('=')
+    }).join('&')
   }
 }

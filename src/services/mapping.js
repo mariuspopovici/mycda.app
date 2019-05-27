@@ -12,24 +12,29 @@ export default class Mapping {
      *
      * @returns {Number} altitude at specified latitude and longiture
      */
-  async sendRequest (lat, long, units = 'metric', config) {
+  async sendRequest (lat, long, units = 'metric', options) {
     const rp = require('request-promise')
 
-    const options = {
-      method: 'GET',
-      headers: {},
-      qs: {
-        locations: lat + ',' + long,
-        key: config.GOOGLE_MAPS_API_KEY
-      },
-      json: true
+    const params = {
+      locations: lat + ',' + long,
+      key: options.appConfig.GOOGLE_MAPS_API_KEY
     }
 
+    const url = 'https://maps.googleapis.com/maps/api/elevation/json?' + this._encodeData(params)
+    const token = await options.user.getIdToken(true)
+
     try {
-      const cors = 'https://cors-anywhere.herokuapp.com/'
       const results = await rp(
-        cors + 'https://maps.googleapis.com/maps/api/elevation/json',
-        options
+        'https://us-central1-mycda-c43c6.cloudfunctions.net/api/cors',
+        {
+          method: 'GET',
+          qs: { url: url },
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
+          },
+          json: true
+        }
       )
 
       if (results && results.status === 'OK') {
@@ -53,5 +58,11 @@ export default class Mapping {
 
   toFeet (altitude) {
     return (altitude * 3.281).toFixed(2)
+  }
+
+  _encodeData (data) {
+    return Object.keys(data).map(function (key) {
+      return [key, data[key]].map(encodeURIComponent).join('=')
+    }).join('&')
   }
 }

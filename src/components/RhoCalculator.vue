@@ -207,7 +207,7 @@ import Mapping from '@/services/mapping'
 import Utils from '@/services/utils'
 import LoadingButton from '@/components/LoadingButton'
 const rhoCalc = require('@mariuspopovici/rho')
-const weatherService = WeatherServiceFactory.create(process.env)
+var weatherService = null
 const mappingService = new Mapping()
 const utils = new Utils()
 
@@ -311,6 +311,7 @@ export default {
   },
   created: function () {
     this.units = this.userPrefs.units
+    weatherService = WeatherServiceFactory.create(process.env, this.user)
   },
   methods: {
     onSubmit: function () {
@@ -352,7 +353,24 @@ export default {
       }
 
       try {
-        const elevationData = await mappingService.sendRequest(this.lat, this.long, this.units, process.env)
+        const elevationData = await mappingService.sendRequest(location.lat, location.lng,
+          this.units,
+          {
+            appConfig: process.env,
+            user: this.user
+          })
+          .catch((err) => {
+            this.$bvToast.toast('Failed to determine elevation at activity location. Air density will not be adjusted for elevation.', {
+              title: `Warning`,
+              variant: 'warning',
+              autoHideDelay: 3000,
+              toaster: 'b-toaster-top-center',
+              solid: true
+            })
+            console.log('Cannot get elevation data.', err)
+            this.altitude = 0
+          })
+
         if (elevationData) {
           this.altitude = elevationData.elevation
         }

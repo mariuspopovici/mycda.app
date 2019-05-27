@@ -778,7 +778,7 @@ export default {
         console.time('Cloud Call')
         // get activity file as JSON
         const result = await rp(
-          'https://us-central1-mycda-c43c6.cloudfunctions.net/activity/' + id + '/',
+          'https://us-central1-mycda-c43c6.cloudfunctions.net/api/activity/' + id + '/',
           options
         )
         console.timeEnd('Cloud Call')

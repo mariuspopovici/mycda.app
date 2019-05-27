@@ -163,9 +163,8 @@ import Utils from '@/services/utils'
 import LoopFinder from '@/services/loopdetect'
 import LoopFinderPrefs from '@/components/LoopFinderPrefs'
 import Mapping from '@/services/mapping'
-
+var weatherService = null
 const utils = new Utils()
-const weatherService = WeatherServiceFactory.create(process.env)
 const rhoCalc = require('@mariuspopovici/rho')
 const mappingService = new Mapping()
 export default {
@@ -309,6 +308,8 @@ export default {
     if (this.loopPrefs) {
       this.loopFinderPrefs = this.loopPrefs
     }
+
+    weatherService = WeatherServiceFactory.create(process.env, this.user)
   },
   methods: {
     getActivityInfo: function () {
@@ -599,17 +600,23 @@ export default {
         const location = this.location[0]
 
         let altitude = 0
-        const elevationData = await mappingService.sendRequest(location.lat, location.lng, this.units, process.env).catch((err) => {
-          this.$bvToast.toast('Failed to determine elevation at activity location. Air density will not be adjusted for elevation.', {
-            title: `Warning`,
-            variant: 'warning',
-            autoHideDelay: 3000,
-            toaster: 'b-toaster-top-center',
-            solid: true
+        const elevationData = await mappingService.sendRequest(location.lat, location.lng,
+          this.units,
+          {
+            appConfig: process.env,
+            user: this.user
           })
-          console.log('Cannot get elevation data.', err)
-          altitude = 0
-        })
+          .catch((err) => {
+            this.$bvToast.toast('Failed to determine elevation at activity location. Air density will not be adjusted for elevation.', {
+              title: `Warning`,
+              variant: 'warning',
+              autoHideDelay: 3000,
+              toaster: 'b-toaster-top-center',
+              solid: true
+            })
+            console.log('Cannot get elevation data.', err)
+            altitude = 0
+          })
 
         if (elevationData) {
           altitude = elevationData.elevation
