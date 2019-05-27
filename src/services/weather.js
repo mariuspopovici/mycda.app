@@ -127,9 +127,6 @@ export class DarkSkyWeatherService extends WeatherService {
   async sendRequest (lat, long, units = 'metric', time) {
     const options = {
       method: 'GET',
-      headers: {
-        'Access-Control-Allow-Origin': 'https://mycda.app'
-      },
       qs: {},
       json: true
     }
@@ -206,9 +203,6 @@ export class OpenWeatherMapService extends WeatherService {
   async sendRequest (lat, long, units = 'metric') {
     const options = {
       method: 'GET',
-      headers: {
-        'Access-Control-Allow-Origin': 'https://mycda.app'
-      },
       qs: {
         lat: lat,
         lon: long,
