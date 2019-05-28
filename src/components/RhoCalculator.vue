@@ -347,13 +347,14 @@ export default {
     setPosition: async function (position) {
       this.lat = position.coords.latitude
       this.long = position.coords.longitude
+
       let time = new Date()
       if ('time' in position) {
         time = position.time
       }
 
       try {
-        const elevationData = await mappingService.sendRequest(location.lat, location.lng,
+        const elevationData = await mappingService.sendRequest(this.lat, this.long,
           this.units,
           {
             appConfig: process.env,

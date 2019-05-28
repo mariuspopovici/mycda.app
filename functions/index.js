@@ -100,6 +100,7 @@ app.get('/cors', async (req, res) => {
     console.log('Body:', req.body);
 
     let url = req.query.url;
+    let service = req.query.service;
 
     if (!url) {
       url = req.body.url;
@@ -109,7 +110,20 @@ app.get('/cors', async (req, res) => {
       res.status(403).send('URL is empty.');
     }
 
-    console.log('Request:', url);
+    if (!service) {
+      res.status(403).send('Service is empty.');
+    }
+
+    console.log('Request URL:', url);
+    console.log('Request Service:', service);
+
+    let apiKey = functions.config()[service].key
+
+    if (!apiKey) {
+      res.status(403).send('Service API key not configured.');
+    }
+
+    url = url.replace('API_KEY', apiKey)
 
     fetch(url, {
       method: req.method,

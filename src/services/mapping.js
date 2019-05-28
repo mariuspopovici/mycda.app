@@ -17,7 +17,7 @@ export default class Mapping {
 
     const params = {
       locations: lat + ',' + long,
-      key: options.appConfig.GOOGLE_MAPS_API_KEY
+      key: 'API_KEY'
     }
 
     const url = 'https://maps.googleapis.com/maps/api/elevation/json?' + this._encodeData(params)
@@ -28,7 +28,7 @@ export default class Mapping {
         'https://us-central1-mycda-c43c6.cloudfunctions.net/api/cors',
         {
           method: 'GET',
-          qs: { url: url },
+          qs: { url: url, service: 'maps' },
           headers: {
             'Authorization': 'Bearer ' + token,
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'

@@ -135,11 +135,14 @@ export class DarkSkyWeatherService extends WeatherService {
       }
     }
 
-    const url = 'https://api.darksky.net/forecast/' + this.config.DS_API_KEY + '/' + lat + ',' + long + ',' + timeString
+    const url = 'https://api.darksky.net/forecast/API_KEY/' + lat + ',' + long + ',' + timeString
     const token = await this.user.getIdToken(true)
     const options = {
       method: 'GET',
-      qs: { url: url },
+      qs: {
+        url: url,
+        service: 'darksky'
+      },
       headers: {
         'Authorization': 'Bearer ' + token,
         'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
@@ -151,7 +154,10 @@ export class DarkSkyWeatherService extends WeatherService {
       const result = await this.rp(
         'https://us-central1-mycda-c43c6.cloudfunctions.net/api/cors',
         options
-      )
+      ).catch(e => {
+        console.log(e)
+        throw new Error('Cannot get weather data.')
+      })
 
       if (result) {
         let response = new WeatherServiceResponse(
@@ -209,7 +215,7 @@ export class OpenWeatherMapService extends WeatherService {
     const params = {
       lat: lat,
       lon: long,
-      appid: this.config.OW_API_KEY,
+      appid: 'API_KEY',
       units: units
     }
     const url = 'https://api.openweathermap.org/data/2.5/weather?' + this._encodeData(params)
@@ -220,14 +226,18 @@ export class OpenWeatherMapService extends WeatherService {
         'https://us-central1-mycda-c43c6.cloudfunctions.net/api/cors',
         {
           method: 'GET',
-          qs: { url: url },
+          qs: { url: url, service: 'openweather' },
           headers: {
             'Authorization': 'Bearer ' + token,
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/59.0.3071.115 Safari/537.36'
           },
           json: true
         }
-      )
+      ).catch(e => {
+        console.log(e)
+        throw new Error('Cannot get weather data.')
+      })
+
       if (result) {
         const tempInCelcius =
           units === 'imperial'
