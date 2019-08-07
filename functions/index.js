@@ -415,12 +415,12 @@ function validateFileContents(data) {
     };
   }
 
-  let session = data.activity.sessions[0];
+  let session = data.activity.sessions.filter(item => item.sport ==='cycling')[0];
   
-  if (session.sport !== 'cycling') {
+  if (!session || session.sport !== 'cycling') {
     return {
       invalid: true,
-      message: `Invalid file. .FIT session sport type is not cycling but ${session.sport}.`
+      message: `Invalid file. Could not locate a cycling session within .FIT file.`
     };
   }
   
@@ -439,12 +439,6 @@ function validateFileContents(data) {
     };
   }
 
-  if (! ('power' in record )) {
-    return {
-      invalid: true,
-      message: 'Invalid file. Missing power data.'
-    };
-  }
 
   return {
     invalid: false,
@@ -454,9 +448,11 @@ function validateFileContents(data) {
 
 
 function getActivityData(data, options = { includeDataPoints: true }) {
-  const session = data.activity.sessions[0];
-  const timestamp = session.laps[0].records[0].timestamp;
+  const session = data.activity.sessions.filter(item => item.sport === 'cycling')[0];
   const laps = session.laps;
+  
+  const timestamp = laps[0].records[0].timestamp;
+  
   let stats = null
   let fileHasStats = session.avg_power && session.avg_speed;
 
@@ -490,7 +486,7 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             lap: i + 1,
             timestamp: record.timestamp,
             distance: record.distance,
-            power: record.power,
+            power: record.power ? record.power : 0,
             altitude: record.altitude,
             speed: record.speed,
             airspeed: record.air_speed ? record.air_speed : record.saturated_hemoglobin_percent,
