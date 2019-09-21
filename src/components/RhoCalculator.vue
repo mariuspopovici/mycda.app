@@ -175,7 +175,7 @@
           <div class="form-group row">
             <div class="col col-12 text-right">
               <b-dropdown id="dropdownLocation">
-                <template slot="text">
+                <template v-slot:button-content>
                   <span v-if="loadingLocation">
                     <b-spinner small></b-spinner>
                   </span>

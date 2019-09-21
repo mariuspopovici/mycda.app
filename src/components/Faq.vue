@@ -19,7 +19,7 @@
                 MyCdA supports most Garmin cycling activity files in .FIT (file extension) format as defined in the official
                 <b-link href="https://www.thisisant.com/resources/fit">FIT SDK</b-link>. In most cases MyCdA
                 can successfully parse activity files that can be imported into other fitness tracking applications such as Garmin Connect,
-                Training Peaks or Strava. MyCdA will reject multi-sport activity files or any other files with activity types other than cycling.
+                Training Peaks or Strava.
                 If you believe that your file is compatible and still have trouble importing it please <b-link href="mailto:support@mycda.app">contact us</b-link>.
               </b-card-text>
               <b-card-text>

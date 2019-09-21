@@ -75,7 +75,7 @@
         :per-page="perPage"
         :current-page="currentPage"
       >
-        <template slot="status" slot-scope="row">
+        <template slot="cell(status)" slot-scope="row">
           <div id='newStatus' v-if="row.item.status === 'New'">
             <font-awesome-icon icon="spinner" spin/>
           </div>
@@ -86,18 +86,22 @@
             <i class="fa fa-exclamation-circle text-danger"></i>
           </div>
         </template>
-        <template slot="distance" slot-scope="data">
+
+        <template slot="cell(distance)" slot-scope="data">
           <div id='distance'>
             <span v-if="data.value">{{convertDistance(data.value)}} {{distanceUnits}}</span>
           </div>
         </template>
-        <template slot="avgPower" slot-scope="data">
+
+        <template slot="cell(avgPower)" slot-scope="data">
           <span v-if="data.value">{{data.value}} W</span>
         </template>
-        <template slot="avgSpeed" slot-scope="data">
+
+        <template slot="cell(avgSpeed)" slot-scope="data">
             <span v-if="data.value">{{convertDistance(data.value)}} {{speedUnits}}</span>
         </template>
-        <template slot="actions" slot-scope="row">
+
+        <template slot="cell(actions)" slot-scope="row">
           <b-container fluid>
             <b-row align-h="center">
             <b-col>

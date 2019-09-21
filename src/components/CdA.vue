@@ -28,7 +28,7 @@
                 <b-dropdown v-if="showLoops" droptop id="showLoopsDD" no-caret
                   variant="primary" v-b-tooltip.hover title="Loop Finder Preferences"
                   ref="loopsDropDown" size="sm">
-                  <template slot='text'>
+                  <template v-slot:button-content>
                     <i class="fa fa-cog"></i>
                   </template>
                   <b-dropdown-form style="width: 300px;">
