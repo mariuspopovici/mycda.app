@@ -185,7 +185,7 @@
         :items="segments"
         :fields="fields"
       >
-        <template slot="name" slot-scope="row">
+        <template slot="cell(name)" slot-scope="row">
           <div v-if="row.item.isBaseline">
             <u v-b-tooltip.hover title="Baseline Segment">{{row.item.name}}</u>
           </div>
@@ -193,18 +193,18 @@
             {{row.item.name}}
           </div>
         </template>
-        <template slot="rangeStart" slot-scope="row">
+        <template slot="cell(rangeStart)" slot-scope="row">
           {{row.item.rangeStart.toLocaleTimeString()}}
         </template>
-        <template slot="rangeEnd" slot-scope="row">
+        <template slot="cell(rangeEnd)" slot-scope="row">
           {{row.item.rangeEnd.toLocaleTimeString()}}
         </template>
-        <template slot="cda" slot-scope="row">
+        <template slot="cell(cda)" slot-scope="row">
           <span v-if="row.item.cdaDeltaPct < 0.0" class="text-danger"> <i class="fa fa-arrow-up"></i> {{row.item.cda}}</span>
           <span v-else-if="row.item.cdaDeltaPct > 0" class="text-success"> <i class="fa fa-arrow-down"></i> {{row.item.cda}}</span>
           <span v-else>{{row.item.cda}}</span>
         </template>
-        <template slot="actions" slot-scope="row">
+        <template slot="cell(actions)" slot-scope="row">
           <div align="center">
             <b-btn
               size="sm"
