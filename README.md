@@ -6,7 +6,7 @@ to determine if an equipment or position change is beneficial or not.
 
 ## Demo
 
-Click [here](https://mycdap.app) for a working demo.
+Click [here](https://mycda.app) for a working demo.
 
 ## Features
 
