@@ -6,7 +6,7 @@ admin.initializeApp(functions.config().firebase);
 
 
 const path = require('path');
-const EasyFit = require('fit-parser').default;
+const EasyFit = require('fit-file-parser').default;
 const CSV = require ('./csv');
 const fs = require('fs');
 const os = require('os');
