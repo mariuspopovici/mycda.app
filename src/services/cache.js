@@ -1,4 +1,4 @@
-import LZString from 'lz-string'
+const pako = require('pako')
 
 export default class Cache {
   constructor (id, capacity = 10) {
@@ -41,7 +41,8 @@ export default class Cache {
     }
 
     try {
-      localStorage.setItem(key, LZString.compress(JSON.stringify(item)))
+      const compressed = pako.deflate(JSON.stringify(item), { to: 'string' })
+      localStorage.setItem(key, compressed)
       console.debug(`Cache (${this._id}) - adding item to cache`, key)
       this._cacheIndex.push(key)
       localStorage.setItem(this._indexKey, JSON.stringify(this._cacheIndex))
@@ -54,7 +55,10 @@ export default class Cache {
   get (key) {
     if (this._cacheIndex.includes(key)) {
       console.debug(`Cache (${this._id}) - retrieving cached item`, key)
-      return JSON.parse(LZString.decompress(localStorage.getItem(key)))
+      const compressed = localStorage.getItem(key)
+      const decompressed = pako.inflate(compressed, { to: 'string' })
+
+      return JSON.parse(decompressed)
     }
   }
 
