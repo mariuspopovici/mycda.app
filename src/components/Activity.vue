@@ -253,6 +253,7 @@ import mapThemes from '../assets/mapthemes/activitymapstyle.json'
 import Buffer from '@/services/buffer'
 import LoopFinderPrefs from '@/components/LoopFinderPrefs'
 import LoopFinder from '@/services/loopdetect'
+import Cache from '@/services/cache'
 const rp = require('request-promise')
 
 export default {
@@ -322,6 +323,7 @@ export default {
       distanceUnits: 'km',
       speedUnits: 'km/h',
       utils: new Utils(),
+      activityCache: new Cache('ActivityCache', 5),
       loopFinder: null,
       loops: [],
       loopFinderPrefs: {
@@ -768,24 +770,28 @@ export default {
       try {
         this.loading = true
 
-        // get activity info
-        console.time('Document')
-        let docRef = db.collection('activities').doc(id)
-        const doc = await docRef.get()
-        this.activityName = doc.data().name
-        console.timeEnd('Document')
+        if (this.activityCache.contains(id)) {
+          const result = this.activityCache.get(id)
+          this.processData(result)
+        } else {
+          // get activity info
+          console.time('Document')
+          let docRef = db.collection('activities').doc(id)
+          const doc = await docRef.get()
+          this.activityName = doc.data().name
+          console.timeEnd('Document')
 
-        console.time('Cloud Call')
-        // get activity file as JSON
-        const result = await rp(
-          'https://us-central1-mycda-c43c6.cloudfunctions.net/api/activity/' + id + '/',
-          options
-        )
-        console.timeEnd('Cloud Call')
+          console.time('Cloud Call')
+          // get activity file as JSON
+          const result = await rp(
+            'https://us-central1-mycda-c43c6.cloudfunctions.net/api/activity/' + id + '/',
+            options
+          )
+          console.timeEnd('Cloud Call')
 
-        console.time('Process')
-        this.processData(result)
-        console.timeEnd('Process')
+          this.activityCache.add(id, result)
+          this.processData(result)
+        }
 
         // get any saved segments
         let segmentsRef = db.collection('segments')
