@@ -88,7 +88,7 @@
                 <b-link href="#/terms">Terms and Conditions</b-link>
               </li>
             </ul>
-            <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019. All Rights Reserved. Build {{appVersion}}</p>
+            <p class="text-muted small mb-4 mb-lg-0">&copy; MyCDA 2019-2020. All Rights Reserved. Build {{appVersion}}</p>
           </div>
         </div>
       </div>
