@@ -250,8 +250,8 @@ export class OpenWeatherMapService extends WeatherService {
           result.main.humidity,
           units === 'imperial' ? this.toFahrenheit(dewPointInCelcius) : dewPointInCelcius,
           units === 'imperial' ? this.hpaToInHg(result.main.pressure) : result.main.pressure,
-          units === 'imperial' ? this.kmToMi(result.main.wind.speed) : result.main.wind.speed,
-          units === result.main.wind.deg
+          units === 'imperial' ? this.kmToMi(result.main.wind.speed) : result.wind.speed,
+          units === result.wind.deg
         )
       }
     } catch (e) {

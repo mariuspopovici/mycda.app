@@ -435,8 +435,10 @@ function validateFileContents(data) {
     };
   }
 
+
   let record = session.laps[0].records[0];
-  if (!("speed" in record)) {
+  const hasSpeed = "speed" in record || "enhanced_speed" in record;
+  if (!hasSpeed) {
     return {
       invalid: true,
       message: "Invalid file. Missing speed data."
@@ -455,10 +457,14 @@ function getActivityData(data, options = { includeDataPoints: true }) {
   )[0];
   const laps = session.laps;
 
+  const useEnhancedSpeed = session.enhanced_avg_speed && !session.avg_speed;
+  const altitudeField = useEnhancedSpeed ? 'enhanced_altitude' : 'altitude';
+  const avgSpeedField = useEnhancedSpeed ? 'enhanced_avg_speed' : 'avg_speed';
+  const speedField = useEnhancedSpeed ? 'enhanced_speed' : 'speed';
   const timestamp = laps[0].records[0].timestamp;
 
   let stats = null;
-  let fileHasStats = session.avg_power && session.avg_speed;
+  let fileHasStats = session.avg_power && session[avgSpeedField];
 
   if (fileHasStats) {
     // file has stats such as session and lap averages
@@ -468,7 +474,7 @@ function getActivityData(data, options = { includeDataPoints: true }) {
       total_distance: session.total_distance,
       total_elapsed_time: session.total_elapsed_time,
       avg_power: session.avg_power,
-      avg_speed: session.avg_speed,
+      avg_speed: session[avgSpeedField],
       lap_count: laps.length,
       laps: [],
       points: []
@@ -481,7 +487,7 @@ function getActivityData(data, options = { includeDataPoints: true }) {
         total_distance: lap.total_distance,
         start_distance: lap.records.length > 0 ? lap.records[0].distance : 0,
         avg_power: lap.avg_power,
-        avg_speed: lap.avg_speed
+        avg_speed: lap[avgSpeedField]
       });
 
       if (options.includeDataPoints) {
@@ -491,8 +497,8 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             timestamp: record.timestamp,
             distance: record.distance,
             power: record.power ? record.power : 0,
-            altitude: record.altitude,
-            speed: record.speed,
+            altitude: record[altitudeField],
+            speed: record[speedField],
             airspeed: record.air_speed
               ? record.air_speed
               : record.saturated_hemoglobin_percent,
@@ -522,9 +528,9 @@ function getActivityData(data, options = { includeDataPoints: true }) {
       lap.records.forEach(record => {
         recordCount++;
         sumPower += record.power;
-        sumSpeed += record.speed;
+        sumSpeed += record[speedField];
         lapSumPower += record.power;
-        lapSumSpeed += record.speed;
+        lapSumSpeed += record[speedField];
         totalDistance = record.distance;
         totalElapsedTime = record.elapsed_time;
 
@@ -534,8 +540,8 @@ function getActivityData(data, options = { includeDataPoints: true }) {
             timestamp: record.timestamp,
             distance: record.distance,
             power: record.power,
-            altitude: record.altitude,
-            speed: record.speed,
+            altitude: record[altitudeField],
+            speed: record[speedField],
             airspeed: record.air_speed
               ? record.air_speed
               : record.saturated_hemoglobin_percent,
