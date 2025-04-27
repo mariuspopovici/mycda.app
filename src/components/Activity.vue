@@ -39,24 +39,80 @@
       <b-row>
         <b-col>
           <b-card no-body :bg-variant="theme">
-            <b-tabs small pills card v-on:input="selectLap">
-              <b-tab title="Entire Activity" active>
-                <b-dropdown v-if="showMap" dropright split id="showLoopsDD" v-on:click="findLoops(false)"
-                  variant="secondary" :text="this.showLoops ? 'Hide Loops' : 'Show Loops'"
-                  ref="loopsDropDown" size="sm">
-                  <b-dropdown-form style="width: 300px;">
-                    <LoopFinderPrefs :minDuration="loopFinderPrefs.minDuration"
-                      :maxDuration="loopFinderPrefs.maxDuration"
-                      :precision="loopFinderPrefs.precision"
-                      v-on:change='onLoopFinderPrefsChange'/>
-                  </b-dropdown-form>
-                </b-dropdown>
-                <p>
-                <p class="card-text"><b>Date:</b> {{timestamp}}</p>
-                <p class="card-text"><b>Total Time:</b> {{totalTime}} </p>
-                <p class="card-text"><b>Distance:</b> {{convertDistance(totalDistance)}} {{distanceUnits}} </p>
-                <p class="card-text"><b>Avg Speed:</b> {{convertDistance(avgSpeed)}} {{speedUnits}}</p>
-                <p class="card-text"><b>Avg Power:</b> {{avgPower}} W</p>
+            <b-tabs small pills card v-on:input="selectLap" v-on:activate-tab="selectLap">
+              <b-tab :title="selectionTabTitle" active>
+                <!-- Panel shown when NO selection -->
+                <div v-show="!selectionActive" id="entireSelectionPanel">
+                  <b-dropdown
+                    v-if="showMap"
+                    dropright
+                    split
+                    id="showLoopsDD"
+                    @click="findLoops(false)"
+                    variant="secondary"
+                    :text="showLoops ? 'Hide Loops' : 'Show Loops'"
+                    ref="loopsDropDown"
+                    size="sm"
+                    class="mb-3"
+                  >
+                    <b-dropdown-form style="width: 300px;">
+                      <LoopFinderPrefs
+                        :minDuration="loopFinderPrefs.minDuration"
+                        :maxDuration="loopFinderPrefs.maxDuration"
+                        :precision="loopFinderPrefs.precision"
+                        @change="onLoopFinderPrefsChange"
+                      />
+                    </b-dropdown-form>
+                  </b-dropdown>
+
+                  <p class="card-text"><strong>Date:</strong> {{ timestamp }}</p>
+                  <p class="card-text"><strong>Total Time:</strong> {{ totalTime }}</p>
+                  <p class="card-text">
+                    <strong>Distance:</strong> {{ convertDistance(totalDistance) }} {{ distanceUnits }}
+                  </p>
+                  <p class="card-text">
+                    <strong>Avg Speed:</strong> {{ convertDistance(avgSpeed) }} {{ speedUnits }}
+                  </p>
+                  <p class="card-text"><strong>Avg Power:</strong> {{ avgPower }} W</p>
+                </div>
+
+                <!-- Panel shown when a selection IS active -->
+                <div v-show="selectionActive" id="chartSelectionPanel">
+                  <b-button size="sm" variant="secondary" @click="removeSelection" class="mb-3">
+                    Undo Selection
+                  </b-button>
+
+                  <b-button
+                    size="sm"
+                    variant="success"
+                    class="mb-3"
+                    :to="{
+                      name: 'activity.cda',
+                      params: {
+                        id: activityID,
+                        range: selectionXRange,
+                        data: {
+                          time, speed, airspeed, distance, power, altitude, laps, location
+                        },
+                        description: 'Selection',
+                        loopPrefs: loopFinderPrefs
+                      }
+                    }"
+                  >
+                    Analyze
+                  </b-button>
+
+                  <p class="card-text">
+                    <strong>Start Time:</strong> {{ selectionXRange.start.toLocaleString() }}
+                  </p>
+                  <p class="card-text">
+                    <strong>End Time:</strong> {{ selectionXRange.end.toLocaleString() }}
+                  </p>
+                  <p class="card-text">
+                    <strong>Duration (h:m:s):</strong>
+                    {{ utils.secondsToHms((selectionXRange.end - selectionXRange.start) / 1000) }}
+                  </p>
+                </div>
               </b-tab>
               <b-tab v-for="(lap, index) in laps" :key= "index" :title="'Lap ' + (index +1 )">
                 <b-button v-if="!lapZoomedIn" size="sm" v-on:click="zoomLap(index)" variant="secondary"><i class="fa fa-search-plus"></i> Zoom In</b-button>
@@ -80,25 +136,6 @@
                 <p class="card-text"><b>Distance:</b> {{convertDistance(lap.total_distance)}} {{distanceUnits}} </p>
                 <p class="card-text"><b>Avg Speed:</b> {{convertDistance(lap.avg_speed)}} {{speedUnits}}</p>
                 <p class="card-text"><b>Avg Power:</b> {{lap.avg_power}} W</p>
-              </b-tab>
-              <b-tab title="Selection" v-if="selectionActive" active>
-                <b-button size="sm" v-on:click="removeSelection" variant="secondary">Undo Selection</b-button>
-                <b-button variant="success" size="sm" :to="{
-                  name: 'activity.cda',
-                  params: {
-                    id: activityID,
-                    range: selectionXRange,
-                    data: {time: time, speed: speed, airspeed: airspeed,
-                      distance: distance, power: power, altitude: altitude, laps: laps,
-                      location: location
-                    },
-                    description: 'Selection',
-                    loopPrefs: loopFinderPrefs
-                  }}">Analyze</b-button>
-                  <p>
-                  <p class="card-text"><b>Start Time:</b> {{selectionXRange.start.toLocaleString()}}</p>
-                  <p class="card-text"><b>End Time:</b> {{selectionXRange.end.toLocaleString()}}</p>
-                  <p class="card-text"><b>Duration (h:m:s):</b> {{utils.secondsToHms((this.selectionXRange.end - this.selectionXRange.start) / 1000)}}</p>
               </b-tab>
             </b-tabs>
             </b-card>
@@ -338,6 +375,7 @@ export default {
       showEditButton: false,
       editTitleEnabled: false,
       selectionActive: false,
+      selectionTabTitle: 'Entire Activity',
       loading: true,
       activityID: this.$route.params.id,
       activityName: '',
@@ -351,7 +389,7 @@ export default {
       laps: [],
       mapCenter: {lat: -10, lng: -10},
       initXRange: null,
-      selectionXRange: null,
+      selectionXRange: {start: new Date(), end: new Date()},
       chartData: [],
       time: [],
       altitude: [],
@@ -501,7 +539,11 @@ export default {
     },
     removeSelection: function () {
       this.selectionActive = false
-      this.selectionXRange = null
+      this.selectionXRange = {
+        start: this.initXRange.start,
+        end: this.initXRange.end
+      }
+      this.selectionTabTitle = 'Entire Activity'
 
       let plotly = this.$refs.plotly
       let layoutUpdate = {
@@ -517,6 +559,7 @@ export default {
       // check if this was triggered by a drag to zoom event
       if ('xaxis.range[0]' in event && 'xaxis.range[1]' in event) {
         this.selectionActive = true
+        this.selectionTabTitle = 'Selection'
         this.selectionXRange = {
           start: new Date(event['xaxis.range[0]']),
           end: new Date(event['xaxis.range[1]'])

@@ -38,7 +38,7 @@
                   </b-dropdown-form>
                 </b-dropdown>
                 <span v-if="showLoops">&nbsp;&nbsp;</span>
-                <b-form-checkbox v-if="hasLocation" id="useWindModel" v-on:change="onUseWindModel" v-model="useWindModel">Wind Model
+                <b-form-checkbox v-if="hasLocation && allowWindModel" id="useWindModel" v-on:change="onUseWindModel">Wind Model
                   <b-spinner small v-if="windModelInProgress"/>
                 </b-form-checkbox>
                 &nbsp;&nbsp;
@@ -195,6 +195,7 @@ export default {
   },
   data () {
     return {
+      allowWindModel: process.env['WEATHER_API'] === 'DarkSky',
       useWindModel: false,
       windModelInProgress: false,
       loopFinder: null,
@@ -589,12 +590,6 @@ export default {
     onUseWindModel: async function (checked) {
       this.useWindModel = checked
 
-      let layoutUpdate = {
-        title: checked ? 'Virtual Elevation (Wind Model)' : 'Virtual Elevation'
-      }
-      let plotly = this.$refs.plotly
-      plotly.relayout(layoutUpdate)
-
       if (checked && this.windModelAirSpeed.length === 0) {
         this.windModelInProgress = true
         const location = this.location[0]
@@ -685,6 +680,12 @@ export default {
 
       this.calculateCdA()
       this.windModelInProgress = false
+
+      let layoutUpdate = {
+        title: checked ? 'Virtual Elevation (Wind Model)' : 'Virtual Elevation'
+      }
+      let plotly = this.$refs.plotly
+      plotly.relayout(layoutUpdate)
     },
     onFindLoops: function (checked) {
       this.showLoops = checked
