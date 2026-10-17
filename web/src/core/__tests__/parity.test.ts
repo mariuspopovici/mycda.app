@@ -3,12 +3,14 @@
  * behaviour is correct. Delete this file together with the legacy app; core.test.ts keeps guarding
  * behaviour.
  */
+import { createRequire } from 'node:module'
 import { describe, expect, it } from 'vitest'
 import LegacyBuffer from '../../../../src/services/buffer.js'
 import LegacyLoopFinder from '../../../../src/services/loopdetect.js'
 import LegacyUtils from '../../../../src/services/utils.js'
 import LegacyVirtualElevation from '../../../../src/services/ve.js'
 import LegacyWindModel from '../../../../src/services/windmodel.js'
+import { airDensity } from '../airDensity'
 import { toActivitySeries } from '../activitySeries'
 import { findLoops } from '../loopFinder'
 import * as units from '../units'
@@ -84,5 +86,25 @@ describe('unit conversions match legacy', () => {
     expect(units.toFahrenheit(v).toFixed(2)).toBe(legacy.toFahrenheit(v))
     expect(units.toCelsius(v).toFixed(2)).toBe(legacy.toCelcius(v))
     expect(units.secondsToHms(v * 37)).toBe(legacy.secondsToHms(v * 37))
+  })
+})
+
+describe('air density matches @mariuspopovici/rho', () => {
+  const require = createRequire(import.meta.url)
+  const rho = require('../../../../node_modules/@mariuspopovici/rho')
+  it.each([
+    [20.5, 1019.3, 20.5, 0],
+    [20, 1010, 20, 2000],
+    [11.05, 1003, -7, 1855],
+    [-5, 1030, -12, 300],
+    [32, 1008, 24, 15]
+  ])('%d °C, %d hPa, dew point %d °C, %d m', (temperature, pressure, dewPoint, altitude) => {
+    expect(airDensity({ temperature, seaLevelPressure: pressure, dewPoint, altitude }))
+      .toBeCloseTo(rho(temperature, pressure, dewPoint, 'metric', altitude), 12)
+  })
+
+  it('reproduces the package README values', () => {
+    expect(airDensity({ temperature: 20.5, seaLevelPressure: 1019.3, dewPoint: 20.5 }).toFixed(4)).toBe('1.1984')
+    expect(airDensity({ temperature: 20, seaLevelPressure: 1010, dewPoint: 20, altitude: 2000 }).toFixed(4)).toBe('0.9402')
   })
 })

@@ -45,7 +45,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [ ] Deploy: set secrets, delete the v1 functions, deploy v2 ([ADR-0011](../decisions/0011-functions-2nd-gen-and-secret-manager.md#deployment))
 - [x] Parser robustness: format detection by content, gzip/zip, fit-file-parser 1.21 → 6.2.2, lap/session recovery, user-facing error messages; 281 of 312 real files accepted, up from 232 ([log](../log/2026-10-17-parser-upgrade.md))
 - [x] CSV timestamps from the upload time; hours, clock times and ISO date-times; distance over real intervals
-- [ ] Open-Meteo client in `web/src/core/` or `web/src/services/` ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md))
+- [x] Open-Meteo client (`web/src/services/openMeteo.ts`) and air density ported from `@mariuspopovici/rho` (`web/src/core/airDensity.ts`) ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md))
 - [ ] Optional: store points in their final form at upload so the client reads Storage directly, skipping `/activity/:id`
 
 ## Phase 3: New app shell

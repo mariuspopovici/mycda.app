@@ -30,7 +30,7 @@ Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/em
 
 The Vue 2 app in `src/` is being replaced by a React 19 + Vite + TypeScript + Mantine app in `web/`, with OpenStreetMap (Leaflet) instead of Google Maps and Open-Meteo instead of DarkSky/OpenWeatherMap. Firestore collections and Storage paths must stay unchanged so existing user data keeps working.
 
-- `web/src/core/` holds the framework-free domain logic (virtual elevation, wind model, loop finder, spike filter, segment stats, units), ported from `src/services/` and the Vue components.
+- `web/src/core/` holds the framework-free domain logic (virtual elevation, wind model, hourly weather sampling, air density, loop finder, spike filter, segment stats, units), ported from `src/services/` and the Vue components. Network clients live in `web/src/services/` (e.g. `openMeteo.ts`, with an injectable `fetch`).
 - `web/src/core/__tests__/parity.test.ts` runs the ports against the legacy `src/services/*.js` on the CSV fixtures; `core.test.ts` holds physics checks and golden snapshots that outlive the legacy code. Ports intentionally reproduce legacy quirks (commented in the code); fix them deliberately and update snapshots, not silently.
 - `functions/activity.js` holds the Firebase-free file parsing so tests (including `web/`'s) can import it: `parseActivityFile` detects the format from the file's *contents* (uploads are named `.fit` unless the name ends in `csv`), unwraps gzip/zip, parses FIT in list mode and assembles sessions/laps itself, and throws `ActivityFileError` with user-facing messages. `functions/index.js` only wires triggers and HTTP routes.
 

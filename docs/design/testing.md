@@ -9,6 +9,7 @@
 | Upload parsing | `npm --prefix functions test` | Format detection, archives, FIT structure recovery, CSV formats |
 | Upload parsing sweep | `npm --prefix functions run test:all-fixtures` | Every private ride parses or is rejected with a message |
 | Emulator | `npm --prefix tests/emulator test` | Security rules, and the functions end to end (needs Java) |
+| Open-Meteo live | `LIVE_API=1 npx vitest run src/services/openMeteo.test.ts` (in `web/`) | The real API still answers the way the client expects; skipped by default |
 
 Run a single file or test from `web/`: `npx vitest run src/core/__tests__/core.test.ts -t windAt`. Add `-u` to accept snapshot changes after reviewing them.
 

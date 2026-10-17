@@ -52,6 +52,16 @@ VE uses the full air speed magnitude. That treats crosswind as adding drag at th
 
 Wind speed must be in the same unit as ground speed (km/h).
 
+## Fetching weather
+
+`fetchHourlyWeather()` in `web/src/services/openMeteo.ts` requests UTC hourly temperature, dew point, sea-level pressure and 10 m wind (km/h) for the ride's days:
+- from the forecast API for rides in the last 90 days (high-resolution models, filled in within hours);
+- from the reanalysis archive for older rides.
+
+Hours that aren't filled in yet are dropped. `fetchElevation()` returns terrain elevation for rides without altitude data.
+
+Air density (`web/src/core/airDensity.ts`, a port of `@mariuspopovici/rho`) adjusts sea-level pressure to the ride's altitude with the barometric formula, then sums the dry-air and water-vapour partial densities. It uses sea-level pressure plus the ride's own altitude, rather than Open-Meteo's surface pressure, because the model grid cell's elevation can differ from the road's.
+
 ## Limitations
 
 - Reanalysis wind is a gridded 10 m value. Wind at rider height, and shelter from terrain, buildings and trees, can differ a lot. Treat wind-model CdA as indicative, and prefer measured air speed or still days.
