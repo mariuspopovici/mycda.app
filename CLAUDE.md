@@ -15,16 +15,16 @@ Frontend (repo root):
 - `npm run lint` — eslint (`standard` + `plugin:vue/essential`) over `src/`.
 - `npm run build` — **runs `npm version patch` first** (bumps version and creates a git commit/tag, hence the `1.0.xx` commits in history), then builds to `dist/`. `npm run build --report` adds the bundle analyzer.
 
-Cloud Functions (`functions/`, Node 22):
-- `npm --prefix functions run lint` — also runs automatically as a predeploy step.
-- `npm --prefix functions run serve` / `shell` — local emulation; `firebase emulators:start` uses the ports in `firebase.json`.
-- `firebase deploy` (or `npm --prefix functions run deploy` for functions only).
+Cloud Functions (`functions/`, 2nd gen, Node 22, CommonJS):
+- `npm --prefix functions test` — Node's built-in test runner (`test/**/*.test.js`): parsing, format detection, FIT recovery cases built with `test/fit-builder.js`. `npm --prefix functions run test:all-fixtures` also sweeps the private rides.
+- `npm --prefix functions run lint` — ESLint 9 flat config; also runs automatically as a predeploy step.
+- `firebase deploy --only functions`. Secrets (`OPENWEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`) live in Secret Manager: `firebase functions:secrets:set <NAME>`; the emulator reads `functions/.secret.local` (gitignored).
 
 New React app (`web/`, being built to replace the Vue app — see Migration below):
 - `npm --prefix web test` — Vitest. Run one file with `npx vitest run src/core/__tests__/core.test.ts` from `web/`; `-u` updates snapshots.
 - `npm --prefix web run lint`, `npm --prefix web run build` (`tsc -b` + Vite).
 
-Security rules tests (`tests/rules/`): `npm --prefix tests/rules test` starts the Firestore + Storage emulators and runs Vitest against `firestore.rules` / `storage.rules`. Needs Java (firebase-tools will require JDK 21+ from v15).
+Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/emulator test` runs `test:rules` (security rules in the Firestore + Storage emulators) and `test:functions` (end-to-end: upload → `processActivityFile` → `GET /api/activity/:id`, ownership checks, `/cors` allowlist, in the Auth + Functions + Firestore + Storage emulators). Needs Java.
 
 ## Migration in progress
 
@@ -32,13 +32,13 @@ The Vue 2 app in `src/` is being replaced by a React 19 + Vite + TypeScript + Ma
 
 - `web/src/core/` holds the framework-free domain logic (virtual elevation, wind model, loop finder, spike filter, segment stats, units), ported from `src/services/` and the Vue components.
 - `web/src/core/__tests__/parity.test.ts` runs the ports against the legacy `src/services/*.js` on the CSV fixtures; `core.test.ts` holds physics checks and golden snapshots that outlive the legacy code. Ports intentionally reproduce legacy quirks (commented in the code); fix them deliberately and update snapshots, not silently.
-- `functions/activity.js` holds the Firebase-free file parsing (`parseCSV`, `parseFIT`, `getActivityData`) so tests can import it; `functions/index.js` only wires triggers and HTTP routes.
+- `functions/activity.js` holds the Firebase-free file parsing so tests (including `web/`'s) can import it: `parseActivityFile` detects the format from the file's *contents* (uploads are named `.fit` unless the name ends in `csv`), unwraps gzip/zip, parses FIT in list mode and assembles sessions/laps itself, and throws `ActivityFileError` with user-facing messages. `functions/index.js` only wires triggers and HTTP routes.
 
 ## Configuration
 
 `config/dev.env.js` and `config/prod.env.js` (copied from the `sample.*.env.js` files, gitignored) hold the keys that webpack's DefinePlugin injects as `process.env.*`: Firebase config (`FB_*`), `GOOGLE_MAPS_API_KEY`, and `WEATHER_API` (`OpenWeatherMap` or `DarkSky`) selecting the weather provider. Values must be double-quoted string literals (e.g. `` `"value"` ``).
 
-Third-party API keys for weather/elevation calls are **not** used directly by the browser: the client calls the `api/cors` Cloud Function with a URL containing the literal placeholder `API_KEY` plus a `service` name, and the function substitutes `functions.config()[service].key` server-side. Each service is restricted to its own host by `PROXY_SERVICE_HOSTS`; the proxy goes away once the new app uses Open-Meteo.
+Third-party API keys for weather/elevation calls are **not** used directly by the browser: the client calls the `api/cors` Cloud Function with a URL containing the literal placeholder `API_KEY` plus a `service` name, and the function substitutes the service's Secret Manager key server-side. Each service is restricted to its own host by `PROXY_SERVICES`; the proxy goes away once the new app uses Open-Meteo.
 
 Security rules are owner-only: `activities` and `userprefs` by `uid`, `segments` through their parent activity's `uid`, Storage under `userdata/{uid}/`.
 
@@ -46,7 +46,7 @@ Security rules are owner-only: `activities` and `userprefs` by `uid`, `segments`
 
 ### Data flow for an activity
 1. `Upload.vue` creates an `activities` Firestore doc and uploads the .FIT/.CSV file to Storage, named with the activity ID.
-2. The `processActivityFile` Storage trigger (`functions/index.js`) parses it (`fit-file-parser` or `functions/csv.js`), writes a gzipped `<activityId>.json.gz` next to the original, and updates the activity doc's status/metadata (`Processed` or `Error` + `statusMessage`).
+2. The `processActivityFile` Storage trigger (`functions/index.js`) checks the activity belongs to the uploader, parses the file (`functions/activity.js`), writes a gzipped `<activityId>.json.gz` next to the original, and updates the activity doc's status/metadata (`Processed` or `Error` + `statusMessage`).
 3. `Activity.vue` fetches the parsed data via the authenticated Express endpoint `api/activity/:id` (Firebase ID token as Bearer header) and caches it in localStorage (`services/cache.js`, LRU by capacity).
 4. `CdA.vue` runs the VE analysis on a lap or chart selection and saves results to the `segments` collection.
 
@@ -65,5 +65,3 @@ Routes requiring login set `meta.requiresAuth` in `src/router/index.js`. The `@`
 
 ## Gotchas
 - `firebase.json` hosting serves `public/`, but the webpack build writes to `dist/`; copy or repoint before deploying hosting.
-- `functions/index.js` requires `cors` and `node-fetch`, which are not listed in `functions/package.json`.
-- Functions use the legacy `functions.config()` API and v1 triggers (`functions.storage.object().onFinalize`).

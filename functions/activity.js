@@ -24,7 +24,7 @@ function detectFormat(buffer) {
   if (buffer.toString("latin1", 0, 4) === "PK\u0003\u0004") return "zip";
   if (buffer.length >= 12 && buffer.toString("latin1", 8, 12) === ".FIT") return "fit";
 
-  const head = buffer.toString("utf8", 0, 1024).replace(/^﻿/, "").trimStart().toLowerCase();
+  const head = buffer.toString("utf8", 0, 1024).replace(/^\uFEFF/, "").trimStart().toLowerCase();
   if (head.startsWith("<")) {
     if (head.includes("<gpx")) return "gpx";
     if (head.includes("<trainingcenterdatabase")) return "tcx";
@@ -257,11 +257,15 @@ function getActivityData(data, options = { includeDataPoints: true }) {
 
   if (fileHasStats) {
     // file has stats such as session and lap averages
+    const lastLap = [...laps].reverse().find((lap) => lap.records.length > 0);
+    const lastRecord = lastLap.records[lastLap.records.length - 1];
     stats = {
       timestamp: timestamp,
       start_time: timestamp,
-      total_distance: session.total_distance,
-      total_elapsed_time: session.total_elapsed_time,
+      total_distance: session.total_distance != null ? session.total_distance : lastRecord.distance,
+      total_elapsed_time: session.total_elapsed_time != null
+        ? session.total_elapsed_time
+        : (new Date(lastRecord.timestamp) - new Date(timestamp)) / 1000,
       avg_power: session.avg_power,
       avg_speed: session[avgSpeedField],
       lap_count: laps.length,

@@ -41,7 +41,7 @@ describe("detectFormat", () => {
     assert.equal(detectFormat(simpleFit()), "fit");
     assert.equal(detectFormat(zlib.gzipSync(simpleFit())), "gzip");
     assert.equal(detectFormat(Buffer.from(zipSync({ "a.fit": simpleFit() }))), "zip");
-    assert.equal(detectFormat(Buffer.from("﻿speed,power,time\n1,2,00:00")), "csv");
+    assert.equal(detectFormat(Buffer.from("\uFEFFspeed,power,time\n1,2,00:00")), "csv");
     assert.equal(detectFormat(Buffer.from("Time,Power,Speed\n0,1,2")), "csv");
     assert.equal(detectFormat(Buffer.from('<?xml version="1.0"?>\n<gpx creator="x">')), "gpx");
     assert.equal(detectFormat(Buffer.from("<?xml version=\"1.0\"?><TrainingCenterDatabase>")), "tcx");
@@ -85,6 +85,12 @@ describe("parseActivityFile: .FIT structure recovery", () => {
     assert.deepEqual(result.points.map((p) => p.lap), [...Array(10).fill(1), ...Array(10).fill(2)]);
     assert.equal(result.points[0].altitude, 0.1);
     assert.equal(result.points[0].speed, 36);
+  });
+
+  it("falls back to record totals when the session has averages but no totals", async () => {
+    const { result } = await parseAndExtract(simpleFit());
+    assert.equal(result.total_distance, 0.19);
+    assert.equal(result.total_elapsed_time, 20);
   });
 
   it("recovers files without a session message, taking the sport from the sport message", async () => {

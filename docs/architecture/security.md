@@ -16,7 +16,7 @@ Queries must be provably restricted to the caller's own documents, or Firestore 
 - list activities with `where('uid', '==', uid)`;
 - list segments with `where('activity', '==', activityId)` (the rule evaluates `get()` on the constrained activity ID).
 
-Cloud Functions use the Admin SDK and bypass the rules, so they must do their own ownership checks.
+Cloud Functions use the Admin SDK and bypass the rules, so they must do their own ownership checks. `processActivityFile` only processes `userdata/{uid}/activities/{activityId}.*` when `activities/{activityId}.uid` is that same `uid`. Otherwise a user could upload under their own path with another user's activity ID and overwrite that activity.
 
 ## Cloud Functions
 
@@ -25,16 +25,16 @@ Cloud Functions use the Admin SDK and bypass the rules, so they must do their ow
 | Route | Access control |
 |---|---|
 | `GET /activity/:id` | Returns 404 unless `activities/{id}.uid` is the caller's. Missing and foreign activities look the same, so activity IDs can't be probed |
-| `GET /cors?service=&url=` | `service` must be in `PROXY_SERVICE_HOSTS`. `url` must be `https`, on exactly that service's host, with no credentials or port. `API_KEY` in the URL is replaced with `functions.config()[service].key` |
+| `GET /cors?service=&url=` | `service` must be `openweather` or `maps` (`PROXY_SERVICES`). `url` must be `https`, on exactly that service's host, with no credentials or port. `API_KEY` in the URL is replaced with the service's key from Secret Manager (`OPENWEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`) |
 
 `/cors` exists only because the legacy app called keyed APIs from the browser. It is removed once weather and elevation move to Open-Meteo ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md)).
 
 ## Tests
 
-`tests/rules/rules.test.js` runs against the Firestore and Storage emulators:
+`tests/emulator/rules.test.js` runs against the Firestore and Storage emulators, and `tests/emulator/functions.test.js` exercises the functions' access control end to end:
 
 ```bash
-npm --prefix tests/rules test
+npm --prefix tests/emulator test
 ```
 
 It covers owner access, cross-user denial for reads, lists, updates and deletes, ownership transfer, moving a segment between activities, and signed-out access. Run it whenever `firestore.rules` or `storage.rules` changes.

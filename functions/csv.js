@@ -28,7 +28,7 @@ function parseCSV(content, options = {}) {
 
   let records;
   try {
-    records = parse(content.replace(/^﻿/, ""), {
+    records = parse(content.replace(/^\uFEFF/, ""), {
       columns: (header) => header.map((h) => h.trim().toLowerCase()),
       trim: true,
       skip_empty_lines: true

@@ -16,3 +16,4 @@ Copy [template.md](template.md) to `NNNN-short-title.md` and add it to the index
 | [0008](0008-metric-only-analysis-core.md) | Metric-only analysis core | Accepted | 2026-10-17 |
 | [0009](0009-virtual-elevation-gap-and-stop-handling.md) | Virtual elevation gap and stop handling | Accepted | 2026-10-17 |
 | [0010](0010-private-ride-fixtures.md) | Personal rides as gitignored test fixtures | Accepted | 2026-10-17 |
+| [0011](0011-functions-2nd-gen-and-secret-manager.md) | Cloud Functions on 2nd gen with Secret Manager | Accepted | 2026-10-17 |

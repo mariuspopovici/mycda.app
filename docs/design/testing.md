@@ -6,7 +6,9 @@
 |---|---|---|
 | Analysis core | `npm --prefix web test` | Physics, wind, loops, series preparation, stats |
 | Full ride sweep | `npm --prefix web run test:all-fixtures` | Every private ride (~3 min) |
-| Security rules | `npm --prefix tests/rules test` | `firestore.rules`, `storage.rules` in the emulators (needs Java) |
+| Upload parsing | `npm --prefix functions test` | Format detection, archives, FIT structure recovery, CSV formats |
+| Upload parsing sweep | `npm --prefix functions run test:all-fixtures` | Every private ride parses or is rejected with a message |
+| Emulator | `npm --prefix tests/emulator test` | Security rules, and the functions end to end (needs Java) |
 
 Run a single file or test from `web/`: `npx vitest run src/core/__tests__/core.test.ts -t windAt`. Add `-u` to accept snapshot changes after reviewing them.
 
@@ -43,6 +45,12 @@ gcloud storage cp "gs://mycda-c43c6.appspot.com/userdata/<UID>/activities/*.csv"
 - Golden files for private rides are written to `private/__golden__/` with `toMatchFileSnapshot`, so nothing derived from a ride is committed.
 - The full sweep (`ALL_FIXTURES=1`) runs parity on every file and skips files the upload pipeline rejects.
 
-## Security rules tests
+## Upload parsing tests
 
-`tests/rules/rules.test.js` uses `@firebase/rules-unit-testing` against the emulators started by `firebase emulators:exec` (project `demo-mycda`, so nothing real is touched). Seed data is written with rules disabled. Each test then asserts allow or deny as a specific user. `PERMISSION_DENIED` lines in the output are expected.
+`functions/test/activity.test.js` uses Node's built-in test runner. FIT edge cases are generated with fit-file-parser's low-level encoder (`functions/test/fit-builder.js`, which uses FIT SDK message and field numbers): no session, no laps, an empty first lap, records before the first lap, alternating speed-only and power-only records, missing speed, and other sports. Prefer adding a builder case over committing binary fixtures.
+
+## Emulator tests
+
+`tests/emulator/functions.test.js` runs the real functions in the Auth, Functions, Firestore and Storage emulators. It uploads files with the Admin SDK, waits for `processActivityFile`, and calls `/api` with ID tokens from the Auth emulator. `setup-secrets.mjs` writes dummy secrets to `functions/.secret.local`.
+
+`tests/emulator/rules.test.js` uses `@firebase/rules-unit-testing` against the emulators started by `firebase emulators:exec` (project `demo-mycda`, so nothing real is touched). Seed data is written with rules disabled. Each test then asserts allow or deny as a specific user. `PERMISSION_DENIED` lines in the output are expected.

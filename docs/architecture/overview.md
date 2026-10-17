@@ -43,9 +43,9 @@ flowchart LR
 | Legacy web app | `src/` | Vue 2, bootstrap-vue, Vuex, plotly, Google Maps. Still in production; to be deleted at cutover |
 | New web app | `web/` | React 19, Vite, TypeScript. It contains only the analysis core so far |
 | Analysis core | `web/src/core/` | Framework-free TypeScript: VE, wind model, loop finder, spike filter, segment stats, units, weather sampling |
-| `processActivityFile` | `functions/index.js` | Runs on upload: parses the file, stores `<id>.json.gz` next to it, updates the activity status and summary |
-| `api` | `functions/index.js` | Express app behind Firebase ID-token auth. `/activity/:id` returns parsed points; `/cors` proxies keyed third-party APIs |
-| File parsing | `functions/activity.js`, `functions/csv.js` | Firebase-free parsing (`parseFIT`, `parseCSV`, `validateFileContents`, `getActivityData`), importable by tests |
+| `processActivityFile` | `functions/index.js` | 2nd-gen Storage trigger. Runs on upload: checks ownership, parses the file, stores `<id>.json.gz` next to it, updates the activity status and summary |
+| `api` | `functions/index.js` | 2nd-gen HTTPS function: Express app behind Firebase ID-token auth. `/activity/:id` returns parsed points; `/cors` proxies keyed third-party APIs, with keys in Secret Manager |
+| File parsing | `functions/activity.js`, `functions/csv.js` | Firebase-free parsing (`parseActivityFile`, `validateFileContents`, `getActivityData`), importable by tests |
 
 ## Activity lifecycle
 
@@ -77,7 +77,6 @@ After the migration (see [ADR-0002](../decisions/0002-rewrite-frontend-in-react.
 
 - `web/` replaces `src/`: React, Mantine, Leaflet with OpenStreetMap tiles, the modular Firebase SDK, TanStack Query.
 - Weather and elevation come from Open-Meteo directly from the browser. No API keys, so the `/cors` proxy is deleted.
-- Functions move to 2nd gen (Node 22), secrets move to Secret Manager, and `node-fetch`, `node-gzip` and `mkdirp` are replaced with built-ins.
 - Firebase Hosting serves the Vite build output.
 - Firestore collections and Storage paths stay unchanged, so existing user data needs no migration.
 
