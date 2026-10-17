@@ -16,8 +16,10 @@ export const inHgToHpa = (inHg: number) => inHg * HPA_PER_INHG
 export const toFahrenheit = (c: number) => (c * 9) / 5 + 32
 export const toCelsius = (f: number) => ((f - 32) * 5) / 9
 
-/** Divisor that converts the speed unit used for `units` (km/h or mph) to m/s. */
-export const speedToMetersPerSecond = (units: Units) => (units === 'metric' ? 3.6 : 2.237)
+const KG_M3_PER_LB_FT3 = 16.018463
+/** Air density conversions; analysis always uses kg/m³. */
+export const lbPerFt3ToKgPerM3 = (rho: number) => rho * KG_M3_PER_LB_FT3
+export const kgPerM3ToLbPerFt3 = (rho: number) => rho / KG_M3_PER_LB_FT3
 
 /** Formats seconds as hh:mm:ss. */
 export function secondsToHms (seconds: number): string {

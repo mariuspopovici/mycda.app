@@ -1,4 +1,4 @@
-import type { LatLng } from './windModel'
+import type { Track } from './windModel'
 
 export type LoopPrecision = 'low' | 'medium' | 'high'
 
@@ -21,10 +21,11 @@ export function precisionDigits (precision: LoopPrecision): number {
 
 /**
  * Finds loops in a GPS track by detecting when the track returns to a previously visited
- * (rounded) coordinate. Loop durations are in number of points.
+ * (rounded) coordinate. Loop durations and indexes are in points of the aligned track;
+ * points without a fix are skipped.
  */
 export function findLoops (
-  coords: LatLng[],
+  coords: Track,
   digits = 4,
   minLoopDuration = 80,
   maxLoopDuration = 200
@@ -33,6 +34,7 @@ export function findLoops (
   const loops: Loop[] = []
 
   coords.forEach((point, index) => {
+    if (!point) return
     const lat = Number(point.lat).toFixed(digits)
     const lng = Number(point.lng).toFixed(digits)
     const key = lat + lng

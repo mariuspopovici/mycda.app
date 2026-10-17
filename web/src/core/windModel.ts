@@ -3,6 +3,9 @@ export interface LatLng {
   lng: number
 }
 
+/** A GPS track aligned with the other activity series; null where a point has no fix. */
+export type Track = Array<LatLng | null>
+
 export interface AirSpeedPoint {
   /** Air speed in the same unit as the ground and wind speeds. */
   airspeed: number
@@ -10,10 +13,13 @@ export interface AirSpeedPoint {
   yaw: number
 }
 
+/** Points on either side used to estimate the direction of travel. */
+const BEARING_HALF_WINDOW = 5
+
 const radians = (degrees: number) => (degrees * Math.PI) / 180
 const degrees = (rad: number) => (rad * 180) / Math.PI
 
-/** Initial bearing from one point to another, truncated to whole degrees in [0, 360). */
+/** Initial compass bearing from one point to another, in [0, 360). */
 export function bearing (from: LatLng, to: LatLng): number {
   const phi1 = radians(from.lat)
   const phi2 = radians(to.lat)
@@ -21,21 +27,32 @@ export function bearing (from: LatLng, to: LatLng): number {
 
   const y = Math.sin(deltaLambda) * Math.cos(phi2)
   const x = Math.cos(phi1) * Math.sin(phi2) - Math.sin(phi1) * Math.cos(phi2) * Math.cos(deltaLambda)
-  return (Math.trunc(degrees(Math.atan2(y, x))) + 360) % 360
+  return (degrees(Math.atan2(y, x)) + 360) % 360
 }
 
-/** Direction of travel at each point, re-evaluated every 10 points. */
-export function travelBearings (location: LatLng[]): number[] {
-  let start = location[0]
-  let current = bearing(start, location[Math.min(10, location.length - 1)])
-
-  return location.map((point, index) => {
-    if (index > 0 && index % 10 === 0) {
-      current = bearing(start, point)
-      start = point
-    }
-    return current
+/**
+ * Direction of travel at each point, from the GPS fixes up to BEARING_HALF_WINDOW points before and
+ * after it. Points without a usable bearing (no fix nearby, standing still) take the nearest known one.
+ * Returns undefined when the track has no usable bearing at all.
+ */
+export function travelBearings (track: Track): number[] | undefined {
+  const n = track.length
+  const bearings: Array<number | undefined> = track.map((_, i) => {
+    let from = Math.max(0, i - BEARING_HALF_WINDOW)
+    while (from < i && !track[from]) from++
+    let to = Math.min(n - 1, i + BEARING_HALF_WINDOW)
+    while (to > i && !track[to]) to--
+    const a = track[from]
+    const b = track[to]
+    if (!a || !b || from === to || (a.lat === b.lat && a.lng === b.lng)) return undefined
+    return bearing(a, b)
   })
+
+  const firstKnown = bearings.find((b) => b !== undefined)
+  if (firstKnown === undefined) return undefined
+
+  let last = firstKnown
+  return bearings.map((b) => (last = b ?? last))
 }
 
 /**
@@ -58,16 +75,17 @@ export function yaw (groundSpeed: number, windSpeed: number, windAngle: number):
 
 /**
  * Estimates air speed at each point from the GPS track and the wind.
+ * @param track GPS fixes aligned with `speed`
  * @param windDirection meteorological wind direction (where the wind blows from), in degrees
+ * @throws when the track has no usable GPS data
  */
 export function windModelAirSpeed (
-  location: LatLng[],
+  track: Track,
   speed: number[],
   windSpeed: number[],
   windDirection: number[]
 ): AirSpeedPoint[] {
-  const bearings = travelBearings(location)
-  return speed.map((groundSpeed, i) =>
-    yaw(groundSpeed, windSpeed[i], (windDirection[i] - bearings[i]) % 360)
-  )
+  const bearings = travelBearings(track)
+  if (!bearings) throw new Error('The wind model needs GPS data.')
+  return speed.map((groundSpeed, i) => yaw(groundSpeed, windSpeed[i], windDirection[i] - bearings[i]))
 }

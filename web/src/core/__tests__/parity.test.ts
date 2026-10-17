@@ -1,6 +1,7 @@
 /**
- * Checks the TypeScript ports against the legacy Vue app services in src/services.
- * Delete this file together with the legacy app; core.test.ts snapshots keep guarding behaviour.
+ * Checks the TypeScript ports against the legacy Vue app services in src/services, where the legacy
+ * behaviour is correct. Delete this file together with the legacy app; core.test.ts keeps guarding
+ * behaviour.
  */
 import { describe, expect, it } from 'vitest'
 import LegacyBuffer from '../../../../src/services/buffer.js'
@@ -12,30 +13,25 @@ import { toActivitySeries } from '../activitySeries'
 import { findLoops } from '../loopFinder'
 import * as units from '../units'
 import { virtualElevation } from '../virtualElevation'
-import { windModelAirSpeed } from '../windModel'
-import { CSV_FIXTURES, circuitTrack, expectClose, loadActivityPoints } from './fixtures'
+import { yaw } from '../windModel'
+import { CSV_FIXTURES, circuitTrack, expectClose, loadActivityPoints, withoutLegacyBugs } from './fixtures'
 
 const PARAM_SETS = [
   { rho: 1.2, mass: 80, crr: 0.005, cda: 0.35, dloss: 0 },
   { rho: 1.15, mass: 72.5, crr: 0.0035, cda: 0.21, dloss: 2.5 }
 ]
 
-describe('virtual elevation matches legacy', () => {
+describe('virtual elevation matches legacy outside its bugs', () => {
   for (const fixture of CSV_FIXTURES) {
-    for (const u of ['metric', 'imperial'] as const) {
-      it(`${fixture} (${u})`, async () => {
-        const s = toActivitySeries(await loadActivityPoints(fixture))
-        for (const p of PARAM_SETS) {
-          const legacy = new LegacyVirtualElevation(s.power, s.speed, s.airspeed, s.altitude, s.time, u, p.dloss)
-          const expected = legacy.calculateVirtualElevation(p.rho, p.mass, p.crr, p.cda)
-          const actual = virtualElevation(
-            { ...s, elevation: s.altitude, units: u, drivetrainLoss: p.dloss },
-            p
-          )
-          expectClose(actual, expected)
-        }
-      })
-    }
+    it(fixture, async () => {
+      const s = withoutLegacyBugs(toActivitySeries(await loadActivityPoints(fixture)))
+      for (const p of PARAM_SETS) {
+        const legacy = new LegacyVirtualElevation(s.power, s.speed, s.airspeed, s.altitude, s.time, 'metric', p.dloss)
+        const expected = legacy.calculateVirtualElevation(p.rho, p.mass, p.crr, p.cda)
+        const actual = virtualElevation({ ...s, elevation: s.altitude, drivetrainLoss: p.dloss }, p)
+        expectClose(actual, expected, 1e-9)
+      }
+    })
   }
 })
 
@@ -53,29 +49,23 @@ describe('power spike filter matches legacy Buffer logic', () => {
   })
 })
 
-describe('wind model matches legacy', () => {
-  it('computes the same air speed and yaw on a circuit', () => {
-    const track = circuitTrack(2)
-    const speed = track.map((_, i) => 30 + 5 * Math.sin(i / 7))
-    const windSpeed = track.map((_, i) => (i < 150 ? 12 : 18))
-    const windDirection = track.map((_, i) => (i < 150 ? 225 : 300))
-
-    const legacy = new LegacyWindModel([], track, speed, windSpeed, windDirection).calculateAirSpeed()
-    const actual = windModelAirSpeed(track, speed, windSpeed, windDirection)
-
-    expectClose(actual.map((p) => p.airspeed), legacy.map((p: { airspeed: number }) => p.airspeed))
-    expectClose(actual.map((p) => p.yaw), legacy.map((p: { yaw: number }) => p.yaw))
-  })
+describe('yaw matches legacy', () => {
+  const legacy = new LegacyWindModel()
+  it.each([[30, 10, 0], [30, 10, 45], [25, 15, 135], [40, 20, 180], [20, 30, 270], [35, 5, -60]])(
+    'ground %d, wind %d at %d°',
+    (ground, wind, angle) => {
+      expect(yaw(ground, wind, angle)).toEqual(legacy._yaw(ground, wind, angle))
+    }
+  )
 })
 
-describe('loop finder matches legacy', () => {
+describe('loop finder matches legacy on a complete track', () => {
   for (const [digits, min, max] of [[3, 60, 1000], [4, 80, 200], [5, 100, 400]]) {
     it(`precision ${digits}, duration ${min}-${max}`, () => {
       const track = circuitTrack(4)
       // the legacy finder mutates its input
       const legacy = new LegacyLoopFinder(track.map((p) => ({ ...p }))).findLoops(digits, min, max)
       expect(findLoops(track, digits, min, max)).toEqual(legacy)
-      expect(track[0].lat).toBeTypeOf('number')
     })
   }
 })

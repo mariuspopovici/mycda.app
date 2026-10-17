@@ -1,19 +1,18 @@
-import { speedToMetersPerSecond, type Units } from './units'
-
 /**
  * Data series for R. Chung's virtual elevation method, described at
  * http://anonymous.coward.free.fr/wattage/cda/indirect-cda.pdf
- * All series are aligned by index.
+ * All series are aligned by index and in metric units; convert for display only.
  */
 export interface VirtualElevationSeries {
+  /** Power in W. */
   power: number[]
-  /** Ground speed in km/h (metric) or mph (imperial). */
+  /** Ground speed in km/h. */
   speed: number[]
-  /** Air speed in the same unit as speed. Pass ground speed when air speed is unknown. */
+  /** Air speed in km/h, negative for a tailwind faster than the rider. Pass ground speed when unknown. */
   airspeed: number[]
+  /** Elevation in m. */
   elevation: number[]
   time: Array<Date | number>
-  units: Units
   /** Drivetrain loss in percent, applied to power. */
   drivetrainLoss?: number
 }
@@ -27,44 +26,54 @@ export interface VirtualElevationParams {
   cda: number
 }
 
+/**
+ * Gaps longer than this are treated as pauses (auto-pause, dropouts) instead of integrating one
+ * power reading over the whole gap. Smart recording produces moving gaps of a few seconds, which
+ * are integrated normally.
+ */
+export const MAX_INTEGRATION_GAP_SECONDS = 10
+
 const G = 9.81
+const KMH_PER_MS = 3.6
 
 /**
- * Solves the power equation for slope at each point and integrates it into a virtual elevation profile
- * that starts at the first real elevation point.
+ * Integrates the energy balance between consecutive points into a virtual elevation profile that
+ * starts at the first real elevation point:
+ *
+ *   m·g·Δh = P·Δt − Crr·m·g·v·Δt − ½·CdA·ρ·v_air·|v_air|·v·Δt − ½·m·(v² − v₀²)
+ *
+ * Where there is nothing to integrate (stopped, pauses, repeated timestamps) the virtual elevation
+ * follows the real elevation change, which is ~0 while standing still. Unlike snapping to the real
+ * elevation, this keeps any drift visible, and drift is what CdA and Crr are tuned to remove.
  */
 export function virtualElevation (series: VirtualElevationSeries, params: VirtualElevationParams): number[] {
-  const { power, speed, airspeed, elevation, time, units, drivetrainLoss = 0 } = series
+  const { power, speed, airspeed, elevation, time, drivetrainLoss = 0 } = series
   const { rho, mass, crr, cda } = params
-  const vFactor = speedToMetersPerSecond(units)
+  const efficiency = 1 - drivetrainLoss / 100
   const ve: number[] = []
 
-  power.forEach((rawPower, i) => {
+  power.forEach((watts, i) => {
     if (i === 0) {
       ve.push(elevation[0])
       return
     }
 
-    const velocity = speed[i] / vFactor
-    const vair = airspeed[i] / vFactor
+    const dt = (Number(time[i]) - Number(time[i - 1])) / 1000
+    const v = speed[i] / KMH_PER_MS
+    const v0 = speed[i - 1] / KMH_PER_MS
+    const vair = airspeed[i] / KMH_PER_MS
 
-    let interval = (Number(time[i]) - Number(time[i - 1])) / 1000
-    if (interval === 0) interval = 1
-
-    if (velocity === 0) {
-      // Legacy behaviour: falls back to the *real* previous elevation, not the virtual one.
-      ve.push(elevation[i - 1])
+    if (v <= 0 || dt <= 0 || dt > MAX_INTEGRATION_GAP_SECONDS) {
+      ve.push(ve[i - 1] + elevation[i] - elevation[i - 1])
       return
     }
 
-    const previousVelocity = speed[i - 1] / vFactor
-    const a = (velocity ** 2 - previousVelocity ** 2) / (2 * velocity * interval)
-    const p = rawPower * (1 - drivetrainLoss / 100)
-    // Legacy behaviour: `a` is already an acceleration, so dividing by interval again is only
-    // correct for 1 s recording intervals.
-    const slope = p / (velocity * mass * G) - crr - (a / interval) / G - (cda * rho * vair ** 2) / (2 * mass * G)
+    const work = watts * efficiency * dt
+    const rolling = crr * mass * G * v * dt
+    const aero = 0.5 * cda * rho * vair * Math.abs(vair) * v * dt
+    const kinetic = 0.5 * mass * (v ** 2 - v0 ** 2)
 
-    ve.push(slope * velocity * interval + ve[i - 1])
+    ve.push(ve[i - 1] + (work - rolling - aero - kinetic) / (mass * G))
   })
 
   return ve

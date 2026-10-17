@@ -11,12 +11,11 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import LegacyLoopFinder from '../../../../src/services/loopdetect.js'
 import LegacyVirtualElevation from '../../../../src/services/ve.js'
-import LegacyWindModel from '../../../../src/services/windmodel.js'
-import { toActivitySeries } from '../activitySeries'
+import { hasLocation, toActivitySeries } from '../activitySeries'
 import { findLoops } from '../loopFinder'
 import { virtualElevation } from '../virtualElevation'
-import { windModelAirSpeed } from '../windModel'
-import { PRIVATE_FIXTURES_DIR, expectClose, loadActivityPoints } from './fixtures'
+import { travelBearings, windModelAirSpeed } from '../windModel'
+import { PRIVATE_FIXTURES_DIR, expectClose, loadActivityPoints, withoutLegacyBugs } from './fixtures'
 
 const CURATED_RIDES: Record<string, string> = {
   '179e07b9-7ef4-424c-9fdb-8dc0c7f01608.fit': 'GPS loops — 1 s, one long gap',
@@ -54,28 +53,29 @@ describe.skipIf(rides.length === 0)('private rides', () => {
       }
       const s = toActivitySeries(points)
 
-      for (const units of ['metric', 'imperial'] as const) {
-        const legacy = new LegacyVirtualElevation(s.power, s.speed, s.airspeed, s.altitude, s.time, units, 2)
-        const ve = virtualElevation({ ...s, elevation: s.altitude, units, drivetrainLoss: 2 }, PARAMS)
-        expectClose(ve, legacy.calculateVirtualElevation(PARAMS.rho, PARAMS.mass, PARAMS.crr, PARAMS.cda))
-      }
+      const clean = withoutLegacyBugs(s)
+      const legacy = new LegacyVirtualElevation(clean.power, clean.speed, clean.airspeed, clean.altitude, clean.time, 'metric', 2)
+      expectClose(
+        virtualElevation({ ...clean, elevation: clean.altitude, drivetrainLoss: 2 }, PARAMS),
+        legacy.calculateVirtualElevation(PARAMS.rho, PARAMS.mass, PARAMS.crr, PARAMS.cda),
+        1e-9
+      )
 
-      if (s.location.length > 10) {
-        const windSpeed = s.speed.map(() => 15)
-        const windDirection = s.speed.map(() => 250)
-        const legacyWind = new LegacyWindModel([], s.location, s.speed, windSpeed, windDirection).calculateAirSpeed()
-        expectClose(
-          windModelAirSpeed(s.location, s.speed, windSpeed, windDirection).map((p) => p.airspeed),
-          legacyWind.map((p: { airspeed: number }) => p.airspeed)
-        )
+      if (hasLocation(s)) {
+        if (travelBearings(s.location)) {
+          const air = windModelAirSpeed(s.location, s.speed, s.speed.map(() => 15), s.speed.map(() => 250))
+          expect(air.every((p) => Number.isFinite(p.airspeed))).toBe(true)
+        }
 
-        const legacyLoops = new LegacyLoopFinder(s.location.map((p) => ({ ...p }))).findLoops(3, 60, 1000)
-        expect(findLoops(s.location, 3, 60, 1000)).toEqual(legacyLoops)
+        // the legacy finder only ever saw the fixes, without gaps
+        const fixes = s.location.filter((p) => p !== null)
+        const legacyLoops = new LegacyLoopFinder(fixes.map((p) => ({ ...p }))).findLoops(3, 60, 1000)
+        expect(findLoops(fixes, 3, 60, 1000)).toEqual(legacyLoops)
       }
 
       if (!ALL) {
-        const ve = virtualElevation({ ...s, elevation: s.altitude, units: 'metric', drivetrainLoss: 2 }, PARAMS)
-        const golden = { points: s.time.length, gps: s.location.length, ve: ve.map((v) => Math.round(v * 1e6) / 1e6) }
+        const ve = virtualElevation({ ...s, elevation: s.altitude, drivetrainLoss: 2 }, PARAMS)
+        const golden = { points: s.time.length, gps: s.location.filter((p) => p !== null).length, ve: ve.map((v) => Math.round(v * 1e6) / 1e6) }
         await expect(JSON.stringify(golden)).toMatchFileSnapshot(
           resolve(PRIVATE_FIXTURES_DIR, '__golden__', ride.replace(/\.\w+$/, '.json'))
         )

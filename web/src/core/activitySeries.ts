@@ -1,4 +1,4 @@
-import type { LatLng } from './windModel'
+import type { Track } from './windModel'
 
 /** A data point as returned by the `api/activity/:id` endpoint. */
 export interface ActivityPoint {
@@ -22,7 +22,8 @@ export interface ActivitySeries {
   speed: number[]
   airspeed: number[]
   distance: number[]
-  location: LatLng[]
+  /** GPS fixes aligned with the other series; null where a point has no fix. */
+  location: Track
 }
 
 /** Power readings above this are treated as sensor spikes. */
@@ -55,10 +56,12 @@ export function toActivitySeries (points: ActivityPoint[]): ActivitySeries {
     series.speed.push(point.speed ?? 0)
     series.airspeed.push(point.airspeed ?? point.speed ?? 0)
     series.distance.push(point.distance ?? 0)
-    if ('lat' in point && 'long' in point) {
-      series.location.push({ lat: Number(point.lat), lng: Number(point.long) })
-    }
+    series.location.push(point.lat != null && point.long != null
+      ? { lat: Number(point.lat), lng: Number(point.long) }
+      : null)
   })
 
   return series
 }
+
+export const hasLocation = (series: ActivitySeries) => series.location.some((p) => p !== null)
