@@ -7,7 +7,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 0 | Lock down production | Done (`93f3288`), deployed 2026-10-17 |
 | 1 | Analysis core in TypeScript with tests | Done (`93f3288`) |
 | 1b | Physics fixes | Done (`4eaf00c`) |
-| 2 | Backend modernization | Next |
+| 2 | Backend modernization | In progress |
 | 3 | New app shell | Not started |
 | 4 | Analysis screens | Not started |
 | 5 | Cutover | Not started |
@@ -40,8 +40,8 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [ ] Replace `functions.config()` with params and Secret Manager (`defineSecret`)
 - [ ] Replace `node-fetch`, `node-gzip` and `mkdirp-promise` with built-ins; declare all dependencies (`cors` and `node-fetch` are currently only transitive)
 - [ ] Modern ESLint config for functions (the current config uses `ecmaVersion: 6`)
-- [ ] Parser robustness: 78 of 272 real `.fit` uploads are rejected or crash ([fixture survey](../log/2026-10-17-fixture-survey.md)). Fix the `in` operator crash on laps without records, and give errors their messages
-- [ ] CSV timestamps: stop deriving the date from `new Date()`
+- [x] Parser robustness: format detection by content, gzip/zip, fit-file-parser 1.21 → 6.2.2, lap/session recovery, user-facing error messages; 281 of 312 real files accepted, up from 232 ([log](../log/2026-10-17-parser-upgrade.md))
+- [x] CSV timestamps from the upload time; hours, clock times and ISO date-times; distance over real intervals
 - [ ] Open-Meteo client in `web/src/core/` or `web/src/services/` ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md))
 - [ ] Optional: store points in their final form at upload so the client reads Storage directly, skipping `/activity/:id`
 

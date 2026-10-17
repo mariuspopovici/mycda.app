@@ -1,12 +1,11 @@
 import { readFileSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
-import { vi } from 'vitest'
 import type { ActivityPoint } from '../activitySeries'
 import type { LatLng } from '../windModel'
 
 const require = createRequire(import.meta.url)
-const { parseCSV, parseFIT, validateFileContents, getActivityData } = require('../../../../functions/activity.js')
+const { parseActivityFile, validateFileContents, getActivityData } = require('../../../../functions/activity.js')
 
 export const FIXTURES_DIR = resolve(import.meta.dirname, '../__fixtures__')
 /** Personal activity files, gitignored. Tests using them are skipped when the folder is absent. */
@@ -14,39 +13,19 @@ export const PRIVATE_FIXTURES_DIR = resolve(FIXTURES_DIR, 'private')
 
 export const CSV_FIXTURES = ['bommycdatest.csv', 'exported.csv', 'mycda.csv', 'mytest.csv', 'test.csv']
 
+/** CSV files carry only elapsed time; production dates them by upload time. */
+const CSV_START_TIME = new Date('2026-01-01T10:00:00Z')
+
 /**
  * Runs an activity file through the Cloud Functions parsing pipeline and a JSON round trip,
  * producing the points the web app receives from `api/activity/:id`.
  * @param fixture file name in FIXTURES_DIR, or an absolute path
  */
 export async function loadActivityPoints (fixture: string): Promise<ActivityPoint[]> {
-  const file = resolve(FIXTURES_DIR, fixture)
-  let parsed
-  if (file.endsWith('.fit')) {
-    parsed = await quietly(() => parseFIT(readFileSync(file)))
-  } else {
-    // functions/csv.js builds timestamps from the current date
-    vi.useFakeTimers({ toFake: ['Date'] })
-    vi.setSystemTime(new Date('2026-01-01T10:00:00Z'))
-    try {
-      parsed = await quietly(() => parseCSV(readFileSync(file, 'utf8')))
-    } finally {
-      vi.useRealTimers()
-    }
-  }
+  const parsed = await parseActivityFile(readFileSync(resolve(FIXTURES_DIR, fixture)), { startTime: CSV_START_TIME })
   const validation = validateFileContents(parsed)
   if (validation.invalid) throw new Error(validation.message)
   return JSON.parse(JSON.stringify(getActivityData(parsed))).points
-}
-
-async function quietly<T> (fn: () => Promise<T>): Promise<T> {
-  const log = console.log
-  console.log = () => {}
-  try {
-    return await fn()
-  } finally {
-    console.log = log
-  }
 }
 
 /** A circuit of `laps` laps around a ~600 m radius circle, one point per second. */

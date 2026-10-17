@@ -70,7 +70,7 @@ userdata/{uid}/activities/{activityId}.json.gz  parsed file, gzipped JSON (writt
 
 ## Parsed activity (`api/activity/:id` response)
 
-`getActivityData()` in `functions/activity.js` builds this from the parsed FIT structure. CSV uploads are first converted into the same FIT-like structure by `functions/csv.js`.
+`parseActivityFile()` in `functions/activity.js` detects the format from the file's contents (the browser names every upload `.fit` unless its name ends in `csv`), unwraps gzip and zip, and returns a FIT-like `activity.sessions[].laps[].records[]` structure; CSV is converted by `functions/csv.js`. `getActivityData()` builds the response below from it.
 
 ```ts
 {
@@ -102,11 +102,11 @@ Missing values are dropped by the JSON round trip, so treat every point field as
 
 ## CSV upload format
 
-Header row required. Columns are matched by name, in any order:
+Header row required. Columns are matched by name (case-insensitive), in any order:
 
 | Column | Required | Unit |
 |---|---|---|
-| `time` | yes | `mm:ss.s` or `h:mm:ss`. Only minutes and seconds are applied, on top of the current date and hour (see known issues) |
+| `time` | yes | Elapsed `[h:]mm:ss[.s]` or seconds (timed from the upload time; `mm:ss` that wraps past 59:59 adds an hour), 12-hour clock `h:mm[:ss] AM/PM`, or an ISO 8601 date-time (used as-is) |
 | `power` | yes | W |
 | `speed` | yes | km/h |
 | `airspeed` | no | km/h |
@@ -121,5 +121,5 @@ The legacy app caches the last 5 fetched activities in `localStorage` (`Activity
 ## Known issues
 
 - Deleting an activity removes only its Firestore document. Its Storage files and segments are orphaned.
-- `functions/csv.js` builds timestamps from `new Date()` with only minutes and seconds replaced, so a CSV ride's date is the upload date, and its absolute times depend on the server clock and time zone.
+- CSV files without date-times are dated by their upload time (`object.timeCreated`), since the format carries no date.
 - Function URLs are hardcoded to the production project in `Activity.vue`, `services/weather.js` and `services/mapping.js`.

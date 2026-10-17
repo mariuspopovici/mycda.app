@@ -5,8 +5,7 @@ admin.initializeApp(functions.config().firebase);
 
 const path = require("path");
 const {
-  parseCSV,
-  parseFIT,
+  parseActivityFile,
   validateFileContents,
   getActivityData
 } = require("./activity");
@@ -323,18 +322,14 @@ exports.processActivityFile = functions.storage
       let data = {};
 
       try {
-        switch (fileExtension) {
-          case ".fit":
-            data = await parseFIT(content);
-            break;
-          case ".csv":
-            data = await parseCSV(content.toString());
-            break;
-        }
+        // the format is detected from the content; CSV rows are timed from the upload
+        data = await parseActivityFile(content, { startTime: new Date(object.timeCreated) });
       } catch (error) {
         await docRef.update({
           status: "Error",
-          statusMessage: `An error occurred while parsing ${fileExtension} file. Please read the FAQ for additional information about supported file types.`
+          statusMessage: error.name === "ActivityFileError"
+            ? error.message
+            : "An error occurred while reading the file. Please read the FAQ for additional information about supported file types."
         });
         console.log("Parse Error", error);
         return null;
