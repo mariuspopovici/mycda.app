@@ -4,7 +4,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 
 | Phase | Scope | Status |
 |---|---|---|
-| 0 | Lock down production | Done in code (`93f3288`), **not deployed** |
+| 0 | Lock down production | Done (`93f3288`), deployed 2026-10-17 |
 | 1 | Analysis core in TypeScript with tests | Done (`93f3288`) |
 | 1b | Physics fixes | Done (`4eaf00c`) |
 | 2 | Backend modernization | Next |
@@ -12,12 +12,12 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 4 | Analysis screens | Not started |
 | 5 | Cutover | Not started |
 
-## Phase 0: Lock down production ✅ (deploy pending)
+## Phase 0: Lock down production ✅
 
 - [x] Owner-only Firestore and Storage rules, with emulator tests ([ADR-0006](../decisions/0006-owner-only-security-rules.md))
 - [x] Ownership check on `/api/activity/:id`
 - [x] Per-service host allowlist on `/api/cors`
-- [ ] Deploy: `firebase deploy --only firestore:rules,storage,functions`
+- [x] Deployed 2026-10-17 (`firebase deploy --only firestore:rules,storage,functions`)
 - [ ] Optionally rotate the OpenWeatherMap and Google API keys
 
 ## Phase 1: Analysis core ✅

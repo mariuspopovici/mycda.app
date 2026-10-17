@@ -41,4 +41,4 @@ It covers owner access, cross-user denial for reads, lists, updates and deletes,
 
 ## History
 
-Until October 2026 the rules allowed any signed-in user to read and write every document and file, `/activity/:id` did not check ownership, and `/cors` would fetch any URL with the real API key substituted in. A signed-in user could therefore read other users' rides or obtain the project's API keys. These were fixed in commit `93f3288` and are **not live until deployed** (see [plans/modernization.md](../plans/modernization.md)). Rotate the OpenWeatherMap and Google keys if exposure is a concern.
+Until October 2026 the rules allowed any signed-in user to read and write every document and file, `/activity/:id` did not check ownership, and `/cors` would fetch any URL with the real API key substituted in. A signed-in user could therefore read other users' rides or obtain the project's API keys. These were fixed in commit `93f3288` and deployed on 2026-10-17. Rotate the OpenWeatherMap and Google keys if exposure is a concern.
