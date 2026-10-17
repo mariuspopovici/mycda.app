@@ -4,6 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
+Architecture, design notes, decision records (ADRs), the migration plan and dated engineering logs live in [docs/](docs/README.md). Read [docs/plans/modernization.md](docs/plans/modernization.md) for current status. Record decisions that are costly to reverse as a new ADR in `docs/decisions/`, and measured investigations in `docs/log/`.
+
 MyCdA.app estimates a cyclist's aerodynamic drag (CdA) and rolling resistance (Crr) from power/speed/elevation data using R. Chung's Virtual Elevation (VE) method. It is a Vue 2 SPA (old `vuejs-templates/webpack` scaffold: webpack 3, Babel 6, bootstrap-vue, Vuex, plotly) backed by Firebase (Auth, Firestore, Storage, Cloud Functions).
 
 ## Commands
