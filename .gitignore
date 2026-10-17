@@ -73,3 +73,6 @@ firebase.*
 # my stuff
 TODO.txt
 .vscode/launch.json
+
+# Personal activity files used as local test fixtures (contain GPS tracks)
+web/src/core/__fixtures__/private/

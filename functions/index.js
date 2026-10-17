@@ -4,8 +4,12 @@ const functions = require("firebase-functions");
 admin.initializeApp(functions.config().firebase);
 
 const path = require("path");
-const EasyFit = require("fit-file-parser").default;
-const CSV = require("./csv");
+const {
+  parseCSV,
+  parseFIT,
+  validateFileContents,
+  getActivityData
+} = require("./activity");
 const fs = require("fs");
 const os = require("os");
 const util = require("util");
@@ -85,48 +89,73 @@ app.use(cookieParser);
 app.use(validateFirebaseIdToken);
 
 /**
- * Returns the response body of the requested url, url should be encoded with encodeURIComponent if there are additional
- * parameters for the requested url.
+ * Each proxied service may only be called on its own HTTPS host, so the API key substituted
+ * for the API_KEY placeholder can never be sent to an arbitrary URL.
+ */
+const PROXY_SERVICE_HOSTS = {
+  darksky: "api.darksky.net",
+  openweather: "api.openweathermap.org",
+  maps: "maps.googleapis.com"
+};
+
+/**
+ * Proxies a request to one of the services in PROXY_SERVICE_HOSTS, replacing the API_KEY
+ * placeholder in the url with the service's key from functions config.
  *
- * Example request using URL query parameters:
- *   https://us-central1-<project-id>.cloudfunctions.net/cors?url=https%3A%2F%2Fapi.ipify.org%3Fformat%3Djson
- * Example request using request body with cURL:
- *   curl -H 'Content-Type: application/json' \
- *        -d '{"url": "https://api.ipify.org/?format=json"}' \
- *        https://us-central1-<project-id>.cloudfunctions.net/cors
+ * Example request:
+ *   https://us-central1-<project-id>.cloudfunctions.net/api/cors?service=openweather&url=<encoded url>
  *
  * This endpoint supports CORS.
  */
 app.get("/cors", async (req, res) => {
   cors(req, res, () => {
-    console.log("Query:", req.query);
-    console.log("Body:", req.body);
-
     let url = req.query.url;
     let service = req.query.service;
 
     if (!url) {
-      url = req.body.url;
+      url = req.body && req.body.url;
     }
 
-    if (!url) {
-      res.status(403).send("URL is empty.");
+    if (!url || !service) {
+      res.status(400).send("URL and service are required.");
+      return;
     }
 
-    if (!service) {
-      res.status(403).send("Service is empty.");
+    if (!Object.prototype.hasOwnProperty.call(PROXY_SERVICE_HOSTS, service)) {
+      res.status(403).send("Unknown service.");
+      return;
     }
 
-    console.log("Request URL:", url);
-    console.log("Request Service:", service);
+    let target;
+    try {
+      target = new URL(url);
+    } catch (e) {
+      res.status(400).send("Invalid URL.");
+      return;
+    }
 
-    let apiKey = functions.config()[service].key;
+    if (
+      target.protocol !== "https:" ||
+      target.hostname !== PROXY_SERVICE_HOSTS[service] ||
+      target.username ||
+      target.password ||
+      target.port
+    ) {
+      res.status(403).send("URL not allowed for this service.");
+      return;
+    }
+
+    console.log("Request Service:", service, "Host:", target.hostname);
+
+    const serviceConfig = functions.config()[service];
+    const apiKey = serviceConfig && serviceConfig.key;
 
     if (!apiKey) {
       res.status(403).send("Service API key not configured.");
+      return;
     }
 
-    url = url.replace("API_KEY", apiKey);
+    url = target.toString().replace("API_KEY", encodeURIComponent(apiKey));
 
     fetch(url, {
       method: req.method,
@@ -184,7 +213,8 @@ app.get("/activity/:activity", async (req, res) => {
   // get the activity document which this file belongs to and attach it while setting status to 'Processed'
   let docRef = db.collection("activities").doc(activity);
   let doc = await docRef.get();
-  if (!doc.exists) {
+  // respond 404 for other users' activities too, so activity IDs can't be probed
+  if (!doc.exists || doc.data().uid !== req.user.uid) {
     res.status(404).send("No such activity exists!");
     return;
   }
@@ -370,212 +400,3 @@ exports.processActivityFile = functions.storage
       return null;
     }
   });
-
-function parseCSV(content) {
-  let csv = new CSV({
-    speedUnit: "km/h"
-  });
-  return new Promise((resolve, reject) => {
-    csv.parse(content, (error, data) => {
-      if (error) {
-        reject(error);
-      } else {
-        console.log("Succesfully parsed .csv activity file.");
-        resolve(data);
-      }
-    });
-  });
-}
-
-function parseFIT(content) {
-  let easyFit = new EasyFit({
-    force: true,
-    speedUnit: "km/h",
-    lengthUnit: "km",
-    temperatureUnit: "kelvin",
-    elapsedRecordField: true,
-    mode: "cascade"
-  });
-
-  return new Promise((resolve, reject) => {
-    easyFit.parse(content, (error, data) => {
-      if (error) {
-        reject(error);
-      } else {
-        console.log("Succesfully parsed .fit activity file.");
-        resolve(data);
-      }
-    });
-  });
-}
-
-function validateFileContents(data) {
-  if (!data.activity.sessions || data.activity.sessions.length === 0) {
-    return {
-      invalid: true,
-      message: `Invalid file. Missing FIT session data.`
-    };
-  }
-
-  let session = data.activity.sessions.filter(
-    item => item.sport === "cycling"
-  )[0];
-
-  if (!session || session.sport !== "cycling") {
-    return {
-      invalid: true,
-      message: `Invalid file. Could not locate a cycling session within .FIT file.`
-    };
-  }
-
-  if (session.laps.length === 0) {
-    return {
-      invalid: true,
-      message: `Invalid file. Missing lap data.`
-    };
-  }
-
-
-  let record = session.laps[0].records[0];
-  const hasSpeed = "speed" in record || "enhanced_speed" in record;
-  if (!hasSpeed) {
-    return {
-      invalid: true,
-      message: "Invalid file. Missing speed data."
-    };
-  }
-
-  return {
-    invalid: false,
-    message: ""
-  };
-}
-
-function getActivityData(data, options = { includeDataPoints: true }) {
-  const session = data.activity.sessions.filter(
-    item => item.sport === "cycling"
-  )[0];
-  const laps = session.laps;
-
-  const useEnhancedSpeed = session.enhanced_avg_speed && !session.avg_speed;
-  const altitudeField = useEnhancedSpeed ? 'enhanced_altitude' : 'altitude';
-  const avgSpeedField = useEnhancedSpeed ? 'enhanced_avg_speed' : 'avg_speed';
-  const speedField = useEnhancedSpeed ? 'enhanced_speed' : 'speed';
-  const timestamp = laps[0].records[0].timestamp;
-
-  let stats = null;
-  let fileHasStats = session.avg_power && session[avgSpeedField];
-
-  if (fileHasStats) {
-    // file has stats such as session and lap averages
-    stats = {
-      timestamp: timestamp,
-      start_time: timestamp,
-      total_distance: session.total_distance,
-      total_elapsed_time: session.total_elapsed_time,
-      avg_power: session.avg_power,
-      avg_speed: session[avgSpeedField],
-      lap_count: laps.length,
-      laps: [],
-      points: []
-    };
-
-    laps.forEach((lap, i) => {
-      stats.laps.push({
-        start_time: lap.start_time,
-        total_elapsed_time: lap.total_elapsed_time,
-        total_distance: lap.total_distance,
-        start_distance: lap.records.length > 0 ? lap.records[0].distance : 0,
-        avg_power: lap.avg_power,
-        avg_speed: lap[avgSpeedField]
-      });
-
-      if (options.includeDataPoints) {
-        lap.records.forEach(record => {
-          stats.points.push({
-            lap: i + 1,
-            timestamp: record.timestamp,
-            distance: record.distance,
-            power: record.power ? record.power : 0,
-            altitude: record[altitudeField],
-            speed: record[speedField],
-            airspeed: record.air_speed
-              ? record.air_speed
-              : record.saturated_hemoglobin_percent,
-            lat: record.position_lat,
-            long: record.position_long
-          });
-        });
-      }
-    });
-  } else {
-    // calculate stats from data
-    let sumPower = 0;
-    let sumSpeed = 0;
-    let recordCount = 0;
-    let totalDistance = 0;
-    let totalElapsedTime = 0;
-    let lapStats = [];
-    let dataPoints = [];
-
-    laps.forEach((lap, i) => {
-      let lapSumPower = 0;
-      let lapSumSpeed = 0;
-
-      let lapStartDistance = lap.records[0].distance;
-      let lapStartElapsedTime = lap.records[0].elapsed_time;
-
-      lap.records.forEach(record => {
-        recordCount++;
-        sumPower += record.power;
-        sumSpeed += record[speedField];
-        lapSumPower += record.power;
-        lapSumSpeed += record[speedField];
-        totalDistance = record.distance;
-        totalElapsedTime = record.elapsed_time;
-
-        if (options.includeDataPoints) {
-          dataPoints.push({
-            lap: i + 1,
-            timestamp: record.timestamp,
-            distance: record.distance,
-            power: record.power,
-            altitude: record[altitudeField],
-            speed: record[speedField],
-            airspeed: record.air_speed
-              ? record.air_speed
-              : record.saturated_hemoglobin_percent,
-            lat: record.position_lat,
-            long: record.position_long
-          });
-        }
-      });
-
-      lapStats.push({
-        start_time: lap.start_time,
-        avg_power: Math.ceil(lapSumPower / lap.records.length),
-        avg_speed: (lapSumSpeed / lap.records.length).toFixed(4),
-        start_distance: lapStartDistance,
-        total_distance: totalDistance - lapStartDistance,
-        total_elapsed_time: totalElapsedTime - lapStartElapsedTime
-      });
-    });
-
-    const avgPower = Math.ceil(sumPower / recordCount);
-    const avgSpeed = (sumSpeed / recordCount).toFixed(2);
-
-    stats = {
-      timestamp: timestamp,
-      start_time: timestamp,
-      total_distance: totalDistance,
-      total_elapsed_time: totalElapsedTime,
-      avg_power: avgPower,
-      avg_speed: avgSpeed,
-      lap_count: laps.length,
-      laps: lapStats,
-      points: dataPoints
-    };
-  }
-
-  return stats;
-}
