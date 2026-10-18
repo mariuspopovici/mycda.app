@@ -10,7 +10,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 2 | Backend modernization | Done, deployed 2026-10-17 (optional Storage-direct reads deferred) |
 | 3 | New app shell | Done in code, not yet hosted |
 | 4 | Analysis screens | Done in code, not yet hosted |
-| 5 | Cutover | Not started |
+| 5 | Cutover | In progress |
 
 ## Phase 0: Lock down production ✅
 
@@ -62,7 +62,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [x] Environment config through Vite `import.meta.env` (`web/.env.local`); `VITE_USE_EMULATORS=true` runs against the emulators
 - [x] Playwright end-to-end tests against the emulators (`tests/emulator/e2e/`)
 - [ ] Activity page is a summary placeholder linking to the legacy app until Phase 4
-- [ ] Deploy the Storage rules size cap: `firebase deploy --only storage`
+- [x] Deployed the Storage rules size cap (2026-10-18)
 
 ## Phase 4: Analysis screens
 
@@ -86,7 +86,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [x] Activity and analysis pages load lazily (Plotly is a separate ~400 kB gzipped chunk).
 - [x] Playwright tests: lap and drag selection, analysis, the suggested CdA recovering a known value, save as baseline, reopen, delete, and the calculator.
 - [x] Stuck and failed uploads. The legacy list never showed activities left at `New`, so years of interrupted uploads surfaced in the new app. Activities at `New` for over 10 minutes now show as **Stalled**. Stalled and error rows can be retried (`POST /api/activity/:id/reprocess`), and "Retry all" covers stalled activities plus errors from the legacy parser. `processedWith` marks results of the current pipeline, which are final.
-- [ ] Deploy functions for the reprocess route and `processedWith`
+- [x] Deployed functions (reprocess route, `processedWith`) and the Storage upload cap, 2026-10-18
 
 Implementation notes:
 - plotly.js 4.1 resets every axis to empty-chart defaults when `react()` gets unchanged data arrays and changed shapes. `PlotlyChart` bumps `datarevision` on every update, and charts keep the user's zoom with `uirevision`.
@@ -94,7 +94,8 @@ Implementation notes:
 
 ## Phase 5: Cutover
 
-- [ ] Point Firebase Hosting at `web/dist` (it currently serves `public/`, which the legacy build never writes)
+- [x] Point Firebase Hosting at `web/dist`: SPA rewrite, immutable caching for hashed assets, no-cache `index.html`, security headers, and a predeploy build. The live site (mycda.app on Firebase Hosting, released 2025-04-27) still serves the legacy build until the switch. Previous releases can be rolled back in the console.
+- [x] Track `firebase.json` and `.firebaserc`. `.gitignore`'s `firebase.*` had also hidden `web/src/firebase.ts`, so the app's Firebase setup was missing from git. A fresh clone now builds and passes its tests.
 - [ ] CI (GitHub Actions): lint, typecheck, core tests, rules tests
 - [ ] Deploy to a Firebase Hosting preview channel, check against real accounts, then promote
 - [ ] Delete `src/`, `build/`, `config/`, the root webpack toolchain, `parity.test.ts` and the `/cors` proxy
