@@ -126,13 +126,16 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
   const targets = useMemo(() => fitTargets(series, loops), [series, loops])
   const defaultTarget: FitTargetKey = targets.run ? 'run' : targets.loops ? 'loops' : 'elevation'
 
-  // new analyses open at the fitted CdA; saved ones at their saved values
-  const [parameters, setParameters] = useState<Parameters>(() => {
+  // new analyses open at the fitted CdA; saved ones at their saved values. The fit is kept, with
+  // its inputs, so the first suggestion reuses it instead of fitting again.
+  const [opening] = useState(() => {
     const start = startingParameters(source, urlStart, prefs)
-    if (segment) return start
-    const veInput = { ...series, airspeed, elevation: series.altitude, drivetrainLoss: start.dloss }
-    return { ...start, cda: roundCda(fitParameters(veInput, start, targets[defaultTarget]!).cda) }
+    if (segment) return { parameters: start }
+    const target = targets[defaultTarget]!
+    const fit = fitParameters({ ...series, airspeed, elevation: series.altitude, drivetrainLoss: start.dloss }, start, target)
+    return { parameters: { ...start, cda: roundCda(fit.cda) }, fit, airspeed, target }
   })
+  const [parameters, setParameters] = useState<Parameters>(opening.parameters)
   const [details, setDetails] = useState<SaveDetails>({
     name: source.defaultName, description: segment?.description ?? '', isBaseline: segment?.isBaseline ?? false
   })
@@ -161,9 +164,12 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
   const { mass, rho, crr } = deferred
   const suggestion = useMemo<Suggestion | undefined>(() => {
     if (segment) return undefined
-    const fitted = fitParameters(veSeries, { mass, rho, crr, cda: 0.3 }, targets[defaultTarget]!)
+    const start = opening.parameters
+    const unchanged = opening.fit && veSeries.airspeed === opening.airspeed && targets[defaultTarget] === opening.target &&
+      veSeries.drivetrainLoss === start.dloss && mass === start.mass && rho === start.rho && crr === start.crr
+    const fitted = unchanged ? opening.fit! : fitParameters(veSeries, { mass, rho, crr, cda: 0.3 }, targets[defaultTarget]!)
     return { cda: roundCda(fitted.cda), basis: BASIS[defaultTarget], atBound: fitted.atBound }
-  }, [segment, veSeries, mass, rho, crr, targets, defaultTarget])
+  }, [segment, opening, veSeries, mass, rho, crr, targets, defaultTarget])
 
   const elevationError = fitError(veSeries, deferred, { kind: 'elevation' })
   const runDrift = targets.run ? fitError(veSeries, deferred, targets.run) : undefined
