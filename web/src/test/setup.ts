@@ -1,9 +1,9 @@
 // Browser APIs Mantine needs that jsdom lacks. No-ops under the node environment.
 if (typeof window !== 'undefined') {
-  const { default: matchers } = await import('@testing-library/jest-dom/matchers')
-  const { expect, afterEach } = await import('vitest')
+  // registers jest-dom's matchers with Vitest's expect
+  await import('@testing-library/jest-dom/vitest')
+  const { afterEach } = await import('vitest')
   const { cleanup } = await import('@testing-library/react')
-  expect.extend(matchers)
   afterEach(() => cleanup())
 
   window.matchMedia ??= (query: string) => ({

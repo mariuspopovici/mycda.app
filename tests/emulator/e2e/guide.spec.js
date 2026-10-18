@@ -25,7 +25,7 @@ test('guide: contents, next and previous, deep links and the phone menu', async 
   await page.goto('/guide')
   await expect(page).toHaveURL(/\/guide\/getting-started$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Getting started' })).toBeVisible()
-  await expect(page).toHaveTitle('Getting started · MyCdA guide')
+  await expect(page).toHaveTitle('Getting started – user guide · MyCdA')
 
   const contents = page.getByRole('navigation', { name: 'User guide' })
   await expect(contents.getByRole('link')).toHaveCount(9)
@@ -68,4 +68,30 @@ test('help links open the guide at the matching heading', async ({ page }) => {
   await page.getByRole('link', { name: 'Guide: Air density' }).click()
   await expect(page).toHaveURL(/\/guide\/analysis#air-density$/)
   await expect(page.getByRole('heading', { name: 'Air density', exact: true })).toBeInViewport()
+})
+
+test('public pages have their own title, description and canonical URL; robots.txt and the sitemap are served', async ({ page, request }) => {
+  const canonical = page.locator('link[rel="canonical"]')
+  await page.goto('/faq')
+  await expect(page).toHaveTitle('Frequently asked questions · MyCdA')
+  await expect(canonical).toHaveAttribute('href', 'https://mycda.app/faq')
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Answers about MyCdA/)
+
+  // client-side navigation updates them, and pages without their own go back to the defaults
+  await page.getByRole('link', { name: 'user guide' }).first().click()
+  await expect(page).toHaveTitle('Getting started – user guide · MyCdA')
+  await expect(canonical).toHaveAttribute('href', 'https://mycda.app/guide/getting-started')
+  await page.goto('/login')
+  await expect(page.getByRole('button', { name: 'Sign in' }).last()).toBeVisible()
+  await expect(page).toHaveTitle('MyCdA – field testing for cycling aerodynamics')
+  await expect(canonical).toHaveCount(0)
+
+  await page.goto('/no-such-page')
+  await expect(page.getByRole('heading', { name: 'Page not found' })).toBeVisible()
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute('content', 'noindex')
+
+  const robots = await request.get('/robots.txt')
+  expect(await robots.text()).toContain('Sitemap: https://mycda.app/sitemap.xml')
+  const sitemap = await request.get('/sitemap.xml')
+  expect(await sitemap.text()).toContain('<loc>https://mycda.app/guide/tests</loc>')
 })
