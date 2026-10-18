@@ -96,8 +96,9 @@ Implementation notes:
 
 - [x] Point Firebase Hosting at `web/dist`: SPA rewrite, immutable caching for hashed assets, no-cache `index.html`, security headers, and a predeploy build. The live site (mycda.app on Firebase Hosting, released 2025-04-27) still serves the legacy build until the switch. Previous releases can be rolled back in the console.
 - [x] Track `firebase.json` and `.firebaserc`. `.gitignore`'s `firebase.*` had also hidden `web/src/firebase.ts`, so the app's Firebase setup was missing from git. A fresh clone now builds and passes its tests.
-- [ ] CI (GitHub Actions): lint, typecheck, core tests, rules tests
-- [ ] Deploy to a Firebase Hosting preview channel, check against real accounts, then promote
+- [x] Preview channel deployed (`preview`, expires 2026-11-01). Routes, deep links, caching and production config verified.
+- [x] CI (`.github/workflows/ci.yml`): the web app (typecheck, lint, tests, build), Cloud Functions (lint, tests), and the emulator suites (rules, functions end to end, Playwright in Chrome) with Java 21. No automated deploy yet.
+- [ ] Use the preview on real accounts, then promote: `firebase hosting:clone mycda-c43c6:preview mycda-c43c6:live` (or `firebase deploy --only hosting`)
 - [ ] Delete `src/`, `build/`, `config/`, the root webpack toolchain, `parity.test.ts` and the `/cors` proxy
 - [ ] Stop `npm run build` from running `npm version patch`
 - [ ] Update `README.md` and its screenshots

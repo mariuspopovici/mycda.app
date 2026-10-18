@@ -28,6 +28,8 @@ New React app (`web/`, being built to replace the Vue app — see Migration belo
 
 Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/emulator test` runs `test:e2e` (Playwright in Chrome against the web app; `SCREENSHOTS=1` adds review screenshots), `test:rules` (security rules in the Firestore + Storage emulators) and `test:functions` (end-to-end: upload → `processActivityFile` → `GET /api/activity/:id`, ownership checks, `/cors` allowlist, in the Auth + Functions + Firestore + Storage emulators). Needs Java.
 
+CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22, Java 21, the runner's Chrome). To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`. The Hosting emulator is on port 5002, because macOS AirPlay holds 5000.
+
 ## Migration in progress
 
 The Vue 2 app in `src/` is being replaced by a React 19 + Vite + TypeScript + Mantine app in `web/`, with OpenStreetMap (Leaflet) instead of Google Maps and Open-Meteo instead of DarkSky/OpenWeatherMap. Firestore collections and Storage paths must stay unchanged so existing user data keeps working.

@@ -1,0 +1,95 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  web:
+    name: Web app
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            functions/package-lock.json
+      # web tests parse fixtures with functions/activity.js
+      - run: npm ci
+        working-directory: functions
+      - run: npm ci
+        working-directory: web
+      - run: npx tsc -b
+        working-directory: web
+      - run: npm run lint
+        working-directory: web
+      - run: npm test
+        working-directory: web
+      - run: npm run build
+        working-directory: web
+
+  functions:
+    name: Cloud Functions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: functions/package-lock.json
+      - run: npm ci
+        working-directory: functions
+      - run: npm run lint
+        working-directory: functions
+      - run: npm test
+        working-directory: functions
+
+  emulator:
+    name: Rules, functions and browser tests (emulators)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            functions/package-lock.json
+            tests/emulator/package-lock.json
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+        working-directory: functions
+      - run: npm ci
+        working-directory: web
+      - run: npm ci
+        working-directory: tests/emulator
+      - name: Cache emulator binaries
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ hashFiles('tests/emulator/package-lock.json') }}
+      # project demo-mycda: nothing here touches real Firebase resources
+      - run: npm test
+        working-directory: tests/emulator
+      - name: Upload Playwright traces
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-results
+          path: tests/emulator/test-results/
+          retention-days: 7
