@@ -25,7 +25,7 @@ import { DEFAULT_LOOP_PREFS, type LoopPrefs } from '../activity/loopPrefs'
 import { AirspeedCard } from './AirspeedCard'
 import { ParametersCard, type FitOption, type FitRequest, type FitTargetKey, type Parameters, type Suggestion } from './ParametersCard'
 import { SaveCard, type SaveDetails } from './SaveCard'
-import { parseRanges, useAnalysisSource, type AnalysisSource } from './useAnalysisSource'
+import { parseAnalysisStart, parseRanges, useAnalysisSource, type AnalysisSource, type AnalysisStart } from './useAnalysisSource'
 import { canModelWind, useWindModel } from './useWindModel'
 import { VirtualElevationChart } from './VirtualElevationChart'
 
@@ -51,7 +51,7 @@ export function AnalysisPage () {
   }
   if (prefsLoading || !('source' in result) || !result.source) return <Center py={80}><Loader /></Center>
   // remount when switching between analyses so state starts fresh
-  return <Analysis key={sid ?? params.toString()} activityId={id} source={result.source} />
+  return <Analysis key={sid ?? params.toString()} activityId={id} source={result.source} start={sid ? {} : parseAnalysisStart(params)} />
 }
 
 /** How CdA can be fitted: closure for joined runs and loops, or the elevation profile. */
@@ -70,20 +70,23 @@ const BASIS: Record<FitTargetKey, string> = {
   elevation: 'the recorded elevation'
 }
 
-/** Starting values: the saved analysis, then the ride's settings, then the user's profile. */
-function startingParameters (source: AnalysisSource, prefs: UserPrefs): Parameters {
+/**
+ * Starting values: the saved analysis, then values passed in the URL (the tests table), then the
+ * ride's settings, then the user's profile.
+ */
+function startingParameters (source: AnalysisSource, start: AnalysisStart, prefs: UserPrefs): Parameters {
   const { segment } = source
   const ride = source.activity?.analysisDefaults ?? {}
   return {
-    mass: segment?.mass ?? ride.mass ?? totalMassKg(prefs),
-    rho: segment?.rho ?? ride.rho ?? 1.2,
-    crr: segment?.crr ?? ride.crr ?? prefs.crr,
+    mass: segment?.mass ?? start.mass ?? ride.mass ?? totalMassKg(prefs),
+    rho: segment?.rho ?? start.rho ?? ride.rho ?? 1.2,
+    crr: segment?.crr ?? start.crr ?? ride.crr ?? prefs.crr,
     cda: segment?.cda ?? prefs.cda,
-    dloss: segment?.dloss ?? ride.dloss ?? prefs.dloss
+    dloss: segment?.dloss ?? start.dloss ?? ride.dloss ?? prefs.dloss
   }
 }
 
-function Analysis ({ activityId, source }: { activityId: string, source: AnalysisSource }) {
+function Analysis ({ activityId, source, start: urlStart }: { activityId: string, source: AnalysisSource, start: AnalysisStart }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { prefs } = useUserPrefs()
@@ -95,11 +98,11 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
   const windPossible = gps && canModelWind(series)
 
   const [airspeedSource, setAirspeedSource] = useState<AirspeedSource>(() => {
-    const saved = segment?.airspeedSource
+    const saved = segment?.airspeedSource ?? urlStart.airspeedSource
     if (saved && (saved !== 'measured' || measured) && (!['wind', 'manual'].includes(saved) || windPossible)) return saved
     return measured ? 'measured' : 'ground'
   })
-  const [manualWind, setManualWind] = useState<ManualWind>(segment?.wind ?? { speed: 10, direction: 270 })
+  const [manualWind, setManualWind] = useState<ManualWind>(segment?.wind ?? urlStart.wind ?? { speed: 10, direction: 270 })
   const [xAxis, setXAxis] = useState<'time' | 'distance'>(series.runDistance.some((d) => d > 0) ? 'distance' : 'time')
   const [showElevation, setShowElevation] = useState(true)
   const [overlay, setOverlay] = useState<Overlay>('none')
@@ -124,7 +127,7 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
 
   // new analyses open at the fitted CdA; saved ones at their saved values
   const [initial] = useState(() => {
-    const start = startingParameters(source, prefs)
+    const start = startingParameters(source, urlStart, prefs)
     const veInput = { ...series, airspeed, elevation: series.altitude, drivetrainLoss: start.dloss }
     const fitted = fitParameters(veInput, start, targets[defaultTarget]!)
     const suggestion: Suggestion = { cda: Math.round(fitted.cda * 1000) / 1000, basis: BASIS[defaultTarget] }

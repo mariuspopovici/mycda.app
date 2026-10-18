@@ -24,7 +24,8 @@ import { LoopSettings } from './LoopSettings'
 import { DEFAULT_LOOP_PREFS, type LoopPrefs } from './loopPrefs'
 import { RideSettingsCard } from './RideSettingsCard'
 import { SegmentsTable } from './SegmentsTable'
-import { encodeRanges } from '../analysis/useAnalysisSource'
+import { analysisUrl } from '../analysis/useAnalysisSource'
+import { TestsCard } from './TestsCard'
 
 interface Selection {
   /** In ride order; several when laps are joined into a run. */
@@ -148,11 +149,7 @@ export function ActivityPage () {
   })
   const analyze = () => {
     if (!selection) return
-    const params = new URLSearchParams({
-      ranges: encodeRanges(selection.ranges.map((r) => ({ start: series.time[r.start], end: series.time[r.end] }))),
-      name: selection.label
-    })
-    navigate(`/activity/${id}/analysis?${params}`)
+    navigate(analysisUrl(id, selection.ranges.map((r) => ({ start: series.time[r.start], end: series.time[r.end] })), selection.label))
   }
 
   const stats = selection ? multiRangeStats(series, selection.ranges) : undefined
@@ -249,6 +246,10 @@ export function ActivityPage () {
           </Card>
         )}
       </SimpleGrid>
+
+      {data.laps.length > 1 && (
+        <TestsCard key={activity.id} activity={activity} data={data} prefs={prefs} segments={segments} onShow={selectLaps} />
+      )}
 
       <RideSettingsCard key={activity.id} activity={activity} prefs={prefs}
         weatherContext={start ? { lat: start.lat, lng: start.lng, time: series.time[0], altitude: series.altitude[0] } : undefined} />

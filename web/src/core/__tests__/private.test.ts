@@ -11,6 +11,7 @@ import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { hasLocation, toActivitySeries } from '../activitySeries'
 import { findLoops } from '../loopFinder'
+import { detectTests, evaluateTest, lapGeometries } from '../testRuns'
 import { virtualElevation } from '../virtualElevation'
 import { travelBearings, windModelAirSpeed } from '../windModel'
 import { PRIVATE_FIXTURES_DIR, loadActivityPoints } from './fixtures'
@@ -72,4 +73,22 @@ describe.skipIf(rides.length === 0)('private rides', () => {
       }
     }, 60_000)
   }
+})
+
+const OUT_AND_BACK = 'lanier-elemnt-out-and-back.fit'
+
+describe.skipIf(!available.includes(OUT_AND_BACK))('out and back test file', () => {
+  // docs/log/2026-10-18-out-and-back-runs.md
+  it('finds the 10 tests and fits each by closure', async () => {
+    const points = await loadActivityPoints(resolve(PRIVATE_FIXTURES_DIR, OUT_AND_BACK))
+    const s = toActivitySeries(points)
+    const lapOfPoint = points.map((p) => p.lap)
+    const geometries = lapGeometries(s, lapOfPoint, [...new Set(lapOfPoint)])
+    const tests = detectTests(geometries)
+    expect(tests).toEqual([[2, 5], [7, 9], [11, 13], [15, 17], [19, 21], [23, 25], [27, 29], [31, 33], [35, 37], [39, 41]])
+
+    const cdas = tests.map((laps) => evaluateTest(s, laps.map((n) => geometries.find((g) => g.number === n)!.range),
+      { rho: 1.2, mass: 80, crr: 0.004, dloss: 0 }).cda)
+    expect(cdas.map((c) => Math.round(c * 1000) / 1000)).toEqual([0.227, 0.229, 0.29, 0.224, 0.23, 0.232, 0.221, 0.216, 0.214, 0.213])
+  }, 60_000)
 })

@@ -3,7 +3,7 @@ import { doc, getDoc } from 'firebase/firestore'
 import { db } from '../../firebase'
 import { toActivity, type Activity } from '../../data/activities'
 import { useActivityData } from '../../data/activityData'
-import { getSegment, type Segment, type TimeRange } from '../../data/segments'
+import { getSegment, type AirspeedSource, type ManualWind, type Segment, type TimeRange } from '../../data/segments'
 import { useUserPrefs } from '../../data/userPrefs'
 import { combineRanges, combineWindows, type CombinedSeries } from '../../core/ranges'
 
@@ -20,6 +20,45 @@ export interface AnalysisSource {
 
 /** Encodes ranges for the analysis URL: `from-to,from-to` in epoch ms. */
 export const encodeRanges = (ranges: TimeRange[]) => ranges.map((r) => `${r.start.getTime()}-${r.end.getTime()}`).join(',')
+
+/** Starting values passed to a new analysis, e.g. by the tests table. Metric. */
+export interface AnalysisStart {
+  mass?: number
+  rho?: number
+  crr?: number
+  dloss?: number
+  airspeedSource?: AirspeedSource
+  wind?: ManualWind
+}
+
+/** URL of a new analysis of the given ranges. */
+export function analysisUrl (activityId: string, ranges: TimeRange[], name: string, start: AnalysisStart = {}) {
+  const params = new URLSearchParams({ ranges: encodeRanges(ranges), name })
+  for (const key of ['mass', 'rho', 'crr', 'dloss'] as const) {
+    if (start[key] !== undefined) params.set(key, String(start[key]))
+  }
+  if (start.airspeedSource) params.set('airspeed', start.airspeedSource)
+  if (start.wind) params.set('wind', `${start.wind.speed},${start.wind.direction}`)
+  return `/activity/${activityId}/analysis?${params}`
+}
+
+/** Reads the starting values set by analysisUrl; anything invalid is ignored. */
+export function parseAnalysisStart (params: URLSearchParams): AnalysisStart {
+  const number = (key: string) => {
+    const n = Number(params.get(key) ?? NaN)
+    return Number.isFinite(n) && n >= 0 ? n : undefined
+  }
+  const airspeed = params.get('airspeed')
+  const [speed, direction] = (params.get('wind') ?? '').split(',').map(Number)
+  return {
+    mass: number('mass'),
+    rho: number('rho'),
+    crr: number('crr'),
+    dloss: number('dloss'),
+    airspeedSource: ['measured', 'ground', 'wind', 'manual'].includes(airspeed ?? '') ? airspeed as AirspeedSource : undefined,
+    wind: Number.isFinite(speed) && Number.isFinite(direction) && params.has('wind') ? { speed, direction } : undefined
+  }
+}
 
 /** Parses `ranges` (or the legacy single `from`/`to` pair) from the analysis URL. */
 export function parseRanges (params: URLSearchParams): TimeRange[] {

@@ -76,3 +76,53 @@ test('air density from humidity and station pressure', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Station pressure (hPa)' }).fill('900')
   await expect(page.getByText(/^1\.06\d\d kg\/m³$/)).toBeVisible()
 })
+
+test('tests table: pairs the out and back legs, fits, saves and opens the test', async ({ page }) => {
+  test.setTimeout(120_000)
+  await page.goto('/signup')
+  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`tests-${Date.now()}@example.com`)
+  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
+  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
+  await page.getByRole('checkbox', { name: /I accept/ }).check()
+  await page.getByRole('button', { name: 'Create account' }).click()
+  await expect(page.getByRole('button', { name: 'Save preferences' })).toBeVisible()
+
+  await page.goto('/activities')
+  await page.locator('input[type=file]').setInputFiles({ name: 'Out and back.fit', mimeType: 'application/octet-stream', buffer: outAndBackRide() })
+  await page.getByRole('link', { name: 'Out and back' }).first().click({ timeout: 60_000 })
+
+  const card = page.locator('.mantine-Card-root', { has: page.getByRole('heading', { name: 'Tests' }) })
+  await expect(card.getByRole('row', { name: /Test 1/ })).toBeVisible({ timeout: 30_000 })
+  await expect(card.getByRole('row')).toHaveCount(2)
+  // the legs are laps 2 and 4, around a turnaround lap
+  await expect(card.getByRole('row', { name: /Test 1/ }).getByText('Lap 2 ·')).toBeVisible()
+  await expect(card.getByRole('row', { name: /Test 1/ }).getByText('Lap 4 ·')).toBeVisible()
+
+  // shared parameters: the profile's Crr and drivetrain loss are wrong for this synthetic ride
+  const setShared = async () => {
+    await card.getByRole('textbox', { name: 'Crr', exact: true }).fill('0.005')
+    await card.getByRole('textbox', { name: 'Drivetrain loss (%)', exact: true }).fill('0')
+    await expect(card.getByRole('row', { name: /Test 1/ }).getByRole('cell', { name: /^0\.26\d$/ })).toBeVisible()
+  }
+  await setShared()
+
+  // an unsaved test opens a new analysis with the table's parameters
+  await card.getByRole('button', { name: 'Test 1', exact: true }).click()
+  await expect(page).toHaveURL(/\/analysis\?ranges=.*&crr=0\.005&dloss=0/)
+  await expect(page.getByRole('textbox', { name: 'Crr', exact: true })).toHaveValue('0.005')
+  await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
+  await page.goBack()
+  await setShared()
+
+  await card.getByRole('button', { name: 'Save 1 test' }).click()
+  await expect(page.getByText('Saved 1 test.')).toBeVisible()
+  await expect(card.getByRole('button', { name: 'All tests saved' })).toBeDisabled()
+  if (process.env.SCREENSHOTS) await card.screenshot({ path: 'test-results/screens/tests-card.png' })
+  await expect(page.getByRole('row', { name: /Test 1 \(laps 2 \+ 4\)/ }).getByText('2 ranges joined')).toBeVisible()
+
+  // opening a saved test opens its analysis
+  await card.getByRole('button', { name: 'Test 1', exact: true }).click()
+  await expect(page).toHaveURL(/\/analysis\/[0-9a-f-]{36}$/)
+  await expect(page.getByRole('textbox', { name: 'Crr', exact: true })).toHaveValue('0.005')
+  await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
+})
