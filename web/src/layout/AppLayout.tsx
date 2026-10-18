@@ -5,10 +5,11 @@ import {
 } from '@mantine/core'
 import { useDisclosure } from '@mantine/hooks'
 import { signOut } from 'firebase/auth'
-import { IconLogout, IconMoon, IconSun, IconUser, IconUserCircle } from '@tabler/icons-react'
+import { IconCoffee, IconLogout, IconMoon, IconSun, IconUser, IconUserCircle } from '@tabler/icons-react'
 import logo from '../assets/logo.svg'
 import { useAuth } from '../auth/AuthContext'
 import { auth, useEmulators } from '../firebase'
+import { SUPPORT_URL } from '../lib/links'
 
 const COMMUNITY_URL = 'https://groups.google.com/forum/#!forum/mycda'
 
@@ -68,6 +69,10 @@ function Footer () {
           <Anchor href='mailto:support@mycda.app' size='sm' c='dimmed'>Contact</Anchor>
           <Anchor component={Link} to='/privacy' size='sm' c='dimmed'>Privacy</Anchor>
           <Anchor component={Link} to='/terms' size='sm' c='dimmed'>Terms</Anchor>
+          <Anchor href={SUPPORT_URL} target='_blank' rel='noopener' size='sm' c='dimmed'
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+            <IconCoffee size={14} aria-hidden /> Buy me a coffee
+          </Anchor>
         </Group>
         <Text size='sm' c='dimmed'>© MyCdA 2019–{new Date().getFullYear()} · v{__APP_VERSION__}</Text>
       </Group>
