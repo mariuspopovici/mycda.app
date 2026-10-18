@@ -28,7 +28,7 @@ Cloud Functions (`functions/`):
 - `npm --prefix functions test`: Node's test runner (`test/**/*.test.js`) covering parsing, format detection, and FIT recovery cases built with `test/fit-builder.js`. `npm --prefix functions run test:all-fixtures` also sweeps the private rides.
 - `npm --prefix functions run lint`: ESLint 9 flat config. It also runs as a predeploy step.
 
-Emulator tests (`tests/emulator/`, project `demo-mycda`, needs Java): `npm --prefix tests/emulator test` runs:
+Emulator tests (`tests/emulator/`, project `demo-mycda`, needs Java 21 for firebase-tools 15): `npm --prefix tests/emulator test` runs:
 - `test:rules`: security rules;
 - `test:functions`: upload → `processActivityFile` → `GET /api/activity/:id`, reprocessing, and ownership checks;
 - `test:e2e`: Playwright in Chrome against the web app. `SCREENSHOTS=1` also saves review screenshots to `test-results/screens/`.
