@@ -100,12 +100,15 @@ export function ParametersCard ({ value, units, onChange, onFit, fitOptions, sug
           <Checkbox size='xs' label='Fit Crr too' checked={fitCrr} onChange={(e) => setFitCrr(e.currentTarget.checked)} />
         </Group>
         {suggestion && (
-          <Group gap={6} wrap='nowrap'>
+          // stacked: the card is narrow, and the note wraps
+          <Stack gap={4} align='flex-start'>
             <Text size='xs' c='dimmed'>Suggested CdA {suggestion.cda.toFixed(3)} from {suggestion.basis}.</Text>
             {Math.abs(value.cda - suggestion.cda) > 0.0005 && (
-              <Button size='compact-xs' variant='subtle' onClick={() => set({ cda: suggestion.cda })}>Reset to suggested</Button>
+              <Button size='compact-xs' variant='light' onClick={() => set({ cda: suggestion.cda })}>
+                Reset to {suggestion.cda.toFixed(3)}
+              </Button>
             )}
-          </Group>
+          </Stack>
         )}
       </Stack>
 

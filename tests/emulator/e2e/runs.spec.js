@@ -49,7 +49,7 @@ test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, 
   await page.getByRole('textbox', { name: /^From/ }).fill('315')
   await expect(page.getByText('Air speed', { exact: true }).first()).toBeVisible()
   await page.getByRole('textbox', { name: 'CdA', exact: true }).fill('0.300')
-  await page.getByRole('button', { name: 'Reset to suggested' }).click()
+  await page.getByRole('button', { name: /^Reset to 0\.26\d$/ }).click()
   await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
 
   await page.getByRole('button', { name: 'Save', exact: true }).click()
