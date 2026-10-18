@@ -2,6 +2,7 @@ import { Link } from 'react-router'
 import { BackgroundImage, Box, Button, Card, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { IconChartArea, IconClipboardCheck, IconCloudUpload } from '@tabler/icons-react'
 import { useAuth } from '../auth/AuthContext'
+import { RelaunchAnnouncement } from './RelaunchAnnouncement'
 
 const FEATURES = [
   {
@@ -43,6 +44,7 @@ export function LandingPage () {
           </Stack>
         </Box>
       </BackgroundImage>
+      <RelaunchAnnouncement />
       <SimpleGrid cols={{ base: 1, sm: 3 }}>
         {FEATURES.map(({ icon: Icon, title, text }) => (
           <Card key={title} withBorder padding='lg'>

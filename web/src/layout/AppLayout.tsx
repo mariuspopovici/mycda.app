@@ -14,6 +14,7 @@ const COMMUNITY_URL = 'https://groups.google.com/forum/#!forum/mycda'
 
 const NAV = [
   { to: '/activities', label: 'Activities', auth: true },
+  { to: '/guide', label: 'Guide' },
   { to: '/faq', label: 'FAQ' },
   { to: '/about', label: 'About' }
 ]

@@ -49,6 +49,13 @@ export const routes: RouteObject[] = [{
     { path: 'rho', element: <AirDensityPage /> },
     { path: 'profile', element: authed(<ProfilePage />) },
     { path: 'faq', element: <FaqPage /> },
+    {
+      path: 'guide/:section?',
+      lazy: async () => {
+        const { GuidePage } = await import('./pages/guide/GuidePage')
+        return { element: <GuidePage /> }
+      }
+    },
     { path: 'about', element: <AboutPage /> },
     { path: 'terms', element: <LegalPage document='terms' /> },
     { path: 'privacy', element: <LegalPage document='privacy' /> },

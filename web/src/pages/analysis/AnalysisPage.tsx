@@ -29,6 +29,7 @@ import { SaveCard, type SaveDetails } from './SaveCard'
 import { parseAnalysisStart, parseRanges, useAnalysisSource, type AnalysisSource, type AnalysisStart } from './useAnalysisSource'
 import { canModelWind, useAirspeed } from './useWindModel'
 import { VirtualElevationChart } from './VirtualElevationChart'
+import { HelpLink } from '../../components/HelpLink'
 
 type Overlay = 'none' | 'laps' | 'loops'
 
@@ -264,7 +265,7 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
     <Stack gap='lg' py='md'>
       <Anchor component={Link} to={`/activity/${activityId}`} size='sm'>← Activity</Anchor>
       <div>
-        <Title order={1}>{details.name.trim() || 'Analysis'}</Title>
+        <Group gap={6}><Title order={1}>{details.name.trim() || 'Analysis'}</Title><HelpLink to='analysis#reading' topic='Reading the chart' /></Group>
         <Text c='dimmed'>
           {series.time[0].toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' })} – {series.time[series.time.length - 1].toLocaleTimeString(undefined, { timeStyle: 'short' })}
           {joined ? ` · ${source.ranges.length} ranges joined; virtual elevation holds level at each join.` : ''}

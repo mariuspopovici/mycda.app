@@ -4,6 +4,7 @@ import { IconCalculator, IconSparkles } from '@tabler/icons-react'
 import { AirDensityCalculator, type WeatherContext } from '../../components/AirDensityCalculator'
 import { DraftNumberInput } from '../../components/DraftNumberInput'
 import { kgPerM3ToLbPerFt3, kgToLbs, lbPerFt3ToKgPerM3, lbsToKg, type Units } from '../../core/units'
+import { HelpLink } from '../../components/HelpLink'
 
 /** Analysis parameters, always metric: mass kg, rho kg/m³, dloss %. */
 export interface Parameters {
@@ -104,6 +105,7 @@ export function ParametersCard ({ value, units, onChange, onFit, fitOptions, sug
               ))}
             </Menu.Dropdown>
           </Menu>
+          <HelpLink to='analysis#suggest' topic='Suggest CdA' />
           <Checkbox size='xs' label='Fit Crr too' checked={fitCrr} onChange={(e) => setFitCrr(e.currentTarget.checked)} />
         </Group>
         {suggestion && (

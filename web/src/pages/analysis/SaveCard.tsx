@@ -1,5 +1,6 @@
 import { Alert, Button, Card, Group, Switch, Stack, Textarea, TextInput, Title } from '@mantine/core'
 import { IconDeviceFloppy, IconDownload, IconTrash } from '@tabler/icons-react'
+import { HelpLink } from '../../components/HelpLink'
 
 export interface SaveDetails {
   name: string
@@ -24,7 +25,7 @@ export function SaveCard ({ value, onChange, onSave, onExport, onDelete, saving,
   const nameMissing = !value.name.trim()
   return (
     <Card withBorder padding='lg'>
-      <Title order={3} mb='sm'>{isNew ? 'Save this analysis' : 'Saved analysis'}</Title>
+      <Group gap={4} mb='sm'><Title order={3}>{isNew ? 'Save this analysis' : 'Saved analysis'}</Title><HelpLink to='analysis#saving' topic='Saving and baselines' /></Group>
       <Stack gap='sm'>
         <TextInput label='Name' value={value.name} maxLength={255} required
           error={nameMissing ? 'Enter a name' : undefined}

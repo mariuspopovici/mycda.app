@@ -9,6 +9,7 @@ import { ACTIVITY_SORTS, deleteActivity, needsRetry, searchActivities, sortActiv
 import { useUserPrefs } from '../../data/userPrefs'
 import { ActivitiesTable } from './ActivitiesTable'
 import { UploadDropzone } from './UploadDropzone'
+import { HelpLink } from '../../components/HelpLink'
 
 function RenameModal ({ activity, onClose }: { activity?: Activity, onClose: () => void }) {
   return (
@@ -112,7 +113,7 @@ export function ActivitiesPage () {
   return (
     <Stack gap='lg' py='md'>
       <div>
-        <Title order={1}>Activities</Title>
+        <Group gap={6}><Title order={1}>Activities</Title><HelpLink to='uploading' topic='Uploading activities' /></Group>
         <Text c='dimmed'>Upload rides recorded with a power meter, then pick laps or ranges to estimate CdA and Crr.</Text>
       </div>
       <UploadDropzone uid={user.uid} />

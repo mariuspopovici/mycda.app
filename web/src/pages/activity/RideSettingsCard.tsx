@@ -8,6 +8,7 @@ import { riderHeightFactor, WIND_EXPOSURES, type WindExposure } from '../../core
 import { DEFAULT_WIND_EXPOSURE, isWindExposure, saveRideSettings, type Activity, type RideDefaults } from '../../data/activities'
 import { EXPOSURE_LABELS } from '../analysis/windExposure'
 import { totalMassKg, type UserPrefs } from '../../data/userPrefs'
+import { HelpLink } from '../../components/HelpLink'
 
 type Field = number | string
 
@@ -80,7 +81,7 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
   const profileMass = totalMassKg(prefs)
   return (
     <Card withBorder padding='lg'>
-      <Title order={3} mb={4}>Ride settings</Title>
+      <Group gap={4} mb={4}><Title order={3}>Ride settings</Title><HelpLink to='activity#ride-settings' topic='Ride settings' /></Group>
       <Text size='sm' c='dimmed' mb='md'>
         Parameters for every analysis of this ride, for example when you rode a different bike or kit. Leave a field empty to use your profile.
       </Text>
