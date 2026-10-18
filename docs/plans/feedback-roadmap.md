@@ -12,6 +12,8 @@ Feedback came from two riders: one in July 2020, and an experienced field tester
 
 The CdA slider's 0.001 step was also requested; that was already the case.
 
+Also on `feature/runs`, from the developer: the activity list shows new uploads first, sorts by upload time, ride date (either direction) or name (remembered per browser), and has a search box that matches names and notes.
+
 ## Step 1–2 details
 
 - **Ride settings** (activity page): mass, ρ (with the calculator), Crr, drivetrain loss and notes, stored on the activity (`notes`, `analysisDefaults`). Starting values come from the saved segment, then the ride, then the profile.

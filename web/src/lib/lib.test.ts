@@ -102,3 +102,30 @@ describe('retry rules', () => {
     expect(canRetry(currentError, now)).toBe(true)
   })
 })
+
+describe('activity sorting and search', () => {
+  it('sorts by upload, ride date and name, and searches name and notes', async () => {
+    const { sortActivities, searchActivities } = await import('../data/activities')
+    const make = (id: string, name: string, uploadedDay: number, rideDay?: number, notes?: string) => ({
+      id, uid: 'u', name, status: 'Processed' as const, notes,
+      timestamp: new Date(Date.UTC(2026, 9, uploadedDay)),
+      activityDate: rideDay === undefined ? undefined : new Date(Date.UTC(2019, 0, rideDay))
+    })
+    const list = [
+      make('old-upload', 'Welwyn track', 1, 20),
+      make('new-upload', 'Velodrome 2', 18, 5, 'TT helmet, still morning'),
+      make('processing', 'Café ride', 17),
+      make('mid', 'Velodrome 10', 10, 25)
+    ]
+    expect(sortActivities(list, 'uploaded').map((a) => a.id)).toEqual(['new-upload', 'processing', 'mid', 'old-upload'])
+    expect(sortActivities(list, 'rideNewest').map((a) => a.id)).toEqual(['processing', 'mid', 'old-upload', 'new-upload'])
+    expect(sortActivities(list, 'rideOldest')[0].id).toBe('new-upload')
+    expect(sortActivities(list, 'name').map((a) => a.name)).toEqual(['Café ride', 'Velodrome 2', 'Velodrome 10', 'Welwyn track'])
+    expect(list[0].id).toBe('old-upload')
+
+    expect(searchActivities(list, 'velo').map((a) => a.id)).toEqual(['new-upload', 'mid'])
+    expect(searchActivities(list, 'cafe').map((a) => a.id)).toEqual(['processing'])
+    expect(searchActivities(list, 'helmet velodrome').map((a) => a.id)).toEqual(['new-upload'])
+    expect(searchActivities(list, '  ')).toBe(list)
+  })
+})

@@ -15,7 +15,8 @@ Created by the browser at upload time. The ID is a client-generated UUID, which 
 | `name` | string | client | `"New Activity"` until renamed |
 | `status` | `"New" \| "Processed" \| "Error"` | client, then function | |
 | `statusMessage` | string | function | Only when `status == "Error"` |
-| `timestamp` | timestamp | client, overwritten by function | Upload or processing time |
+| `timestamp` | timestamp | client | Upload time; the activity list's default order (newest first). Before 2026-10-18 processing overwrote it, so older activities carry their processing time |
+| `processedAt` | timestamp | function | When processing last finished (pipeline v2, from 2026-10-18) |
 | `activity_date` | timestamp | function | First record's timestamp |
 | `distance` | number | function | Session total distance, in km |
 | `averageSpeed` | number | function | km/h |

@@ -1,9 +1,11 @@
 import { useState } from 'react'
-import { Alert, Button, Center, Group, Loader, Modal, Progress, Stack, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Alert, Button, Center, Group, Loader, Modal, Progress, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { useLocalStorage } from '@mantine/hooks'
+import { IconSearch, IconX } from '@tabler/icons-react'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { useUser } from '../../auth/AuthContext'
-import { deleteActivity, needsRetry, renameActivity, reprocessActivity, useActivities, type Activity } from '../../data/activities'
+import { ACTIVITY_SORTS, deleteActivity, needsRetry, searchActivities, sortActivities, type ActivitySort, renameActivity, reprocessActivity, useActivities, type Activity } from '../../data/activities'
 import { useUserPrefs } from '../../data/userPrefs'
 import { ActivitiesTable } from './ActivitiesTable'
 import { UploadDropzone } from './UploadDropzone'
@@ -52,6 +54,9 @@ export function ActivitiesPage () {
   const { activities, error } = useActivities(user.uid)
   const { prefs } = useUserPrefs()
   const [renaming, setRenaming] = useState<Activity>()
+  const [query, setQuery] = useState('')
+  const [sort, setSort] = useLocalStorage<ActivitySort>({ key: 'mycda-activity-sort', defaultValue: 'uploaded' })
+  const shown = activities ? searchActivities(sortActivities(activities, sort), query) : undefined
   const [retrying, setRetrying] = useState<Set<string>>(new Set())
   const [batch, setBatch] = useState<{ done: number, total: number }>()
 
@@ -127,8 +132,32 @@ export function ActivitiesPage () {
       )}
       {!activities && !error && <Center py='xl'><Loader /></Center>}
       {activities?.length === 0 && <Text c='dimmed' ta='center' py='xl'>No activities yet. Upload your first ride above.</Text>}
-      {activities && activities.length > 0 && (
-        <ActivitiesTable activities={activities} units={prefs.units} onRename={setRenaming} onDelete={confirmDelete} onRetry={retryOne} retrying={retrying} />
+      {activities && activities.length > 0 && shown && (
+        <>
+          <Group justify='space-between' gap='sm'>
+            <TextInput
+              placeholder='Search names and notes'
+              aria-label='Search activities'
+              leftSection={<IconSearch size={16} />}
+              value={query}
+              onChange={(e) => setQuery(e.currentTarget.value)}
+              rightSection={query && (
+                <ActionIcon variant='subtle' color='gray' size='sm' onClick={() => setQuery('')} aria-label='Clear search'>
+                  <IconX size={14} />
+                </ActionIcon>
+              )}
+              style={{ flex: 1, maxWidth: 420 }}
+            />
+            <Group gap='xs' wrap='nowrap'>
+              {query && <Text size='sm' c='dimmed'>{shown.length} of {activities.length}</Text>}
+              <Select aria-label='Sort activities' data={ACTIVITY_SORTS} value={sort} allowDeselect={false}
+                onChange={(v) => v && setSort(v as ActivitySort)} w={220} />
+            </Group>
+          </Group>
+          {shown.length === 0
+            ? <Text c='dimmed' ta='center' py='lg'>No activities match “{query.trim()}”.</Text>
+            : <ActivitiesTable key={`${sort}|${query}`} activities={shown} units={prefs.units} onRename={setRenaming} onDelete={confirmDelete} onRetry={retryOne} retrying={retrying} />}
+        </>
       )}
       <RenameModal activity={renaming} onClose={() => setRenaming(undefined)} />
     </Stack>
