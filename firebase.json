@@ -25,17 +25,58 @@
   "hosting": {
     "public": "web/dist",
     "predeploy": [
-      "npm --prefix web run build"
+      "npm --prefix web run build:site"
     ],
     "ignore": [
       "firebase.json",
       "**/.*",
       "**/node_modules/**"
     ],
+    "cleanUrls": true,
+    "redirects": [
+      {
+        "source": "/landing",
+        "destination": "/",
+        "type": 301
+      },
+      {
+        "source": "/guide",
+        "destination": "/guide/getting-started",
+        "type": 301
+      }
+    ],
     "rewrites": [
       {
-        "source": "**",
-        "destination": "/index.html"
+        "source": "/login",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/signup",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/reset",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/auth/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/activities",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/home",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/activity/**",
+        "destination": "/app.html"
+      },
+      {
+        "source": "/profile",
+        "destination": "/app.html"
       }
     ],
     "headers": [

@@ -47,7 +47,7 @@ flowchart LR
 
 | Component | Location | Role |
 |---|---|---|
-| Web app | `web/` | React 19, Vite, TypeScript, Mantine 9, React Router 8, TanStack Query, Firebase 12 modular SDK. Served by Firebase Hosting from `web/dist` |
+| Web app | `web/` | React 19, Vite, TypeScript, Mantine 9, React Router 8, TanStack Query, Firebase 12 modular SDK. Served by Firebase Hosting from `web/dist`, with the public pages prerendered ([seo.md](seo.md)) |
 | Analysis core | `web/src/core/` | Framework-free TypeScript: VE, CdA/Crr fitting, range stats, wind model, weather sampling, air density, loop finder, spike filter, segment stats, units |
 | `processActivityFile` | `functions/index.js` | 2nd-gen Storage trigger, `us-central1`. Checks ownership, parses the upload, stores `<id>.json.gz` next to it, and records status, summary and `processedWith` |
 | `api` | `functions/index.js` | 2nd-gen HTTPS function: an Express app behind Firebase ID-token auth. `GET /activity/:id` returns parsed points; `POST /activity/:id/reprocess` re-runs processing |
