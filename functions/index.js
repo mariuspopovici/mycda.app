@@ -132,7 +132,9 @@ app.post("/activity/:activity/reprocess", async (req, res) => {
 });
 
 exports.api = onRequest(
-  { cors: true },
+  // an explicit empty list: omitting it leaves bindings from earlier deploys (the removed /cors
+  // proxy's keys) attached to the function
+  { cors: true, secrets: [] },
   app
 );
 
