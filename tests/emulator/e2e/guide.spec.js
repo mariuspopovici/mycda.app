@@ -1,5 +1,13 @@
 import { expect, test } from '@playwright/test'
 
+test('the footer and the About page link to Buy me a coffee', async ({ page }) => {
+  await page.goto('/about')
+  const support = 'https://buymeacoffee.com/mariuspopovici'
+  // the About page's button, and the footer link (the footer is inside main)
+  await expect(page.locator('a.mantine-Button-root', { hasText: 'Buy me a coffee' })).toHaveAttribute('href', support)
+  await expect(page.locator('footer').getByRole('link', { name: 'Buy me a coffee' })).toHaveAttribute('href', support)
+})
+
 test('the landing page announces the relaunch and links into the guide', async ({ page }) => {
   await page.goto('/')
   await expect(page.getByRole('heading', { name: 'MyCdA is back' })).toBeVisible()

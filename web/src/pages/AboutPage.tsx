@@ -1,6 +1,7 @@
 import { Link } from 'react-router'
 import { Anchor, Button, Group, List, Stack, Text, Title } from '@mantine/core'
-import { IconBrandGithub, IconBrandInstagram, IconBug } from '@tabler/icons-react'
+import { IconBrandGithub, IconBrandInstagram, IconBug, IconCoffee } from '@tabler/icons-react'
+import { SUPPORT_URL } from '../lib/links'
 
 export function AboutPage () {
   return (
@@ -13,7 +14,12 @@ export function AboutPage () {
       <Text>
         A rule of thumb for race day: reducing CdA by 0.005 m² is worth about 5 W, or roughly 20 seconds over 40 km.
       </Text>
-      <Text>MyCdA is free software.</Text>
+      <Text>MyCdA is free software, with no ads and no subscription.</Text>
+      <Group gap='sm'>
+        <Text>If it's useful to you, a coffee helps pay for hosting and new features.</Text>
+        <Button component='a' href={SUPPORT_URL} target='_blank' rel='noopener' variant='light' color='yellow'
+          leftSection={<IconCoffee size={18} />}>Buy me a coffee</Button>
+      </Group>
       <List spacing='xs'>
         <List.Item>
           The virtual elevation method follows the algorithm described by R. Chung in{' '}
