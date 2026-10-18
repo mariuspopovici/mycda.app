@@ -19,6 +19,7 @@ import { formatDistance, formatPower, formatSpeed } from '../../lib/format'
 import { AirspeedCard } from '../analysis/AirspeedCard'
 import { analysisUrl } from '../analysis/useAnalysisSource'
 import { canModelWind, useAirspeed } from '../analysis/useWindModel'
+import { HelpLink } from '../../components/HelpLink'
 
 interface Props {
   activity: Activity
@@ -130,7 +131,7 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
   return (
     <Card withBorder padding='lg'>
       <Group justify='space-between' align='flex-start' mb={4} gap='xs'>
-        <Title order={3}>Tests</Title>
+        <Group gap={4}><Title order={3}>Tests</Title><HelpLink to='tests' topic='The Tests table' /></Group>
         <Group gap='xs'>
           <Button size='xs' variant='default' leftSection={<IconRefresh size={14} />} onClick={() => setTests(detectTests(geometries))}>Find again</Button>
           <Button size='xs' variant='default' leftSection={<IconPlus size={14} />} onClick={() => setTests((t) => [...t, []])}>Add test</Button>

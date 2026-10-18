@@ -54,3 +54,10 @@ test('guide: contents, next and previous, deep links and the phone menu', async 
   await page.getByRole('option', { name: '9. Reference' }).click()
   await expect(page).toHaveURL(/\/guide\/reference$/)
 })
+
+test('help links open the guide at the matching heading', async ({ page }) => {
+  await page.goto('/rho')
+  await page.getByRole('link', { name: 'Guide: Air density' }).click()
+  await expect(page).toHaveURL(/\/guide\/analysis#air-density$/)
+  await expect(page.getByRole('heading', { name: 'Air density', exact: true })).toBeInViewport()
+})

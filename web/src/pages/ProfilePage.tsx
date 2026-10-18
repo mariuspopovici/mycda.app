@@ -15,6 +15,7 @@ import { authErrorMessage } from '../auth/authErrors'
 import { convertPrefsUnits, useSaveUserPrefs, useUserPrefs, type UserPrefs } from '../data/userPrefs'
 import { weightUnit } from '../lib/format'
 import type { Units } from '../core/units'
+import { HelpLink } from '../components/HelpLink'
 
 const reauthenticate = (user: User, password: string) =>
   reauthenticateWithCredential(user, EmailAuthProvider.credential(user.email ?? '', password))
@@ -182,7 +183,7 @@ export function ProfilePage () {
       <Title order={1}>Profile</Title>
       {welcome && <Alert color='green' title='Welcome to MyCdA'>Set up your preferences below, then upload your first ride.</Alert>}
       <Card withBorder padding='lg'>
-        <Title order={3} mb='xs'>Analysis preferences</Title>
+        <Group gap={4} mb='xs'><Title order={3}>Analysis preferences</Title><HelpLink to='getting-started#profile' topic='Your profile' /></Group>
         <Text size='sm' c='dimmed' mb='md'>Defaults for new analyses. If you don't know a value, keep the suggestion as a baseline.</Text>
         {isLoading ? <Skeleton h={260} /> : <PreferencesForm key={String(saved)} initial={prefs} saved={saved} />}
       </Card>

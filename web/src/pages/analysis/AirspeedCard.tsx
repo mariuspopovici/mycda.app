@@ -7,6 +7,7 @@ import type { AirspeedSource, ManualWind } from '../../data/segments'
 import { compassPoint, formatSpeed, speedUnit } from '../../lib/format'
 import type { WindModelResult } from './useWindModel'
 import { exposureSummary } from './windExposure'
+import { HelpLink } from '../../components/HelpLink'
 
 interface Props {
   source: AirspeedSource
@@ -32,7 +33,7 @@ export function AirspeedCard ({
   const factor = riderHeightFactor(exposure)
   return (
     <Card withBorder padding='lg'>
-      <Text size='sm' fw={500} mb={6}>Air speed</Text>
+      <Group gap={4} mb={6}><Text size='sm' fw={500}>Air speed</Text><HelpLink to='analysis#airspeed' topic='Air speed' /></Group>
       <SegmentedControl fullWidth size='xs' value={source} onChange={(v) => onSourceChange(v as AirspeedSource)}
         data={[
           { label: 'Measured', value: 'measured', disabled: !measuredAvailable },

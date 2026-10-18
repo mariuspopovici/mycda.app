@@ -26,6 +26,7 @@ import { RideSettingsCard } from './RideSettingsCard'
 import { SegmentsTable } from './SegmentsTable'
 import { analysisUrl } from '../analysis/useAnalysisSource'
 import { TestsCard } from './TestsCard'
+import { HelpLink } from '../../components/HelpLink'
 
 interface Selection {
   /** In ride order; several when laps are joined into a run. */
@@ -237,7 +238,7 @@ export function ActivityPage () {
 
       <SimpleGrid cols={{ base: 1, md: gps ? 2 : 1 }}>
         <Card withBorder padding='lg'>
-          <Title order={3} mb='sm'>Laps</Title>
+          <Group gap={4} mb='sm'><Title order={3}>Laps</Title><HelpLink to='activity#selecting' topic='Selecting laps and ranges' /></Group>
           <LapsTable laps={data.laps} units={units} selectedLaps={selection?.laps ?? []} onSelect={selectLap} onToggle={toggleLap} />
         </Card>
         {gps && (
@@ -255,7 +256,7 @@ export function ActivityPage () {
         weatherContext={start ? { lat: start.lat, lng: start.lng, time: series.time[0], altitude: series.altitude[0] } : undefined} />
 
       <Card withBorder padding='lg'>
-        <Title order={3} mb='sm'>Saved analyses</Title>
+        <Group gap={4} mb='sm'><Title order={3}>Saved analyses</Title><HelpLink to='comparing' topic='Comparing setups' /></Group>
         {segments.length
           ? <SegmentsTable activityId={id} segments={segments} onShow={showSegment} onDelete={confirmDeleteSegment} />
           : <Text size='sm' c='dimmed'>None yet. Select a range above and analyze it.</Text>}
