@@ -1,0 +1,59 @@
+# Testing strategy
+
+## Suites
+
+| Suite | Command | What it guards |
+|---|---|---|
+| Analysis core | `npm --prefix web test` | Physics, wind, loops, series preparation, stats |
+| Full ride sweep | `npm --prefix web run test:all-fixtures` | Every private ride (~3 min) |
+| Upload parsing | `npm --prefix functions test` | Format detection, archives, FIT structure recovery, CSV formats |
+| Upload parsing sweep | `npm --prefix functions run test:all-fixtures` | Every private ride parses or is rejected with a message |
+| Emulator | `npm --prefix tests/emulator test` | Security rules, the functions end to end, and the web app in Chrome (Playwright); needs Java |
+| Open-Meteo live | `LIVE_API=1 npx vitest run src/services/openMeteo.test.ts` (in `web/`) | The real API still answers the way the client expects; skipped by default |
+
+Run a single file or test from `web/`: `npx vitest run src/core/__tests__/core.test.ts -t windAt`. Add `-u` to accept snapshot changes after reviewing them.
+
+## Analysis core tests (`web/src/core/__tests__/`)
+
+| File | Kind | Notes |
+|---|---|---|
+| `core.test.ts` | Behaviour + golden | Physics invariants, one test per fixed bug, golden snapshots of VE on the committed CSV fixtures. The legacy parity tests were removed with the legacy app; these snapshots carry the guarantee forward |
+| `airDensity.test.ts` | Parity + physics | Air density against `@mariuspopovici/rho`, and its physical trends |
+| `private.test.ts` | Real rides | Curated rides from the gitignored `__fixtures__/private/`. Skipped when absent |
+| `fixtures.ts` | Helpers | `loadActivityPoints()` runs a `.fit`/`.csv` through the real Cloud Functions parsing (`functions/activity.js`) and a JSON round trip, the same path production data takes |
+
+### Physics invariants
+
+The strongest VE tests don't depend on stored outputs. `flatRide()` generates power that *exactly* balances rolling, aero and kinetic energy for given speeds and timestamps, so a correct VE must stay flat. This holds:
+- at constant speed;
+- while accelerating, at 1 s and at irregular 1–3 s intervals;
+- in a tailwind faster than the rider.
+
+### Golden outputs
+
+Snapshots pin the exact current output so that refactors can't change results unnoticed. A snapshot change is a **behaviour change**: review it, explain it in the commit, and record a measurable change in [log/](../log/).
+
+## Private ride fixtures
+
+The developer's own rides, downloaded from Storage into `web/src/core/__fixtures__/private/` (gitignored, because the files contain GPS tracks). See [ADR-0010](../decisions/0010-private-ride-fixtures.md).
+
+```bash
+gcloud storage cp "gs://mycda-c43c6.appspot.com/userdata/<UID>/activities/*.fit" web/src/core/__fixtures__/private/
+gcloud storage cp "gs://mycda-c43c6.appspot.com/userdata/<UID>/activities/*.csv" web/src/core/__fixtures__/private/
+```
+
+- The curated list in `private.test.ts` covers 1 s and smart recording, stops, long gaps, partial GPS, no GPS, laps, loops and measured air speed. See [log/2026-10-17-fixture-survey.md](../log/2026-10-17-fixture-survey.md).
+- Golden files for private rides are written to `private/__golden__/` with `toMatchFileSnapshot`, so nothing derived from a ride is committed.
+- The full sweep (`ALL_FIXTURES=1`) checks that every file yields finite VE and valid loops, and skips files the upload pipeline rejects.
+
+## Upload parsing tests
+
+`functions/test/activity.test.js` uses Node's built-in test runner. FIT edge cases are generated with fit-file-parser's low-level encoder (`functions/test/fit-builder.js`, which uses FIT SDK message and field numbers): no session, no laps, an empty first lap, records before the first lap, alternating speed-only and power-only records, missing speed, and other sports. Prefer adding a builder case over committing binary fixtures.
+
+## Emulator tests
+
+`tests/emulator/functions.test.js` runs the real functions in the Auth, Functions, Firestore and Storage emulators. It uploads files with the Admin SDK, waits for `processActivityFile`, and calls `/api` with ID tokens from the Auth emulator. `setup-secrets.mjs` writes dummy secrets to `functions/.secret.local`.
+
+`tests/emulator/e2e/app.spec.js` drives the web app in Chrome (Playwright, `channel: 'chrome'`, so no browser download) against the Auth, Functions, Firestore and Storage emulators, with Vite started in emulator mode. It covers sign-up, preferences and unit conversion, upload through `processActivityFile` to "Ready", rename, open, delete, rejected-file messages, sign-in errors, and legacy hash URL redirects. `SCREENSHOTS=1` also runs `e2e/screens.spec.js`, which saves light, dark and phone-width screenshots to `test-results/screens/` for visual review. Firestore keeps a streaming connection open, so wait for content, never `networkidle`.
+
+`tests/emulator/rules.test.js` uses `@firebase/rules-unit-testing` against the emulators started by `firebase emulators:exec` (project `demo-mycda`, so nothing real is touched). Seed data is written with rules disabled. Each test then asserts allow or deny as a specific user. `PERMISSION_DENIED` lines in the output are expected.

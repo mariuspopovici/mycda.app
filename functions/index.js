@@ -1,581 +1,223 @@
-const admin = require("firebase-admin");
-const functions = require("firebase-functions");
-
-admin.initializeApp(functions.config().firebase);
-
-const path = require("path");
-const EasyFit = require("fit-file-parser").default;
-const CSV = require("./csv");
-const fs = require("fs");
-const os = require("os");
-const util = require("util");
-const mkdirp = require("mkdirp-promise");
-const { gzip, ungzip } = require("node-gzip");
-const compression = require("compression");
-const cookieParser = require("cookie-parser")();
+const path = require("node:path");
+const zlib = require("node:zlib");
+const { promisify } = require("node:util");
+const { initializeApp } = require("firebase-admin/app");
+const { getAuth } = require("firebase-admin/auth");
+const { FieldValue, getFirestore } = require("firebase-admin/firestore");
+const { getStorage } = require("firebase-admin/storage");
+const { setGlobalOptions } = require("firebase-functions/v2");
+const { onRequest } = require("firebase-functions/v2/https");
+const { onObjectFinalized } = require("firebase-functions/v2/storage");
+const logger = require("firebase-functions/logger");
 const express = require("express");
-const app = express();
-const cors = require("cors")({ origin: true });
-const fetch = require("node-fetch");
+const compression = require("compression");
+const cookieParser = require("cookie-parser");
+const {
+  parseActivityFile,
+  validateFileContents,
+  getActivityData
+} = require("./activity");
 
-const db = admin.firestore();
-db.settings({ timestampsInSnapshots: true });
+const gzip = promisify(zlib.gzip);
+const gunzip = promisify(zlib.gunzip);
+
+// The web app calls https://us-central1-mycda-c43c6.cloudfunctions.net/api. Without an explicit
+// region the CLI places Storage triggers on the default bucket's "us" multi-region in us-east1.
+setGlobalOptions({ region: "us-central1" });
+
+initializeApp();
+const db = getFirestore();
+// optional summary fields (e.g. distance in files without it) are left out rather than rejected
+db.settings({ ignoreUndefinedProperties: true });
 
 /**
- * Express middleware that validates Firebase ID Tokens passed in the Authorization HTTP header.
- * The Firebase ID token needs to be passed as a Bearer token in the Authorization HTTP header like this:
- * `Authorization: Bearer <Firebase ID Token>`.
- * when decoded successfully, the ID Token content will be added as `req.user`.
- * @param {*} req
- * @param {*} res
- * @param {*} next
+ * Version of the upload pipeline, recorded on every processed activity so clients can tell results
+ * of the current parser from those of the legacy one (which predates this field).
  */
-const validateFirebaseIdToken = async (req, res, next) => {
-  console.log("Check if request is authorized with Firebase ID token");
+const PIPELINE_VERSION = 2;
 
-  if (
-    (!req.headers.authorization ||
-      !req.headers.authorization.startsWith("Bearer ")) &&
-    !(req.cookies && req.cookies.__session)
-  ) {
-    console.error(
-      "No Firebase ID token was passed as a Bearer token in the Authorization header.",
-      "Make sure you authorize your request by providing the following HTTP header:",
-      "Authorization: Bearer <Firebase ID Token>",
-      'or by passing a "__session" cookie.'
-    );
-    res.status(403).send("Unauthorized");
-    return;
-  }
+/** Uploaded activity files: userdata/{uid}/activities/{activityId}.fit|.csv */
+const ACTIVITY_FILE_PATH = /^userdata\/([^/]+)\/activities\/([^/]+)\.(fit|csv)$/i;
 
-  let idToken;
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith("Bearer ")
-  ) {
-    console.log('Found "Authorization" header');
-    // Read the ID Token from the Authorization header.
-    idToken = req.headers.authorization.split("Bearer ")[1];
-  } else if (req.cookies) {
-    console.log('Found "__session" cookie');
-    // Read the ID Token from cookie.
-    idToken = req.cookies.__session;
-  } else {
-    // No cookie
+const app = express();
+app.use(compression());
+app.use(cookieParser());
+app.use(validateFirebaseIdToken);
+
+/**
+ * Express middleware that requires a Firebase ID token, passed as `Authorization: Bearer <token>`
+ * or in a `__session` cookie. The decoded token is available as `req.user`.
+ */
+async function validateFirebaseIdToken(req, res, next) {
+  const header = req.headers.authorization || "";
+  const idToken = header.startsWith("Bearer ")
+    ? header.slice("Bearer ".length)
+    : req.cookies && req.cookies.__session;
+
+  if (!idToken) {
     res.status(403).send("Unauthorized");
     return;
   }
 
   try {
-    const decodedIdToken = await admin.auth().verifyIdToken(idToken);
-    console.log("ID Token correctly decoded", decodedIdToken);
-    req.user = decodedIdToken;
+    req.user = await getAuth().verifyIdToken(idToken);
     next();
-    return;
   } catch (error) {
-    console.error("Error while verifying Firebase ID token:", error);
+    logger.warn("Invalid Firebase ID token", { error: error.message });
     res.status(403).send("Unauthorized");
-    return;
   }
-};
-
-app.use(cors);
-app.use(compression());
-app.use(cookieParser);
-app.use(validateFirebaseIdToken);
+}
 
 /**
- * Returns the response body of the requested url, url should be encoded with encodeURIComponent if there are additional
- * parameters for the requested url.
- *
- * Example request using URL query parameters:
- *   https://us-central1-<project-id>.cloudfunctions.net/cors?url=https%3A%2F%2Fapi.ipify.org%3Fformat%3Djson
- * Example request using request body with cURL:
- *   curl -H 'Content-Type: application/json' \
- *        -d '{"url": "https://api.ipify.org/?format=json"}' \
- *        https://us-central1-<project-id>.cloudfunctions.net/cors
- *
- * This endpoint supports CORS.
- */
-app.get("/cors", async (req, res) => {
-  cors(req, res, () => {
-    console.log("Query:", req.query);
-    console.log("Body:", req.body);
-
-    let url = req.query.url;
-    let service = req.query.service;
-
-    if (!url) {
-      url = req.body.url;
-    }
-
-    if (!url) {
-      res.status(403).send("URL is empty.");
-    }
-
-    if (!service) {
-      res.status(403).send("Service is empty.");
-    }
-
-    console.log("Request URL:", url);
-    console.log("Request Service:", service);
-
-    let apiKey = functions.config()[service].key;
-
-    if (!apiKey) {
-      res.status(403).send("Service API key not configured.");
-    }
-
-    url = url.replace("API_KEY", apiKey);
-
-    fetch(url, {
-      method: req.method,
-      headers: {
-        "Content-Type": req.get("Content-Type")
-      }
-    })
-      .then(r =>
-        r.headers.get("content-type") === "application/json"
-          ? r.json()
-          : r.text()
-      )
-      .then(body => res.status(200).send(body))
-      .catch(e => {
-        console.log("Fetch Error:", e);
-        res
-          .status(500)
-          .send("An error occurred while processing cors proxy request.");
-      });
-  });
-});
-
-/**
- * Takes activity ID as a parameter and extracts power, speed, cadence, altitude etc. from .fit file
- * associated with the activity. Returns it all nicely wrapped in a JSON object with the following structure:
- * {
- *   start_time,
- *   total_elapsed_time,
- *   avg_speed,
- *   avg_cadence,
- *   avg_power,
- *   lap_count,
- *   total_ascent,
- *   total_descent,
- *   total_distance,
- *   points: [{
- *      lap,
- *      timestamp,
- *      distance,
- *      power,
- *      altitude,
- *      speed,
- *      cadence
- *   }]
- * }
+ * Returns the caller's parsed activity: summary, laps and data points (see docs/architecture/data-model.md).
+ * Responds 404 for missing and foreign activities alike, so activity IDs can't be probed.
  */
 app.get("/activity/:activity", async (req, res) => {
-  let activity = req.params.activity;
-  if (!activity) {
-    res.status(400).send("Missing parameters!");
-    return;
-  }
-
-  console.log("Got request for activity:", activity);
-  // get the activity document which this file belongs to and attach it while setting status to 'Processed'
-  let docRef = db.collection("activities").doc(activity);
-  let doc = await docRef.get();
-  if (!doc.exists) {
+  const doc = await db.collection("activities").doc(req.params.activity).get();
+  if (!doc.exists || doc.data().uid !== req.user.uid) {
     res.status(404).send("No such activity exists!");
     return;
   }
 
-  const fitFile = doc.data().fitFile;
-  console.log("Downloading file", fitFile);
-
-  // download the .fit file to a temporary location, read it and extract the data we need
-  const bucket = admin.storage().bucket();
-  const tempLocalFile = path.normalize(
-    path.format({ dir: os.tmpdir, name: activity, ext: ".json.gz" })
-  );
-
   try {
-    await bucket.file(fitFile).download({ destination: tempLocalFile });
-    console.log("Downloaded activity .fit file locally in " + tempLocalFile);
-
-    const readFile = util.promisify(fs.readFile);
-    let content = await readFile(tempLocalFile);
-
-    // content will be gzip compressed so we uncompress it
-    content = await ungzip(content);
-    fs.unlinkSync(tempLocalFile);
-
-    let fit = JSON.parse(content);
-    console.log("Read and parsed contents.");
-
-    let data = getActivityData(fit);
-
-    console.log("Prepared response.");
-
-    res.status(200).json(data);
-    return;
+    const [compressed] = await getStorage().bucket().file(doc.data().fitFile).download();
+    const data = JSON.parse(await gunzip(compressed));
+    res.status(200).json(getActivityData(data));
   } catch (error) {
-    console.log("Get Activity Error", error);
+    logger.error("Get activity failed", { activity: req.params.activity, error: error.message });
     res.status(500).send("An error occurred.");
-    return;
   }
 });
 
-/**
- * This HTTPS endpoint can only be accessed by your Firebase Users.
- * Requests need to be authorized by providing an `Authorization` HTTP header
- * with value `Bearer <Firebase ID Token>`.
- */
-exports.api = functions.https.onRequest(app);
+/** Message for activities whose upload never completed, so there is nothing to process. */
+const NO_UPLOAD_MESSAGE = "The upload didn't finish, so there's no file to process. Delete this activity and upload the file again.";
 
 /**
- * This gets raised every time a file gets uploaded in storage
- * - downloads the .FIT file from storage
- * - parses the .FIT file using EasyFit
- * - converts the .FIT file to a .json file
- * - stores the .json file in the same location as the original
- * - sets the download URL on the activity document so we can retrieve the .json file later when we need it
- * - saves some metadata in the activity document
+ * Runs processing again on the caller's stored upload: for activities stuck at "New" (lost
+ * trigger, interrupted upload) and for errors the current parser may now handle.
+ * Responds with the resulting status.
  */
-exports.processActivityFile = functions.storage
-  .object()
-  .onFinalize(async object => {
-    console.log("Processing activity file.");
-    const filePath = object.name;
-    const fileName = path.basename(filePath); // just file name with extension
-    const fileExtension = path.extname(fileName);
+app.post("/activity/:activity/reprocess", async (req, res) => {
+  const docRef = db.collection("activities").doc(req.params.activity);
+  const doc = await docRef.get();
+  if (!doc.exists || doc.data().uid !== req.user.uid) {
+    res.status(404).send("No such activity exists!");
+    return;
+  }
 
-    if (fileExtension !== ".fit" && fileExtension !== ".csv") {
-      console.log("A file was uploaded but it is not a valid activity file.");
-      return null;
+  const bucket = getStorage().bucket();
+  const base = `userdata/${req.user.uid}/activities/${docRef.id}`;
+  let original;
+  for (const candidate of [`${base}.fit`, `${base}.csv`]) {
+    const [exists] = await bucket.file(candidate).exists();
+    if (exists) {
+      original = candidate;
+      break;
+    }
+  }
+
+  try {
+    if (!original) {
+      await docRef.update({ processedWith: PIPELINE_VERSION, status: "Error", statusMessage: NO_UPLOAD_MESSAGE });
     } else {
-      console.log(`A new ${fileExtension} file was uploaded.`);
+      const [metadata] = await bucket.file(original).getMetadata();
+      await processUpload(bucket, original, docRef, new Date(metadata.timeCreated));
+    }
+    const updated = (await docRef.get()).data();
+    res.status(200).json({ status: updated.status, statusMessage: updated.statusMessage || null });
+  } catch (error) {
+    logger.error("Reprocess failed", { activity: docRef.id, error: error.stack });
+    res.status(500).send("An error occurred.");
+  }
+});
+
+exports.api = onRequest(
+  // an explicit empty list: omitting it leaves bindings from earlier deploys (the removed /cors
+  // proxy's keys) attached to the function
+  { cors: true, secrets: [] },
+  app
+);
+
+/**
+ * Parses an uploaded activity file, stores the parsed structure as {activityId}.json.gz next to
+ * the original, and records status and summary statistics on the activity document.
+ * @param {Date} startTime upload time, used to date CSV files
+ */
+async function processUpload(bucket, filePath, docRef, startTime) {
+  const activityId = docRef.id;
+  const jsonFilePath = path.posix.join(path.posix.dirname(filePath), `${activityId}.json.gz`);
+
+  let data;
+  try {
+    const [content] = await bucket.file(filePath).download();
+    // the format is detected from the content; CSV rows are timed from the upload
+    data = await parseActivityFile(content, { startTime });
+  } catch (error) {
+    if (error.name !== "ActivityFileError") logger.error("Parse error", { filePath, error: error.stack });
+    await docRef.update({
+      processedWith: PIPELINE_VERSION,
+      status: "Error",
+      statusMessage: error.name === "ActivityFileError"
+        ? error.message
+        : "An error occurred while reading the file. Please read the FAQ for additional information about supported file types."
+    });
+    return;
+  }
+
+  try {
+    // the parsed file is kept in Storage; the activity document only holds a summary
+    await bucket.file(jsonFilePath).save(await gzip(JSON.stringify(data)), {
+      contentType: "application/gzip"
+    });
+
+    const validation = validateFileContents(data);
+    if (validation.invalid) {
+      await docRef.update({ processedWith: PIPELINE_VERSION, fitFile: jsonFilePath, status: "Error", statusMessage: validation.message });
+      return;
     }
 
-    const baseFileName = path.basename(filePath, path.extname(filePath)); // file name without extension
-    const fileDir = path.dirname(filePath);
+    const stats = getActivityData(data, { includeDataPoints: false });
+    await docRef.update({
+      processedWith: PIPELINE_VERSION,
+      timestamp: new Date(),
+      activity_date: new Date(stats.timestamp),
+      distance: stats.total_distance,
+      averagePower: stats.avg_power,
+      averageSpeed: stats.avg_speed,
+      fitFile: jsonFilePath,
+      status: "Processed",
+      statusMessage: FieldValue.delete()
+    });
+  } catch (error) {
+    logger.error("Processing error", { filePath, error: error.stack });
+    await docRef.update({
+      processedWith: PIPELINE_VERSION,
+      fitFile: jsonFilePath,
+      status: "Error",
+      statusMessage: "An error occurred while processing the file."
+    });
+  }
+}
 
-    // this is the .json converted file
-    const jsonFilePath = path.normalize(
-      path.format({ dir: fileDir, name: baseFileName, ext: ".json.gz" })
-    );
-    const tempLocalFile = path.join(os.tmpdir(), filePath);
-    const tempLocalDir = path.dirname(tempLocalFile);
-    const tempLocalJsonFile = path.join(os.tmpdir(), jsonFilePath);
+/**
+ * Runs when a file is uploaded to userdata/{uid}/activities/. The activity must belong to the
+ * uploader.
+ */
+exports.processActivityFile = onObjectFinalized(
+  { memory: "512MiB", timeoutSeconds: 120 },
+  async (event) => {
+    const filePath = event.data.name;
+    const match = ACTIVITY_FILE_PATH.exec(filePath);
+    if (!match) return;
+    const [, uid, activityId] = match;
 
-    const fileBucket = object.bucket;
-
-    // .fit file name contains the activity ID
-    const activityId = baseFileName;
-
-    // get the file from storage, save it locally, read contents and parse it
-    const bucket = admin.storage().bucket(fileBucket);
-
-    // create the temp directory where the storage file will be downloaded.
-    await mkdirp(tempLocalDir);
-
-    try {
-      // get the activity document which this file belongs to and attach it while setting status to 'Processed'
-      let docRef = db.collection("activities").doc(activityId);
-
-      await bucket.file(filePath).download({ destination: tempLocalFile });
-      console.log(
-        `Downloaded activity ${fileExtension} file locally in ${tempLocalFile}`
-      );
-
-      // read file content
-      const readFile = util.promisify(fs.readFile);
-      let content = await readFile(tempLocalFile);
-      let data = {};
-
-      try {
-        switch (fileExtension) {
-          case ".fit":
-            data = await parseFIT(content);
-            break;
-          case ".csv":
-            data = await parseCSV(content.toString());
-            break;
-        }
-      } catch (error) {
-        await docRef.update({
-          status: "Error",
-          statusMessage: `An error occurred while parsing ${fileExtension} file. Please read the FAQ for additional information about supported file types.`
-        });
-        console.log("Parse Error", error);
-        return null;
-      }
-
-      // we store the serialized FIT data as a .json file in Firestore to avoid moving it across the network unless we really need the data
-      // we will however keep some metadata in the activity document in firestore for convenience
-      const dataAsJSON = JSON.stringify(data);
-      const compressed = await gzip(dataAsJSON);
-
-      const writeFile = util.promisify(fs.writeFile);
-      await writeFile(tempLocalJsonFile, compressed, "utf-8");
-      console.log("Converted to .json file at", tempLocalJsonFile);
-
-      // store the .json file in storage
-      await bucket.upload(tempLocalJsonFile, { destination: jsonFilePath });
-      console.log("Upload .json file to Storage at", jsonFilePath);
-
-      // once the file has been converted delete the local files to free up disk space.
-      fs.unlinkSync(tempLocalJsonFile);
-      fs.unlinkSync(tempLocalFile);
-
-      let result = validateFileContents(data);
-      if (result.invalid) {
-        try {
-          return docRef.update({
-            fitFile: jsonFilePath,
-            status: "Error",
-            statusMessage: result.message
-          });
-        } catch (e) {
-          console.log("Validation Status Update Error", e);
-          return null;
-        }
-      } else {
-        try {
-          const stats = getActivityData(data, {
-            includeDataPoints: false
-          });
-          var doc = {
-            // .fit file metadata
-            timestamp: new Date(),
-            activity_date: stats.timestamp,
-            distance: stats.total_distance,
-            averagePower: stats.avg_power,
-            averageSpeed: stats.avg_speed,
-            // location of converted .fit file
-            fitFile: jsonFilePath,
-            status: "Processed"
-          };
-          return docRef.update(doc);
-        } catch (e) {
-          console.error("Get Activity Data Error", e);
-          return docRef.update({
-            fitFile: jsonFilePath,
-            status: "Error",
-            statusMessage: "An error occurred while processing .FIT file."
-          });
-        }
-      }
-    } catch (error) {
-      console.error("Processing Error", error);
-      return null;
+    const docRef = db.collection("activities").doc(activityId);
+    const doc = await docRef.get();
+    if (!doc.exists || doc.data().uid !== uid) {
+      logger.warn("Upload does not match an activity owned by the uploader", { filePath });
+      return;
     }
-  });
 
-function parseCSV(content) {
-  let csv = new CSV({
-    speedUnit: "km/h"
-  });
-  return new Promise((resolve, reject) => {
-    csv.parse(content, (error, data) => {
-      if (error) {
-        reject(error);
-      } else {
-        console.log("Succesfully parsed .csv activity file.");
-        resolve(data);
-      }
-    });
-  });
-}
-
-function parseFIT(content) {
-  let easyFit = new EasyFit({
-    force: true,
-    speedUnit: "km/h",
-    lengthUnit: "km",
-    temperatureUnit: "kelvin",
-    elapsedRecordField: true,
-    mode: "cascade"
-  });
-
-  return new Promise((resolve, reject) => {
-    easyFit.parse(content, (error, data) => {
-      if (error) {
-        reject(error);
-      } else {
-        console.log("Succesfully parsed .fit activity file.");
-        resolve(data);
-      }
-    });
-  });
-}
-
-function validateFileContents(data) {
-  if (!data.activity.sessions || data.activity.sessions.length === 0) {
-    return {
-      invalid: true,
-      message: `Invalid file. Missing FIT session data.`
-    };
+    await processUpload(getStorage().bucket(event.data.bucket), filePath, docRef, new Date(event.data.timeCreated));
   }
-
-  let session = data.activity.sessions.filter(
-    item => item.sport === "cycling"
-  )[0];
-
-  if (!session || session.sport !== "cycling") {
-    return {
-      invalid: true,
-      message: `Invalid file. Could not locate a cycling session within .FIT file.`
-    };
-  }
-
-  if (session.laps.length === 0) {
-    return {
-      invalid: true,
-      message: `Invalid file. Missing lap data.`
-    };
-  }
-
-
-  let record = session.laps[0].records[0];
-  const hasSpeed = "speed" in record || "enhanced_speed" in record;
-  if (!hasSpeed) {
-    return {
-      invalid: true,
-      message: "Invalid file. Missing speed data."
-    };
-  }
-
-  return {
-    invalid: false,
-    message: ""
-  };
-}
-
-function getActivityData(data, options = { includeDataPoints: true }) {
-  const session = data.activity.sessions.filter(
-    item => item.sport === "cycling"
-  )[0];
-  const laps = session.laps;
-
-  const useEnhancedSpeed = session.enhanced_avg_speed && !session.avg_speed;
-  const altitudeField = useEnhancedSpeed ? 'enhanced_altitude' : 'altitude';
-  const avgSpeedField = useEnhancedSpeed ? 'enhanced_avg_speed' : 'avg_speed';
-  const speedField = useEnhancedSpeed ? 'enhanced_speed' : 'speed';
-  const timestamp = laps[0].records[0].timestamp;
-
-  let stats = null;
-  let fileHasStats = session.avg_power && session[avgSpeedField];
-
-  if (fileHasStats) {
-    // file has stats such as session and lap averages
-    stats = {
-      timestamp: timestamp,
-      start_time: timestamp,
-      total_distance: session.total_distance,
-      total_elapsed_time: session.total_elapsed_time,
-      avg_power: session.avg_power,
-      avg_speed: session[avgSpeedField],
-      lap_count: laps.length,
-      laps: [],
-      points: []
-    };
-
-    laps.forEach((lap, i) => {
-      stats.laps.push({
-        start_time: lap.start_time,
-        total_elapsed_time: lap.total_elapsed_time,
-        total_distance: lap.total_distance,
-        start_distance: lap.records.length > 0 ? lap.records[0].distance : 0,
-        avg_power: lap.avg_power,
-        avg_speed: lap[avgSpeedField]
-      });
-
-      if (options.includeDataPoints) {
-        lap.records.forEach(record => {
-          stats.points.push({
-            lap: i + 1,
-            timestamp: record.timestamp,
-            distance: record.distance,
-            power: record.power ? record.power : 0,
-            altitude: record[altitudeField],
-            speed: record[speedField],
-            airspeed: record.air_speed
-              ? record.air_speed
-              : record.saturated_hemoglobin_percent,
-            lat: record.position_lat,
-            long: record.position_long
-          });
-        });
-      }
-    });
-  } else {
-    // calculate stats from data
-    let sumPower = 0;
-    let sumSpeed = 0;
-    let recordCount = 0;
-    let totalDistance = 0;
-    let totalElapsedTime = 0;
-    let lapStats = [];
-    let dataPoints = [];
-
-    laps.forEach((lap, i) => {
-      let lapSumPower = 0;
-      let lapSumSpeed = 0;
-
-      let lapStartDistance = lap.records[0].distance;
-      let lapStartElapsedTime = lap.records[0].elapsed_time;
-
-      lap.records.forEach(record => {
-        recordCount++;
-        sumPower += record.power;
-        sumSpeed += record[speedField];
-        lapSumPower += record.power;
-        lapSumSpeed += record[speedField];
-        totalDistance = record.distance;
-        totalElapsedTime = record.elapsed_time;
-
-        if (options.includeDataPoints) {
-          dataPoints.push({
-            lap: i + 1,
-            timestamp: record.timestamp,
-            distance: record.distance,
-            power: record.power,
-            altitude: record[altitudeField],
-            speed: record[speedField],
-            airspeed: record.air_speed
-              ? record.air_speed
-              : record.saturated_hemoglobin_percent,
-            lat: record.position_lat,
-            long: record.position_long
-          });
-        }
-      });
-
-      lapStats.push({
-        start_time: lap.start_time,
-        avg_power: Math.ceil(lapSumPower / lap.records.length),
-        avg_speed: (lapSumSpeed / lap.records.length).toFixed(4),
-        start_distance: lapStartDistance,
-        total_distance: totalDistance - lapStartDistance,
-        total_elapsed_time: totalElapsedTime - lapStartElapsedTime
-      });
-    });
-
-    const avgPower = Math.ceil(sumPower / recordCount);
-    const avgSpeed = (sumSpeed / recordCount).toFixed(2);
-
-    stats = {
-      timestamp: timestamp,
-      start_time: timestamp,
-      total_distance: totalDistance,
-      total_elapsed_time: totalElapsedTime,
-      avg_power: avgPower,
-      avg_speed: avgSpeed,
-      lap_count: laps.length,
-      laps: lapStats,
-      points: dataPoints
-    };
-  }
-
-  return stats;
-}
+);

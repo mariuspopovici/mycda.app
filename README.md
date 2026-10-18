@@ -1,135 +1,77 @@
 # MyCdA.app
 
-MyCdA.app lets you use data collected using a power meter, speed sensor and a cycling computer and
-estimate your drag coefficient (CdA) and /or rolling resistance (crr). Compare data across different runs in order
-to determine if an equipment or position change is beneficial or not.
+MyCdA.app estimates your aerodynamic drag area (CdA) and rolling resistance (Crr) from rides recorded with a power meter, speed sensor and cycling computer. Compare runs to find out whether a change in position or equipment makes you faster.
 
-## Demo
+**Try it: [mycda.app](https://mycda.app)** (free)
 
-Click [here](https://mycda.app) for a working demo.
+![Virtual elevation analysis of a lap](docs/images/analysis.png)
 
 ## Features
 
-* Upload and process Garmin .FIT and .CSV files
-* Analyze power, speed and elevation data using an interactive chart and activity map
-* View statistics by entire activity or for individual laps
-* Detect loops in activity GPS track.
-* Analyze CdA and crr for by lap or manual selection from chart. Identify loops and use loop start / end markings to align Virtual Elevation profile.
-* View virtual elevation chart, visually adjust CdA and crr and analyze results
-* Include air speed in VE calculations (through CSV import)
-* Support for drivetrain / friction loss adjustments.
-* Record notes and equipment changes for specific segments
-* Calculate air density by manual input or automatically based on current GPS location altitude adjusted
-* Save CdA/crr analysis segments and view / edit later
-* Designate segments as baseline segments
-* Compare segments to baseline showing % CdA, Watts Saved and Seconds/40k
-* Calculate Mean, Std. Dev and CV across all segments
+- **Upload** Garmin `.fit` and `.csv` files, including gzipped and zipped exports. Problem files say exactly why they can't be used, and failed or interrupted uploads can be retried.
+- **Explore** power, speed and elevation over time or distance, with laps, automatic loop detection and an OpenStreetMap view of the track.
+- **Analyze** any lap, set of loops or range with R. Chung's [virtual elevation method](http://anonymous.coward.free.fr/wattage/cda/indirect-cda.pdf). Tune CdA and Crr by hand, or let **Suggest CdA** fit them to the recorded elevation or to loop closure.
+- **Air speed**: use an air speed sensor (via CSV), still air, or a wind model built from hourly weather for the time and place of your ride.
+- **Air density** from temperature, dew point, pressure and altitude, looked up from historical weather ([Open-Meteo](https://open-meteo.com/)). It's also a [standalone calculator](https://mycda.app/rho).
+- **Compare** saved analyses against a baseline in watts saved and seconds per 40 km, with the mean, standard deviation and coefficient of variation of CdA.
+- Metric or imperial units, light and dark themes, and phone-friendly layouts.
 
-## Screenshot Tour
-<figure>
-  <img src="static/images/screens/MyCdA app.png" alt="Landing Page">
-  <figcaption>Landing page</figcaption>
-</figure>
+| Activities | Activity |
+|---|---|
+| ![Activity list](docs/images/activities.png) | ![Activity with a lap selected](docs/images/activity.png) |
 
-<figure>
-  <img src="static/images/screens/Login MyCdA app.png" alt="Login Screen">
-  <figcaption>Login screen</figcaption>
-</figure>
+## How it works
 
-<figure>
-  <img src="static/images/screens/Upload MyCdA app.png" alt="Activities Screen">
-  <figcaption>Activities List</figcaption>
-</figure>
+| Part | Technology |
+|---|---|
+| Web app (`web/`) | React 19, TypeScript, Vite, Mantine, React Router, TanStack Query, Plotly, Leaflet |
+| Analysis core (`web/src/core/`) | Framework-free TypeScript: virtual elevation, fitting, wind model, air density, loop detection |
+| Backend | Firebase Auth, Firestore, Storage and Hosting. Cloud Functions (`functions/`, Node 22) parse uploads and serve activity data |
+| External data | Open-Meteo (weather, elevation) and OpenStreetMap (maps), with no API keys |
 
-<figure>
-  <img src="static/images/screens/Summary Activity Details MyCdA app.png" alt="Activity Details Screen">
-  <figcaption>Home / Activity Details with Segment Stats</figcaption>
-</figure>
+Architecture, design notes and decision records are in [`docs/`](docs/README.md).
 
-<figure>
-  <img src="static/images/screens/CdA Analysis MyCdA app.png" alt="CdA Screen">
-  <figcaption>CdA Analysis</figcaption>
-</figure>
+## Development
 
-<figure>
-  <img src="static/images/screens/CdA Analysis Loop Detection MyCdA app.png" alt="CdA Screen">
-  <figcaption>CdA Analysis Loop Detection</figcaption>
-</figure>
-
-<figure>
-  <img src="static/images/screens/CdA Analysis Loop Settings MyCdA app.png" alt="CdA Screen">
-  <figcaption>CdA Analysis Loop Detection Settings</figcaption>
-</figure>
-
-<figure>
-  <img src="static/images/screens/Calculator MyCdA app.png" alt="Activities Screen">
-  <figcaption>CdA Analysis Air Density Calculator.</figcaption>
-</figure>
-
-## TODO
-
-* Segment splitting. This feature will allow to split loops into out and back segments and average individual splits CdA. This should allow analysis for courses where braking cannot be avoided or out and back time trial course etc.
- 
-## Build Setup
+You need Node 22+ and, for the emulator tests, Java 21+ and Chrome.
 
 ```bash
-# install dependencies
-npm install
+# web app
+cd web
+npm ci
+cp .env.example .env.local     # fill in your Firebase web config
+npm run dev                    # http://localhost:5173
 
-# serve with hot reload at localhost:8080
-npm run dev
-
-# build for production with minification
-npm run build
-
-# build for production and view the bundle analyzer report
-npm run build --report
-
-# deploy to Firebase project (create and initialize a new Firebase project)
-firebase deploy
+# or run everything locally against the Firebase emulators
+npm --prefix ../tests/emulator ci
+npm --prefix ../tests/emulator run emulators   # terminal 1
+npm run dev:emulators                          # terminal 2
 ```
 
-For a detailed explanation on how things work, check out the [guide](http://vuejs-templates.github.io/webpack/) and [docs for vue-loader](http://vuejs.github.io/vue-loader).
+Tests:
 
-## Configuration
-
-In order to use the location based weather data pull you need to configure your app instance to connect to the OpenWeatherMap API. To do so follow these simple steps:
-
-- Sample application configuration files are provided in the _config_ folder. Rename _sample.dev.env.js_ to _dev.env.js_ and _sample.prod.env.js_ to _prod.env.js_.
-- Sign up for a free **OpenWeatherMap** account at https://openweathermap.org/api
-- Once your account is set up, go into [API Keys](https://home.openweathermap.org/api_keys) and copy your API key.
-- Configure **MyCdA.app** by editing the _config/prov.env.js_ file and inserting the API key copied in the previous text into the placeholder.
-- Sign up for a free Google Firebase account at https://firebase.google.com/
-- From the Firebase console, enable **Email/Password** authentication from the Authentication, Sign-in method tab.
-- Obtain your firebase project keys and insert them in the env.js configuration file
-- Obtain a Google Maps API key and insert key into the configuration file.
-  
-```javascript
-module.exports = merge(prodEnv, {
-  NODE_ENV: `"development"`,
-  OW_API_KEY: `"your open weather API key here"`,
-  FB_API_KEY: `"Firebase API key here"`,
-  FB_AUTH_DOMAIN: `"Firebase auth domain"`,
-  FB_DATABASE_URL: `"Firebase database url"`,
-  FB_PROJECT_ID: `"Firebase app name"`,
-  FB_STORAGE_BUCKET: `"Firebase storage bucket"`,
-  FB_MSG_SENDER_ID: `"Firebase sender id"`,
-  GOOGLE_MAPS_API_KEY: `"Google Maps API key"`
-});
+```bash
+npm --prefix web test               # analysis core, data and UI helpers (Vitest)
+npm --prefix functions test         # upload parsing (node --test)
+npm --prefix tests/emulator test    # security rules, functions end to end, browser tests (Playwright)
 ```
-## History
 
-Visit the [Community](https://groups.google.com/forum/#!forum/mycda) page for a list of build release notes.
+CI runs all of them on every push (`.github/workflows/ci.yml`).
 
-## Contributing
+### Setting up your own instance
 
-1. Fork it!
-2. Create your feature branch: `git checkout -b my-new-feature`
-3. Commit your changes: `git commit -am 'Add some feature'`
-4. Push to the branch: `git push origin my-new-feature`
-5. Submit a pull request :D
+1. Create a Firebase project on the Blaze plan. Enable Email/Password sign-in, Firestore and Storage.
+2. Point `.firebaserc` at your project, and fill in `web/.env.local` from the project's web app config.
+3. Deploy with `firebase deploy`. That deploys the Firestore and Storage rules, the functions, and hosting (which builds `web/` first).
+
+## CSV format
+
+The header row needs `time`, `power` and `speed` (km/h). It can also have `airspeed`, `elevation`, `lap`, `lat` and `long`. See the [FAQ](https://mycda.app/faq#csv) for details, or download the [example file](web/public/mycda-example.csv).
+
+## Community
+
+Questions and release notes: the [MyCdA community](https://groups.google.com/forum/#!forum/mycda). Bugs and ideas: [GitHub issues](https://github.com/mariuspopovici/mycda.app/issues).
 
 ## License
 
-MIT
-'
+[MIT](LICENSE)
