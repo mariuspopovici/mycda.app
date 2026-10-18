@@ -42,7 +42,9 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [x] ESLint 9 flat config for functions
 - [x] `processActivityFile` checks the activity belongs to the uploader
 - [x] End-to-end emulator tests (`tests/emulator/functions.test.js`)
-- [ ] Deploy: set secrets, delete the v1 functions, deploy v2 ([ADR-0011](../decisions/0011-functions-2nd-gen-and-secret-manager.md#deployment))
+- [x] Deployed 2026-10-17 ([ADR-0011](../decisions/0011-functions-2nd-gen-and-secret-manager.md#deployment)). Two first-deploy problems:
+  - Without an explicit region, the CLI put the Storage trigger in `us-east1`, which is how it maps the default bucket's `us` multi-region. Both functions are now pinned to `us-central1` with `setGlobalOptions`.
+  - The first 2nd-gen Storage trigger failed until the Eventarc service agent's permissions had propagated. A retry a few minutes later succeeded.
 - [x] Parser robustness: format detection by content, gzip/zip, fit-file-parser 1.21 → 6.2.2, lap/session recovery, user-facing error messages; 281 of 312 real files accepted, up from 232 ([log](../log/2026-10-17-parser-upgrade.md))
 - [x] CSV timestamps from the upload time; hours, clock times and ISO date-times; distance over real intervals
 - [x] Open-Meteo client (`web/src/services/openMeteo.ts`) and air density ported from `@mariuspopovici/rho` (`web/src/core/airDensity.ts`) ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md))

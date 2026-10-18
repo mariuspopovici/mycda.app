@@ -5,6 +5,7 @@ const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getStorage } = require("firebase-admin/storage");
+const { setGlobalOptions } = require("firebase-functions/v2");
 const { onRequest } = require("firebase-functions/v2/https");
 const { onObjectFinalized } = require("firebase-functions/v2/storage");
 const { defineSecret } = require("firebase-functions/params");
@@ -20,6 +21,10 @@ const {
 
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);
+
+// The legacy app calls https://us-central1-mycda-c43c6.cloudfunctions.net/api. Without an explicit
+// region the CLI places Storage triggers on the default bucket's "us" multi-region in us-east1.
+setGlobalOptions({ region: "us-central1" });
 
 initializeApp();
 const db = getFirestore();
