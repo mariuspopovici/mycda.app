@@ -7,7 +7,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 0 | Lock down production | Done (`93f3288`), deployed 2026-10-17 |
 | 1 | Analysis core in TypeScript with tests | Done (`93f3288`) |
 | 1b | Physics fixes | Done (`4eaf00c`) |
-| 2 | Backend modernization | In progress |
+| 2 | Backend modernization | Done, deployed 2026-10-17 (optional Storage-direct reads deferred) |
 | 3 | New app shell | Not started |
 | 4 | Analysis screens | Not started |
 | 5 | Cutover | Not started |
@@ -45,6 +45,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [x] Deployed 2026-10-17 ([ADR-0011](../decisions/0011-functions-2nd-gen-and-secret-manager.md#deployment)). Two first-deploy problems:
   - Without an explicit region, the CLI put the Storage trigger in `us-east1`, which is how it maps the default bucket's `us` multi-region. Both functions are now pinned to `us-central1` with `setGlobalOptions`.
   - The first 2nd-gen Storage trigger failed until the Eventarc service agent's permissions had propagated. A retry a few minutes later succeeded.
+  - Verified with a live `.fit` upload through the legacy app.
 - [x] Parser robustness: format detection by content, gzip/zip, fit-file-parser 1.21 → 6.2.2, lap/session recovery, user-facing error messages; 281 of 312 real files accepted, up from 232 ([log](../log/2026-10-17-parser-upgrade.md))
 - [x] CSV timestamps from the upload time; hours, clock times and ISO date-times; distance over real intervals
 - [x] Open-Meteo client (`web/src/services/openMeteo.ts`) and air density ported from `@mariuspopovici/rho` (`web/src/core/airDensity.ts`) ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md))
