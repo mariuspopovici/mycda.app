@@ -8,7 +8,7 @@
 | Full ride sweep | `npm --prefix web run test:all-fixtures` | Every private ride (~3 min) |
 | Upload parsing | `npm --prefix functions test` | Format detection, archives, FIT structure recovery, CSV formats |
 | Upload parsing sweep | `npm --prefix functions run test:all-fixtures` | Every private ride parses or is rejected with a message |
-| Emulator | `npm --prefix tests/emulator test` | Security rules, and the functions end to end (needs Java) |
+| Emulator | `npm --prefix tests/emulator test` | Security rules, the functions end to end, and the web app in Chrome (Playwright); needs Java |
 | Open-Meteo live | `LIVE_API=1 npx vitest run src/services/openMeteo.test.ts` (in `web/`) | The real API still answers the way the client expects; skipped by default |
 
 Run a single file or test from `web/`: `npx vitest run src/core/__tests__/core.test.ts -t windAt`. Add `-u` to accept snapshot changes after reviewing them.
@@ -53,5 +53,7 @@ gcloud storage cp "gs://mycda-c43c6.appspot.com/userdata/<UID>/activities/*.csv"
 ## Emulator tests
 
 `tests/emulator/functions.test.js` runs the real functions in the Auth, Functions, Firestore and Storage emulators. It uploads files with the Admin SDK, waits for `processActivityFile`, and calls `/api` with ID tokens from the Auth emulator. `setup-secrets.mjs` writes dummy secrets to `functions/.secret.local`.
+
+`tests/emulator/e2e/app.spec.js` drives the web app in Chrome (Playwright, `channel: 'chrome'`, so no browser download) against the Auth, Functions, Firestore and Storage emulators, with Vite started in emulator mode. It covers sign-up, preferences and unit conversion, upload through `processActivityFile` to "Ready", rename, open, delete, rejected-file messages, sign-in errors, and legacy hash URL redirects. `SCREENSHOTS=1` also runs `e2e/screens.spec.js`, which saves light, dark and phone-width screenshots to `test-results/screens/` for visual review. Firestore keeps a streaming connection open, so wait for content, never `networkidle`.
 
 `tests/emulator/rules.test.js` uses `@firebase/rules-unit-testing` against the emulators started by `firebase emulators:exec` (project `demo-mycda`, so nothing real is touched). Seed data is written with rules disabled. Each test then asserts allow or deny as a specific user. `PERMISSION_DENIED` lines in the output are expected.

@@ -76,3 +76,8 @@ TODO.txt
 
 # Personal activity files used as local test fixtures (contain GPS tracks)
 web/src/core/__fixtures__/private/
+
+# Playwright output
+tests/emulator/test-results/
+tests/emulator/playwright-report/
+.DS_Store

@@ -8,7 +8,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 1 | Analysis core in TypeScript with tests | Done (`93f3288`) |
 | 1b | Physics fixes | Done (`4eaf00c`) |
 | 2 | Backend modernization | Done, deployed 2026-10-17 (optional Storage-direct reads deferred) |
-| 3 | New app shell | Not started |
+| 3 | New app shell | Done in code, not yet hosted |
 | 4 | Analysis screens | Not started |
 | 5 | Cutover | Not started |
 
@@ -53,11 +53,16 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 
 ## Phase 3: New app shell
 
-- [ ] Mantine app shell, routing, dark mode ([ADR-0003](../decisions/0003-mantine-ui-library.md))
-- [ ] Modular Firebase SDK; auth screens (login, sign-up, reset and set password)
-- [ ] Profile (user prefs), upload with progress, activity list
-- [ ] Static pages: landing, FAQ, terms, privacy
-- [ ] Environment config through Vite `import.meta.env`; no hardcoded function URLs
+- [x] Mantine 9 app shell, React Router 8, light/dark/auto colour scheme ([ADR-0003](../decisions/0003-mantine-ui-library.md))
+- [x] Firebase 12 modular SDK; sign in, sign up, reset password, and the auth action handler (reset password, verify or change email)
+- [x] Profile: preferences (shared `userprefs` shape, numbers instead of strings, per-unit limits) and account (display name, email change with verification, password change)
+- [x] Activities: live list, multi-file upload with progress (25 MB, also enforced in `storage.rules`), rename, and delete that also removes segments and Storage files; card layout on phones
+- [x] Static pages: landing, FAQ (updated for the new parser), about, terms, privacy
+- [x] Legacy hash URLs (`/#/activity/…`) redirect to the new paths
+- [x] Environment config through Vite `import.meta.env` (`web/.env.local`); `VITE_USE_EMULATORS=true` runs against the emulators
+- [x] Playwright end-to-end tests against the emulators (`tests/emulator/e2e/`)
+- [ ] Activity page is a summary placeholder linking to the legacy app until Phase 4
+- [ ] Deploy the Storage rules size cap: `firebase deploy --only storage`
 
 ## Phase 4: Analysis screens
 

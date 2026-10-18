@@ -18,7 +18,7 @@ import {
   updateDoc,
   where
 } from 'firebase/firestore'
-import { getBytes, ref, uploadString } from 'firebase/storage'
+import { deleteObject, getBytes, ref, uploadBytes, uploadString } from 'firebase/storage'
 
 const root = resolve(import.meta.dirname, '../..')
 let env
@@ -134,5 +134,12 @@ describe('storage', () => {
     await assertFails(getBytes(ref(bob().storage(), path)))
     await assertFails(uploadString(ref(bob().storage(), 'userdata/alice/activities/a3.fit'), 'x'))
     await assertFails(uploadString(ref(alice().storage(), 'other/file.fit'), 'x'))
+  })
+
+  it('owners can delete their files but not upload files over 25 MB', async () => {
+    const big = new Uint8Array(25 * 1024 * 1024)
+    await assertFails(uploadBytes(ref(alice().storage(), 'userdata/alice/activities/big.fit'), big))
+    await assertFails(deleteObject(ref(bob().storage(), 'userdata/alice/activities/a1.fit')))
+    await assertSucceeds(deleteObject(ref(alice().storage(), 'userdata/alice/activities/a1.fit')))
   })
 })

@@ -3,12 +3,15 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "npm run test:rules && npm run test:functions",
+    "test": "npm run test:rules && npm run test:functions && npm run test:e2e",
     "test:rules": "firebase emulators:exec --only firestore,storage --project demo-mycda \"vitest run rules.test.js\"",
-    "test:functions": "node setup-secrets.mjs && firebase emulators:exec --only auth,functions,firestore,storage --project demo-mycda \"vitest run functions.test.js\""
+    "test:functions": "node setup-secrets.mjs && firebase emulators:exec --only auth,functions,firestore,storage --project demo-mycda \"vitest run functions.test.js\"",
+    "test:e2e": "node setup-secrets.mjs && firebase emulators:exec --only auth,functions,firestore,storage --project demo-mycda \"playwright test\"",
+    "emulators": "node setup-secrets.mjs && firebase emulators:start --only auth,functions,firestore,storage --project demo-mycda"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "^4.0.1",
+    "@playwright/test": "1.63.0",
     "firebase": "^11.10.0",
     "firebase-admin": "14.5.0",
     "firebase-tools": "^14.11.0",

@@ -5,7 +5,10 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     match /userdata/{uid}/{allPaths=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, delete: if request.auth != null && request.auth.uid == uid;
+      // uploads are capped at 25 MB, matching the web app's limit
+      allow create, update: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 25 * 1024 * 1024;
     }
   }
 }

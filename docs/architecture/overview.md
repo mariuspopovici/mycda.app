@@ -41,7 +41,7 @@ flowchart LR
 | Component | Location | Role |
 |---|---|---|
 | Legacy web app | `src/` | Vue 2, bootstrap-vue, Vuex, plotly, Google Maps. Still in production; to be deleted at cutover |
-| New web app | `web/` | React 19, Vite, TypeScript. It contains only the analysis core so far |
+| New web app | `web/` | React 19, Vite, TypeScript, Mantine 9, React Router 8. Auth, profile, activity list and upload are done; analysis screens come in Phase 4. Shares all Firestore and Storage data with the legacy app |
 | Analysis core | `web/src/core/` | Framework-free TypeScript: VE, wind model, loop finder, spike filter, segment stats, units, weather sampling |
 | `processActivityFile` | `functions/index.js` | 2nd-gen Storage trigger. Runs on upload: checks ownership, parses the file, stores `<id>.json.gz` next to it, updates the activity status and summary |
 | `api` | `functions/index.js` | 2nd-gen HTTPS function: Express app behind Firebase ID-token auth. `/activity/:id` returns parsed points; `/cors` proxies keyed third-party APIs, with keys in Secret Manager |

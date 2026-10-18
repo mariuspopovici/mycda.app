@@ -21,15 +21,18 @@ Cloud Functions (`functions/`, 2nd gen, Node 22, CommonJS):
 - `firebase deploy --only functions`. Secrets (`OPENWEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`) live in Secret Manager: `firebase functions:secrets:set <NAME>`; the emulator reads `functions/.secret.local` (gitignored).
 
 New React app (`web/`, being built to replace the Vue app — see Migration below):
-- `npm --prefix web test` — Vitest. Run one file with `npx vitest run src/core/__tests__/core.test.ts` from `web/`; `-u` updates snapshots.
+- `npm --prefix web run dev` — Vite against production Firebase, configured by `web/.env.local` (gitignored; `node web/scripts/env-from-legacy.mjs` generates it from `config/prod.env.js`, see `web/.env.example`).
+- Local development against the emulators: `npm --prefix tests/emulator run emulators` in one terminal, `npm --prefix web run dev:emulators` in another (project `demo-mycda`; the header shows "emulators").
+- `npm --prefix web test` — Vitest. Run one file with `npx vitest run src/core/__tests__/core.test.ts` from `web/`; `-u` updates snapshots. Component tests opt into jsdom per file; `src/test/setup.ts` adds the browser APIs Mantine needs.
 - `npm --prefix web run lint`, `npm --prefix web run build` (`tsc -b` + Vite).
 
-Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/emulator test` runs `test:rules` (security rules in the Firestore + Storage emulators) and `test:functions` (end-to-end: upload → `processActivityFile` → `GET /api/activity/:id`, ownership checks, `/cors` allowlist, in the Auth + Functions + Firestore + Storage emulators). Needs Java.
+Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/emulator test` runs `test:e2e` (Playwright in Chrome against the web app; `SCREENSHOTS=1` adds review screenshots), `test:rules` (security rules in the Firestore + Storage emulators) and `test:functions` (end-to-end: upload → `processActivityFile` → `GET /api/activity/:id`, ownership checks, `/cors` allowlist, in the Auth + Functions + Firestore + Storage emulators). Needs Java.
 
 ## Migration in progress
 
 The Vue 2 app in `src/` is being replaced by a React 19 + Vite + TypeScript + Mantine app in `web/`, with OpenStreetMap (Leaflet) instead of Google Maps and Open-Meteo instead of DarkSky/OpenWeatherMap. Firestore collections and Storage paths must stay unchanged so existing user data keeps working.
 
+- `web/src/` app structure: `firebase.ts` (SDK setup, emulator switch, `apiUrl`), `auth/` (AuthProvider, `useAuth`/`useUser`, RequireAuth, error messages), `data/` (Firestore/Storage access: `activities.ts`, `userPrefs.ts`), `layout/`, `pages/`, `router.tsx`, `lib/` (formatting, legacy hash URL mapping). Mantine 9, React Router 8, TanStack Query 5, Firebase 12 modular SDK. `userprefs` keeps the legacy shape (weights in display units) so both apps can share it; analysis converts with `totalMassKg()`.
 - `web/src/core/` holds the framework-free domain logic (virtual elevation, wind model, hourly weather sampling, air density, loop finder, spike filter, segment stats, units), ported from `src/services/` and the Vue components. Network clients live in `web/src/services/` (e.g. `openMeteo.ts`, with an injectable `fetch`).
 - `web/src/core/__tests__/parity.test.ts` runs the ports against the legacy `src/services/*.js` on the CSV fixtures; `core.test.ts` holds physics checks and golden snapshots that outlive the legacy code. Ports intentionally reproduce legacy quirks (commented in the code); fix them deliberately and update snapshots, not silently.
 - `functions/activity.js` holds the Firebase-free file parsing so tests (including `web/`'s) can import it: `parseActivityFile` detects the format from the file's *contents* (uploads are named `.fit` unless the name ends in `csv`), unwraps gzip/zip, parses FIT in list mode and assembles sessions/laps itself, and throws `ActivityFileError` with user-facing messages. `functions/index.js` only wires triggers and HTTP routes.
