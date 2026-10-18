@@ -5,6 +5,14 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- the reader's color scheme before first paint, as Mantine's ColorSchemeScript does (key from main.tsx) -->
+    <script>
+      try {
+        var stored = window.localStorage.getItem('mycda-color-scheme')
+        var scheme = stored === 'light' || stored === 'dark' ? stored : window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.setAttribute('data-mantine-color-scheme', scheme)
+      } catch (e) {}
+    </script>
     <meta name="description" content="Estimate your cycling drag area (CdA) and rolling resistance (Crr) from power meter field tests. Free, with a step-by-step guide to testing positions and equipment." />
     <title>MyCdA – field testing for cycling aerodynamics</title>
     <!-- social previews; pages update the title, description and URL (lib/pageMeta.ts) -->

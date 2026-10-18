@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "prerender": "node scripts/prerender.mjs",
+    "build:site": "npm run build && npm run prerender",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
@@ -48,6 +50,7 @@
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
     "jsdom": "30.1.1",
+    "playwright-core": "1.63.0",
     "postcss-preset-mantine": "1.18.0",
     "postcss-simple-vars": "7.0.1",
     "typescript": "~5.8.3",

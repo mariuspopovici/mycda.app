@@ -16,7 +16,7 @@ import { theme } from './theme'
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } })
 const colorSchemeManager = localStorageColorSchemeManager({ key: 'mycda-color-scheme' })
 
-createRoot(document.getElementById('root')!).render(
+const render = () => createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <MantineProvider theme={theme} defaultColorScheme='auto' colorSchemeManager={colorSchemeManager}>
       <Notifications position='top-center' />
@@ -30,3 +30,15 @@ createRoot(document.getElementById('root')!).render(
     </MantineProvider>
   </StrictMode>
 )
+
+// Public pages arrive prerendered (scripts/prerender.mjs). Mounting before a lazy route (the guide)
+// has loaded would blank that content, so wait for the router to finish its initial load.
+if (router.state.initialized) {
+  render()
+} else {
+  const unsubscribe = router.subscribe((state) => {
+    if (!state.initialized) return
+    unsubscribe()
+    render()
+  })
+}

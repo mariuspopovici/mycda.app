@@ -37,8 +37,12 @@ jobs:
         working-directory: web
       - run: npm test
         working-directory: web
-      - run: npm run build
+      # build and prerender the public pages in the runner's Chrome, as the Hosting deploy does;
+      # the app only needs some API key to start signed out
+      - run: npm run build:site
         working-directory: web
+        env:
+          VITE_FIREBASE_API_KEY: ci-placeholder
 
   functions:
     name: Cloud Functions
