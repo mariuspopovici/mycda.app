@@ -65,10 +65,11 @@ dev.env.js
 # dist folder
 dist/
 
-#firebase config
+# Firebase CLI cache and logs (firebase.json and .firebaserc are tracked: CI deploys from them)
 .firebase/
-.firebaserc
-firebase.*
+firebase-debug*.log
+firestore-debug.log
+ui-debug.log
 
 # my stuff
 TODO.txt
