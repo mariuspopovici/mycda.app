@@ -100,10 +100,14 @@ function PasswordForm ({ user }: { user: User }) {
         <input type='text' name='username' autoComplete='username' value={user.email ?? ''} readOnly hidden />
         <SimpleGrid cols={{ base: 1, sm: 3 }}>
           <PasswordInput label='Current password' autoComplete='current-password' {...form.getInputProps('current')} />
-          <PasswordInput label='New password' autoComplete='new-password' description='At least 6 characters' {...form.getInputProps('password')} />
+          <PasswordInput label='New password' autoComplete='new-password' {...form.getInputProps('password')} />
           <PasswordInput label='Repeat new password' autoComplete='new-password' {...form.getInputProps('confirm')} />
         </SimpleGrid>
-        <Group justify='flex-end'><Button type='submit' variant='light' loading={form.submitting}>Change password</Button></Group>
+        {/* the hint sits below the row so it doesn't push one field out of line */}
+        <Group justify='space-between' align='center'>
+          <Text size='xs' c='dimmed'>Passwords need at least 6 characters.</Text>
+          <Button type='submit' variant='light' loading={form.submitting}>Change password</Button>
+        </Group>
       </Stack>
     </form>
   )
