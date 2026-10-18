@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { expect, test } from '@playwright/test'
+import { circuitRide } from './rides.js'
 
 const require = createRequire(import.meta.url)
 const { buildFit, ride } = require(resolve(import.meta.dirname, '../../../functions/test/fit-builder.js'))
@@ -46,10 +47,26 @@ test('screens', async ({ page }) => {
     { name: 'Hill repeats.fit.gz', mimeType: 'application/gzip', buffer: gzipSync(fit) },
     { name: 'route.fit', mimeType: 'application/octet-stream', buffer: Buffer.from('<?xml version="1.0"?><gpx></gpx>') }
   ])
-  await expect(page.getByText('Ready')).toHaveCount(2, { timeout: 60_000 })
+  await expect(page.getByText('Ready').filter({ visible: true })).toHaveCount(2, { timeout: 60_000 })
   await shoot('activities'); await shoot('activities', 'dark')
-  await page.getByRole('link', { name: 'Velodrome laps' }).click()
-  await shoot('activity', 'dark')
+  await page.locator('input[type=file]').setInputFiles({ name: 'Circuit.fit', mimeType: 'application/octet-stream', buffer: circuitRide() })
+  await page.getByRole('link', { name: 'Circuit' }).click({ timeout: 60_000 })
+  await expect(page.locator('.leaflet-container')).toBeVisible()
+  await page.getByRole('switch', { name: 'Find loops' }).check()
+  await page.getByRole('row', { name: /^2 / }).click()
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: out('activity-dark'), fullPage: true })
+  await page.getByRole('button', { name: 'Analyze selection' }).click()
+  await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 })
+  await page.getByRole('radiogroup').getByText('Loops', { exact: true }).click()
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: out('analysis-dark'), fullPage: true })
+  await page.emulateMedia({ colorScheme: 'light' })
+  await page.evaluate(() => localStorage.setItem('mycda-color-scheme', 'light'))
+  await page.reload()
+  await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 })
+  await page.waitForTimeout(1500)
+  await page.screenshot({ path: out('analysis-light'), fullPage: true })
   await page.goto('/faq'); await shoot('faq')
 
   await page.setViewportSize({ width: 390, height: 844 })

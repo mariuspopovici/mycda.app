@@ -4,8 +4,9 @@ import { RequireAuth } from './auth/RequireAuth'
 import { AppLayout } from './layout/AppLayout'
 import { LegacyHashRedirect } from './layout/LegacyHashRedirect'
 import { AboutPage } from './pages/AboutPage'
+import { AirDensityPage } from './pages/AirDensityPage'
+import { LegacyCdaRedirect } from './layout/LegacyCdaRedirect'
 import { ActivitiesPage } from './pages/activities/ActivitiesPage'
-import { ActivityPage } from './pages/ActivityPage'
 import { AuthActionPage } from './pages/AuthActionPage'
 import { FaqPage } from './pages/FaqPage'
 import { LandingPage } from './pages/LandingPage'
@@ -31,7 +32,23 @@ export const routes: RouteObject[] = [{
       { path: 'auth/action', element: <AuthActionPage /> },
       { path: 'activities', element: authed(<ActivitiesPage />) },
       { path: 'home', element: <Navigate to='/activities' replace /> },
-      { path: 'activity/:id', element: authed(<ActivityPage />) },
+      // the analysis pages pull in Plotly and Leaflet, so they load on demand
+      {
+        path: 'activity/:id',
+        lazy: async () => {
+          const { ActivityPage } = await import('./pages/activity/ActivityPage')
+          return { element: authed(<ActivityPage />) }
+        }
+      },
+      {
+        path: 'activity/:id/analysis/:sid?',
+        lazy: async () => {
+          const { AnalysisPage } = await import('./pages/analysis/AnalysisPage')
+          return { element: authed(<AnalysisPage />) }
+        }
+      },
+      { path: 'activity/:id/cda/:sid?', element: <LegacyCdaRedirect /> },
+      { path: 'rho', element: <AirDensityPage /> },
       { path: 'profile', element: authed(<ProfilePage />) },
       { path: 'faq', element: <FaqPage /> },
       { path: 'about', element: <AboutPage /> },

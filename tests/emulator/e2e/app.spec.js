@@ -61,7 +61,7 @@ test('sign up, set preferences, upload, rename, open and delete an activity', as
 
   await page.getByRole('link', { name: 'Velodrome test' }).click()
   await expect(page.getByRole('heading', { name: 'Velodrome test' })).toBeVisible()
-  await expect(page.getByText('36.0 km/h')).toBeVisible()
+  await expect(page.getByText('36.0 km/h').first()).toBeVisible()
   const activityUrl = page.url()
 
   await page.goBack()
@@ -70,7 +70,7 @@ test('sign up, set preferences, upload, rename, open and delete an activity', as
   await expect(page.getByText('No activities yet')).toBeVisible()
 
   await page.goto(activityUrl)
-  await expect(page.getByText('Activity not found')).toBeVisible()
+  await expect(page.getByText("Couldn't open this activity")).toBeVisible()
 })
 
 test('rejected files show why, and legacy hash URLs redirect after signing in', async ({ page }) => {
@@ -89,7 +89,7 @@ test('rejected files show why, and legacy hash URLs redirect after signing in', 
   await page.locator('input[type=file]').setInputFiles({ name: 'route.fit', mimeType: 'application/octet-stream', buffer: Buffer.from('<?xml version="1.0"?><gpx creator="x"></gpx>') })
   const row = page.getByRole('row', { name: /route/ })
   await row.getByRole('button', { name: 'Error' }).click()
-  await expect(page.getByText('GPX files are not supported')).toBeVisible()
+  await expect(page.getByText('GPX files are not supported').filter({ visible: true })).toBeVisible()
 
   await page.getByRole('button', { name: 'Account' }).click()
   await page.getByRole('menuitem', { name: 'Sign out' }).click()

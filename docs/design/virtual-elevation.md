@@ -54,6 +54,15 @@ The core is metric only: km/h, m, kg and kg/m³ in, m out. Imperial is a display
 - missing air speed replaced by ground speed;
 - power above 1500 W replaced by the mean of the previous 5 accepted values (sensor spikes).
 
+## Fitting
+
+`web/src/core/fit.ts` ("Suggest CdA") finds the CdA, and optionally Crr, that best explains the ride. It uses golden-section search, with an inner search over CdA for each Crr. There are two targets:
+
+- **Elevation:** minimise the RMS difference between VE and the recorded elevation. This needs trustworthy elevation, such as a barometric altimeter or a flat track.
+- **Loops:** minimise the RMS of each loop's drift, `(VE[end] − VE[start]) − (elevation[end] − elevation[start])`. This is the classic Chung approach. Each loop starts and ends at the same place, so a correct CdA and Crr close it, regardless of how noisy the recorded elevation is between those points.
+
+Fitting Crr as well only works when speed varies enough to separate the two terms (see below). On a synthetic ride with known parameters, both targets recover CdA to within 0.001 (`fit.test.ts`, and the end-to-end test).
+
 ## Interpreting results
 
 - Analyse stretches without stops, braking or drafting. Loops, out-and-backs and velodromes work best.

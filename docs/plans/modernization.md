@@ -9,7 +9,7 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 1b | Physics fixes | Done (`4eaf00c`) |
 | 2 | Backend modernization | Done, deployed 2026-10-17 (optional Storage-direct reads deferred) |
 | 3 | New app shell | Done in code, not yet hosted |
-| 4 | Analysis screens | Not started |
+| 4 | Analysis screens | Done in code, not yet hosted |
 | 5 | Cutover | Not started |
 
 ## Phase 0: Lock down production ✅
@@ -66,11 +66,30 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 
 ## Phase 4: Analysis screens
 
-- [ ] Activity details: plotly chart with range selection, laps, stats, Leaflet map ([ADR-0004](../decisions/0004-openstreetmap-with-leaflet.md)), loop detection
-- [ ] CdA analysis: VE chart, CdA/Crr/mass/ρ controls, air density calculator (Open-Meteo plus `@mariuspopovici/rho`), wind model toggle (only when `travelBearings` is defined), save and edit segments
-- [ ] Segment comparison against the baseline
-- [ ] Segment storage that avoids the 1 MiB document limit ([data model](../architecture/data-model.md))
-- [ ] Read legacy segments' display-unit `mass`, `rho` and `ve` correctly ([ADR-0008](../decisions/0008-metric-only-analysis-core.md))
+- [x] Activity page:
+  - power, speed and elevation chart over time or distance, where dragging zooms into the range and selects it;
+  - laps table (click to select) with stats filled in from points when the file lacks them;
+  - loop detection with settings;
+  - range statistics;
+  - Leaflet map with the selection highlighted and the hovered point marked ([ADR-0004](../decisions/0004-openstreetmap-with-leaflet.md));
+  - saved analyses with baseline comparison and mean/SD/CV.
+- [x] Analysis page (`/activity/:id/analysis?from&to&name`, `/activity/:id/analysis/:sid`):
+  - survives a reload, which crashed the legacy app;
+  - VE plotted on the elevation axis;
+  - mass, ρ (with the calculator), Crr, drivetrain loss, and a CdA slider plus a precise input;
+  - laps or loops overlay with RMS error and per-loop drift;
+  - **Suggest CdA**: fit to elevation or loop closure, optionally with Crr ([design](../design/virtual-elevation.md#fitting));
+  - air speed: measured, still air, or the Open-Meteo wind model;
+  - save, update, baseline, CSV export, delete. Legacy `/cda` URLs redirect.
+- [x] Air density calculator: a dialog in the analysis page and a standalone public `/rho` page, with ride or current weather from Open-Meteo.
+- [x] Segments readable and writable by both apps ([ADR-0012](../decisions/0012-segments-during-coexistence.md)), including legacy display-unit `mass`/`ve` and kg/m³ `rho` ([ADR-0008](../decisions/0008-metric-only-analysis-core.md)). One baseline per activity. Over-long ranges are blocked before hitting the 1 MiB limit.
+- [x] Activity and analysis pages load lazily (Plotly is a separate ~400 kB gzipped chunk).
+- [x] Playwright tests: lap and drag selection, analysis, the suggested CdA recovering a known value, save as baseline, reopen, delete, and the calculator.
+- [ ] Follow-up: an activity whose processing never finishes stays at "Processing" with no retry. Seen intermittently in the emulator with several simultaneous uploads.
+
+Implementation notes:
+- plotly.js 4.1 resets every axis to empty-chart defaults when `react()` gets unchanged data arrays and changed shapes. `PlotlyChart` bumps `datarevision` on every update, and charts keep the user's zoom with `uirevision`.
+- Plotly's box select ignores line-only traces, which is why selection works by zooming.
 
 ## Phase 5: Cutover
 
