@@ -5,7 +5,7 @@ import { compareToBaseline, summarizeCdA } from '../segmentStats'
 import { kgPerM3ToLbPerFt3, lbPerFt3ToKgPerM3 } from '../units'
 import { MAX_INTEGRATION_GAP_SECONDS, virtualElevation } from '../virtualElevation'
 import { windAt } from '../weather'
-import { bearing, travelBearings, windModelAirSpeed, yaw } from '../windModel'
+import { bearing, riderHeightFactor, travelBearings, windModelAirSpeed, yaw } from '../windModel'
 import { CSV_FIXTURES, circuitTrack, loadActivityPoints } from './fixtures'
 
 const round = (values: number[]) => values.map((v) => Math.round(v * 1e6) / 1e6)
@@ -137,8 +137,30 @@ describe('toActivitySeries', () => {
 
 describe('wind model', () => {
   it('adds a direct headwind and subtracts a tailwind', () => {
-    expect(yaw(30, 10, 0)).toEqual({ airspeed: 40, yaw: 0 })
-    expect(yaw(30, 10, 180)).toEqual({ airspeed: 20, yaw: 0 })
+    expect(yaw(30, 10, 0)).toEqual({ airspeed: 40, apparent: 40, yaw: 0 })
+    expect(yaw(30, 10, 180)).toEqual({ airspeed: 20, apparent: 20, yaw: 0 })
+  })
+
+  it('counts only the head component of a crosswind as air speed', () => {
+    const p = yaw(30, 10, 90)
+    expect(p.airspeed).toBeCloseTo(30, 9)
+    expect(p.apparent).toBeCloseTo(Math.sqrt(1000), 9)
+    expect(p.yaw).toBeCloseTo(18.43, 2)
+    // from the left (270°) mirrors the right
+    expect(yaw(30, 10, 270).airspeed).toBeCloseTo(30, 9)
+  })
+
+  it('gives negative air speed when a tailwind outruns the rider', () => {
+    const p = yaw(10, 25, 180)
+    expect(p.airspeed).toBe(-15)
+    expect(p.apparent).toBe(15)
+    expect(p.yaw).toBeCloseTo(180, 9)
+  })
+
+  it('scales the 10 m wind to rider height by exposure', () => {
+    expect(riderHeightFactor('open')).toBeCloseTo(0.6, 1)
+    expect(riderHeightFactor('mixed')).toBeCloseTo(0.5, 9)
+    expect(riderHeightFactor('sheltered')).toBeCloseTo(0.41, 2)
   })
 
   it('computes compass bearings', () => {

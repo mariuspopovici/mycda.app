@@ -7,10 +7,40 @@ export interface LatLng {
 export type Track = Array<LatLng | null>
 
 export interface AirSpeedPoint {
-  /** Air speed in the same unit as the ground and wind speeds. */
+  /**
+   * Air speed along the direction of travel (the head component), in the same unit as the ground and
+   * wind speeds. Negative when a tailwind is faster than the rider. This is what opposes motion, and
+   * what virtualElevation expects (Martin et al. 1998); crosswind effects belong in CdA.
+   */
   airspeed: number
-  /** Yaw angle in degrees. */
+  /** Apparent wind speed: the full magnitude, including the crosswind. */
+  apparent: number
+  /** Yaw angle in degrees, 0 for wind from straight ahead. */
   yaw: number
+}
+
+/**
+ * How exposed the course is to the wind, which sets how much slower the wind is at rider height than
+ * the 10 m wind that weather models and stations report.
+ */
+export type WindExposure = 'open' | 'mixed' | 'sheltered'
+
+export const WIND_EXPOSURES: WindExposure[] = ['open', 'mixed', 'sheltered']
+
+/** Aerodynamic roughness length z₀ in m for each exposure (Davenport classes). */
+const ROUGHNESS_M: Record<WindExposure, number> = { open: 0.03, mixed: 0.1, sheltered: 0.2 }
+
+/** Height of a rider's torso, where most of the drag is, in m. */
+const RIDER_HEIGHT_M = 1
+const REFERENCE_HEIGHT_M = 10
+
+/**
+ * Ratio of the wind at rider height to the 10 m wind, from the logarithmic wind profile
+ * u(z) ∝ ln(z / z₀): about 0.6 open, 0.5 mixed, 0.4 sheltered.
+ */
+export function riderHeightFactor (exposure: WindExposure): number {
+  const z0 = ROUGHNESS_M[exposure]
+  return Math.log(RIDER_HEIGHT_M / z0) / Math.log(REFERENCE_HEIGHT_M / z0)
 }
 
 /** Points on either side used to estimate the direction of travel. */
@@ -57,7 +87,7 @@ export function travelBearings (track: Track): number[] | undefined {
 
 /**
  * Combines ground speed with wind into air speed and yaw.
- * @param windAngle wind direction relative to the direction of travel, in degrees
+ * @param windAngle wind direction relative to the direction of travel, in degrees (0 = headwind)
  */
 export function yaw (groundSpeed: number, windSpeed: number, windAngle: number): AirSpeedPoint {
   let angle = windAngle - Math.floor(windAngle / 360) * 360
@@ -68,14 +98,16 @@ export function yaw (groundSpeed: number, windSpeed: number, windAngle: number):
   const sideWind = angle !== 180 ? Math.sin(angleRad) * windSpeed : 0
 
   return {
-    airspeed: Math.sqrt(headWind ** 2 + sideWind ** 2),
-    yaw: (Math.atan(sideWind / headWind) * 180) / Math.PI
+    airspeed: headWind,
+    apparent: Math.sqrt(headWind ** 2 + sideWind ** 2),
+    yaw: degrees(Math.atan2(sideWind, headWind))
   }
 }
 
 /**
  * Estimates air speed at each point from the GPS track and the wind.
  * @param track GPS fixes aligned with `speed`
+ * @param windSpeed wind at rider height (scale a 10 m wind with riderHeightFactor first)
  * @param windDirection meteorological wind direction (where the wind blows from), in degrees
  * @throws when the track has no usable GPS data
  */

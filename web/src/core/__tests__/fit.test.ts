@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { fitError, fitParameters, goldenSection } from '../fit'
+import { canFitCrr, fitError, fitParameters, goldenSection, minimize } from '../fit'
 
 const G = 9.81
 const TRUE = { rho: 1.2, mass: 80, crr: 0.0045, cda: 0.26 }
@@ -31,6 +31,19 @@ describe('goldenSection', () => {
   })
 })
 
+describe('minimize', () => {
+  it('finds the global minimum past a local dip that traps golden-section search', () => {
+    // a wide, shallow dip at 0.4 and a narrow, deeper minimum at 0.9
+    const f = (x: number) => Math.min((x - 0.4) ** 2 + 0.05, 20 * (x - 0.9) ** 2)
+    expect(goldenSection(f, 0, 1)).toBeCloseTo(0.4, 3)
+    expect(minimize(f, 0, 1)).toBeCloseTo(0.9, 4)
+  })
+
+  it('finds a minimum at the edge of the range', () => {
+    expect(minimize((x) => x, 0, 1)).toBeCloseTo(0, 4)
+  })
+})
+
 describe('fitParameters', () => {
   const { series, loops } = syntheticRide()
   const start = { rho: TRUE.rho, mass: TRUE.mass, crr: TRUE.crr, cda: 0.4 }
@@ -56,5 +69,20 @@ describe('fitParameters', () => {
     expect(fitError(series, { ...TRUE, cda: 0.35 }, { kind: 'loops', loops })).toBeGreaterThan(1)
     expect(fitError(series, TRUE, { kind: 'loops', loops })).toBeLessThan(1e-6)
     expect(fitError(series, TRUE, { kind: 'loops', loops: [] })).toBeNaN()
+  })
+
+  it('fits Crr only when the target can separate it from CdA', () => {
+    expect(canFitCrr({ kind: 'elevation' })).toBe(true)
+    expect(canFitCrr({ kind: 'loops', loops })).toBe(true)
+    expect(canFitCrr({ kind: 'loops', loops: loops.slice(0, 1) })).toBe(false)
+    const single = fitParameters(series, { ...start, crr: 0.008 }, { kind: 'loops', loops: loops.slice(0, 1) }, { fitCrr: true })
+    expect(single.crr).toBe(0.008)
+  })
+
+  it('flags a fit that ends at the edge of the search range', () => {
+    expect(fitParameters(series, start, { kind: 'elevation' }).atBound).toBe(false)
+    // five times the power: no plausible CdA explains it
+    const inflated = { ...series, power: series.power.map((p) => p * 5) }
+    expect(fitParameters(inflated, start, { kind: 'elevation' }).atBound).toBe(true)
   })
 })

@@ -7,26 +7,27 @@ import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { useQueryClient } from '@tanstack/react-query'
 import { hasLocation } from '../../core/activitySeries'
-import { fitError, fitParameters, type FitTarget } from '../../core/fit'
+import { canFitCrr, fitError, fitParameters, type FitResult, type FitTarget } from '../../core/fit'
 import { findLoops, precisionDigits } from '../../core/loopFinder'
 import type { CombinedSeries } from '../../core/ranges'
 import { rangesForWindows } from '../../core/selection'
 import { mToFt } from '../../core/units'
 import { virtualElevation } from '../../core/virtualElevation'
-import { windModelAirSpeed } from '../../core/windModel'
 import { RideMap } from '../../components/RideMap'
 import {
-  createSegment, deleteSegment, updateSegment, useSegments, type AirspeedSource, type ManualWind, type SegmentValues
+  createSegment, deleteSegment, updateSegment, usesWind, useSegments, type AirspeedSource, type ManualWind, type SegmentValues
 } from '../../data/segments'
+import { DEFAULT_WIND_EXPOSURE } from '../../data/activities'
 import { totalMassKg, useUserPrefs, type UserPrefs } from '../../data/userPrefs'
 import { csvFileName, downloadText, toCsv } from '../../lib/csv'
 import { LoopSettings } from '../activity/LoopSettings'
 import { DEFAULT_LOOP_PREFS, type LoopPrefs } from '../activity/loopPrefs'
 import { AirspeedCard } from './AirspeedCard'
+import { EXPOSURE_LABELS } from './windExposure'
 import { ParametersCard, type FitOption, type FitRequest, type FitTargetKey, type Parameters, type Suggestion } from './ParametersCard'
 import { SaveCard, type SaveDetails } from './SaveCard'
-import { parseRanges, useAnalysisSource, type AnalysisSource } from './useAnalysisSource'
-import { canModelWind, useWindModel } from './useWindModel'
+import { parseAnalysisStart, parseRanges, useAnalysisSource, type AnalysisSource, type AnalysisStart } from './useAnalysisSource'
+import { canModelWind, useAirspeed } from './useWindModel'
 import { VirtualElevationChart } from './VirtualElevationChart'
 
 type Overlay = 'none' | 'laps' | 'loops'
@@ -51,7 +52,7 @@ export function AnalysisPage () {
   }
   if (prefsLoading || !('source' in result) || !result.source) return <Center py={80}><Loader /></Center>
   // remount when switching between analyses so state starts fresh
-  return <Analysis key={sid ?? params.toString()} activityId={id} source={result.source} />
+  return <Analysis key={sid ?? params.toString()} activityId={id} source={result.source} start={sid ? {} : parseAnalysisStart(params)} />
 }
 
 /** How CdA can be fitted: closure for joined runs and loops, or the elevation profile. */
@@ -64,26 +65,31 @@ function fitTargets (series: CombinedSeries, loops: Array<{ startIndex: number, 
   return targets
 }
 
+const roundCda = (cda: number) => Math.round(cda * 1000) / 1000
+
 const BASIS: Record<FitTargetKey, string> = {
   run: 'closure of the run (it ends where it started)',
   loops: 'closure of the loops',
   elevation: 'the recorded elevation'
 }
 
-/** Starting values: the saved analysis, then the ride's settings, then the user's profile. */
-function startingParameters (source: AnalysisSource, prefs: UserPrefs): Parameters {
+/**
+ * Starting values: the saved analysis, then values passed in the URL (the tests table), then the
+ * ride's settings, then the user's profile.
+ */
+function startingParameters (source: AnalysisSource, start: AnalysisStart, prefs: UserPrefs): Parameters {
   const { segment } = source
   const ride = source.activity?.analysisDefaults ?? {}
   return {
-    mass: segment?.mass ?? ride.mass ?? totalMassKg(prefs),
-    rho: segment?.rho ?? ride.rho ?? 1.2,
-    crr: segment?.crr ?? ride.crr ?? prefs.crr,
+    mass: segment?.mass ?? start.mass ?? ride.mass ?? totalMassKg(prefs),
+    rho: segment?.rho ?? start.rho ?? ride.rho ?? 1.2,
+    crr: segment?.crr ?? start.crr ?? ride.crr ?? prefs.crr,
     cda: segment?.cda ?? prefs.cda,
-    dloss: segment?.dloss ?? ride.dloss ?? prefs.dloss
+    dloss: segment?.dloss ?? start.dloss ?? ride.dloss ?? prefs.dloss
   }
 }
 
-function Analysis ({ activityId, source }: { activityId: string, source: AnalysisSource }) {
+function Analysis ({ activityId, source, start: urlStart }: { activityId: string, source: AnalysisSource, start: AnalysisStart }) {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { prefs } = useUserPrefs()
@@ -95,46 +101,45 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
   const windPossible = gps && canModelWind(series)
 
   const [airspeedSource, setAirspeedSource] = useState<AirspeedSource>(() => {
-    const saved = segment?.airspeedSource
+    const saved = segment?.airspeedSource ?? urlStart.airspeedSource
     if (saved && (saved !== 'measured' || measured) && (!['wind', 'manual'].includes(saved) || windPossible)) return saved
     return measured ? 'measured' : 'ground'
   })
-  const [manualWind, setManualWind] = useState<ManualWind>(segment?.wind ?? { speed: 10, direction: 270 })
+  const [manualWind, setManualWind] = useState<ManualWind>(segment?.wind ?? urlStart.wind ?? { speed: 10, direction: 270 })
   const [xAxis, setXAxis] = useState<'time' | 'distance'>(series.runDistance.some((d) => d > 0) ? 'distance' : 'time')
   const [showElevation, setShowElevation] = useState(true)
   const [overlay, setOverlay] = useState<Overlay>('none')
   const [loopPrefs, setLoopPrefs] = useState<LoopPrefs>(DEFAULT_LOOP_PREFS)
   const [hovered, setHovered] = useState<number>()
 
-  const wind = useWindModel(series, airspeedSource === 'wind')
-  const manualAirspeed = useMemo(() => (airspeedSource === 'manual' && windPossible
-    ? windModelAirSpeed(series.location, series.speed, series.speed.map(() => manualWind.speed), series.speed.map(() => manualWind.direction)).map((p) => p.airspeed)
-    : undefined), [airspeedSource, windPossible, series, manualWind])
-  const airspeed = airspeedSource === 'measured'
-    ? series.airspeed
-    : airspeedSource === 'wind' && wind.data
-      ? wind.data.airspeed
-      : airspeedSource === 'manual' && manualAirspeed ? manualAirspeed : series.speed
+  // a ride setting (ADR-0014); a saved analysis keeps the exposure it was saved with
+  const rideExposure = source.activity?.analysisDefaults?.windExposure ?? DEFAULT_WIND_EXPOSURE
+  const [exposure, setExposure] = useState(segment?.windExposure ?? rideExposure)
+  const { airspeed: windAirspeed, model: wind } = useAirspeed(series, airspeedSource, manualWind, exposure, windPossible)
+  // still air until the weather arrives
+  const airspeed = windAirspeed ?? series.speed
 
   const loops = useMemo(() => (gps
     ? findLoops(series.location, precisionDigits(loopPrefs.precision), loopPrefs.minDuration, loopPrefs.maxDuration)
     : []), [gps, series, loopPrefs])
-  const targets = fitTargets(series, loops)
+  const targets = useMemo(() => fitTargets(series, loops), [series, loops])
   const defaultTarget: FitTargetKey = targets.run ? 'run' : targets.loops ? 'loops' : 'elevation'
 
   // new analyses open at the fitted CdA; saved ones at their saved values
-  const [initial] = useState(() => {
-    const start = startingParameters(source, prefs)
+  const [parameters, setParameters] = useState<Parameters>(() => {
+    const start = startingParameters(source, urlStart, prefs)
+    if (segment) return start
     const veInput = { ...series, airspeed, elevation: series.altitude, drivetrainLoss: start.dloss }
-    const fitted = fitParameters(veInput, start, targets[defaultTarget]!)
-    const suggestion: Suggestion = { cda: Math.round(fitted.cda * 1000) / 1000, basis: BASIS[defaultTarget] }
-    return { parameters: segment ? start : { ...start, cda: suggestion.cda }, suggestion }
+    return { ...start, cda: roundCda(fitParameters(veInput, start, targets[defaultTarget]!).cda) }
   })
-  const [parameters, setParameters] = useState<Parameters>(initial.parameters)
   const [details, setDetails] = useState<SaveDetails>({
     name: source.defaultName, description: segment?.description ?? '', isBaseline: segment?.isBaseline ?? false
   })
-  const snapshot = () => JSON.stringify({ parameters, details, airspeedSource, manualWind: airspeedSource === 'manual' ? manualWind : null })
+  const snapshot = () => JSON.stringify({
+    parameters, details, airspeedSource,
+    manualWind: airspeedSource === 'manual' ? manualWind : null,
+    exposure: usesWind(airspeedSource) ? exposure : null
+  })
   const [saved, setSaved] = useState(() => (segment ? snapshot() : undefined))
   const [saving, setSaving] = useState(false)
 
@@ -151,6 +156,14 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
     ? loops.map((l, i) => ({ start: l.startIndex, end: l.endIndex, label: `Loop ${i + 1}` }))
     : overlay === 'laps' ? lapBands.map((l) => ({ start: l.start, end: l.end, label: `Lap ${l.window + 1}` })) : []
 
+  // refitted whenever the other parameters or the air speed change, so "Reset to" never restores a stale CdA
+  const { mass, rho, crr } = deferred
+  const suggestion = useMemo<Suggestion | undefined>(() => {
+    if (segment) return undefined
+    const fitted = fitParameters(veSeries, { mass, rho, crr, cda: 0.3 }, targets[defaultTarget]!)
+    return { cda: roundCda(fitted.cda), basis: BASIS[defaultTarget], atBound: fitted.atBound }
+  }, [segment, veSeries, mass, rho, crr, targets, defaultTarget])
+
   const elevationError = fitError(veSeries, deferred, { kind: 'elevation' })
   const runDrift = targets.run ? fitError(veSeries, deferred, targets.run) : undefined
   const loopDrifts = loops.map((l) => (ve[l.endIndex] - ve[l.startIndex]) - (series.altitude[l.endIndex] - series.altitude[l.startIndex]))
@@ -166,17 +179,27 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
   }, [dirty, segment])
 
   const fitOptions: FitOption[] = [
-    ...(targets.run ? [{ key: 'run' as const, label: 'Close the run (out and back)' }] : []),
-    { key: 'loops', label: targets.loops ? 'Close the loops' : 'Close the loops (none found)', disabled: !targets.loops },
-    { key: 'elevation', label: 'Match recorded elevation' }
+    ...(targets.run ? [{ key: 'run' as const, label: 'Close the run (out and back)', crrFittable: false }] : []),
+    {
+      key: 'loops',
+      label: targets.loops ? 'Close the loops' : 'Close the loops (none found)',
+      disabled: !targets.loops,
+      crrFittable: !!targets.loops && canFitCrr(targets.loops)
+    },
+    { key: 'elevation', label: 'Match recorded elevation', crrFittable: true }
   ]
 
   const fit = ({ target, fitCrr }: FitRequest) => {
-    const result = fitParameters(veSeries, parameters, targets[target]!, { fitCrr })
-    setParameters((p) => ({ ...p, cda: Math.round(result.cda * 1000) / 1000, crr: fitCrr ? Math.round(result.crr * 10000) / 10000 : p.crr }))
+    const withCrr = fitCrr && canFitCrr(targets[target]!)
+    const result: FitResult = fitParameters(veSeries, parameters, targets[target]!, { fitCrr: withCrr })
+    setParameters((p) => ({ ...p, cda: roundCda(result.cda), crr: withCrr ? Math.round(result.crr * 10000) / 10000 : p.crr }))
+    const error = `${target === 'elevation' ? 'RMS difference from recorded elevation' : 'RMS closure error'}: ${height(result.error).toFixed(2)} ${heightUnit}.`
     notifications.show({
-      title: `Suggested CdA ${result.cda.toFixed(3)}${fitCrr ? `, Crr ${result.crr.toFixed(4)}` : ''}`,
-      message: `${target === 'elevation' ? 'RMS difference from recorded elevation' : 'RMS closure error'}: ${height(result.error).toFixed(2)} ${heightUnit}. Check that the profile makes sense before saving.`
+      color: result.atBound ? 'orange' : undefined,
+      title: `Suggested CdA ${result.cda.toFixed(3)}${withCrr ? `, Crr ${result.crr.toFixed(4)}` : ''}`,
+      message: result.atBound
+        ? `${error} The fit hit the edge of the plausible range, so something is off: check the power data, mass, air density and air speed source.`
+        : `${error} Check that the profile makes sense before saving.`
     })
   }
 
@@ -190,7 +213,8 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
     rho: parameters.rho,
     dloss: parameters.dloss,
     airspeedSource,
-    wind: airspeedSource === 'manual' ? manualWind : undefined
+    wind: airspeedSource === 'manual' ? manualWind : undefined,
+    windExposure: exposure
   })
 
   const save = async () => {
@@ -288,10 +312,19 @@ function Analysis ({ activityId, source }: { activityId: string, source: Analysi
         <Grid.Col span={{ base: 12, lg: 4 }}>
           <Stack>
             <ParametersCard value={parameters} units={units} onChange={setParameters} onFit={fit}
-              fitOptions={fitOptions} suggestion={segment ? undefined : initial.suggestion}
+              fitOptions={fitOptions} suggestion={suggestion}
               weatherContext={start ? { lat: start.lat, lng: start.lng, time: series.time[0], altitude: series.altitude[0] } : undefined} />
             <AirspeedCard source={airspeedSource} onSourceChange={setAirspeedSource} wind={manualWind} onWindChange={setManualWind}
-              units={units} measuredAvailable={measured} windPossible={windPossible} model={wind} />
+              units={units} measuredAvailable={measured} windPossible={windPossible} model={wind} exposure={exposure}
+              exposureNote={exposure === rideExposure
+                ? <>The exposure is a <Anchor component={Link} to={`/activity/${activityId}`} fz='xs'>ride setting</Anchor>.</>
+                : (
+                  <>
+                    Saved with {EXPOSURE_LABELS[exposure].name.toLowerCase()} exposure; the ride is now set
+                    to {EXPOSURE_LABELS[rideExposure].name.toLowerCase()}.{' '}
+                    <Anchor component='button' fz='xs' onClick={() => setExposure(rideExposure)}>Use {EXPOSURE_LABELS[rideExposure].name.toLowerCase()}</Anchor>
+                  </>
+                  )} />
           </Stack>
         </Grid.Col>
       </Grid>

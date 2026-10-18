@@ -29,7 +29,7 @@ test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete
 
   await page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Include lap 2', exact: true }) }).click()
   await expect(page.getByText('Lap 2', { exact: true })).toBeVisible()
-  await expect(page.getByText('03:19')).toBeVisible()
+  await expect(page.getByRole('paragraph').filter({ hasText: /^00:03:19$/ })).toBeVisible()
 
   // dragging across the chart selects a range
   if (process.env.DEBUG_DRAG) {

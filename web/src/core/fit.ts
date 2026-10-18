@@ -43,6 +43,22 @@ export function goldenSection (f: (x: number) => number, lo: number, hi: number,
   return (a + b) / 2
 }
 
+/**
+ * Minimizes f on [lo, hi]: a coarse scan finds the lowest of `steps` evenly spaced points, then
+ * golden-section search refines between its neighbours. The scan keeps a local dip in a noisy error
+ * curve from trapping the search.
+ */
+export function minimize (f: (x: number) => number, lo: number, hi: number, tolerance = 1e-5, steps = 16): number {
+  const step = (hi - lo) / steps
+  let best = 0
+  let bestValue = Infinity
+  for (let i = 0; i <= steps; i++) {
+    const value = f(lo + i * step)
+    if (value < bestValue) { best = i; bestValue = value }
+  }
+  return goldenSection(f, lo + Math.max(best - 1, 0) * step, lo + Math.min(best + 1, steps) * step, tolerance)
+}
+
 export const CDA_BOUNDS: [number, number] = [0.05, 0.8]
 export const CRR_BOUNDS: [number, number] = [0.001, 0.02]
 
@@ -51,21 +67,39 @@ export interface FitResult {
   crr: number
   /** Value of the fit target at the result, m. */
   error: number
+  /** The best value lies at the edge of the search range, so the data or the other parameters are likely off. */
+  atBound: boolean
 }
 
-/** Finds the CdA (and optionally Crr) that best explains the ride, keeping the other parameters. */
+/**
+ * Whether the target can tell CdA and Crr apart. A single closure is one equation in two unknowns:
+ * any pair along a line closes it, so Crr needs the elevation profile or at least two loops.
+ */
+export function canFitCrr (target: FitTarget): boolean {
+  return target.kind === 'elevation' || target.loops.length >= 2
+}
+
+const nearBound = (x: number, [lo, hi]: [number, number]) => x - lo < (hi - lo) * 1e-3 || hi - x < (hi - lo) * 1e-3
+
+/**
+ * Finds the CdA (and optionally Crr) that best explains the ride, keeping the other parameters.
+ * Crr is fitted only when the target can separate it from CdA (see canFitCrr).
+ */
 export function fitParameters (
   series: VirtualElevationSeries,
   params: VirtualElevationParams,
   target: FitTarget,
   options: { fitCrr?: boolean } = {}
 ): FitResult {
-  const bestCda = (crr: number) => goldenSection((cda) => fitError(series, { ...params, crr, cda }, target), ...CDA_BOUNDS)
-  if (!options.fitCrr) {
+  const bestCda = (crr: number) => minimize((cda) => fitError(series, { ...params, crr, cda }, target), ...CDA_BOUNDS)
+  if (!options.fitCrr || !canFitCrr(target)) {
     const cda = bestCda(params.crr)
-    return { cda, crr: params.crr, error: fitError(series, { ...params, cda }, target) }
+    return { cda, crr: params.crr, error: fitError(series, { ...params, cda }, target), atBound: nearBound(cda, CDA_BOUNDS) }
   }
-  const crr = goldenSection((c) => fitError(series, { ...params, crr: c, cda: bestCda(c) }, target), ...CRR_BOUNDS, 1e-6)
+  const crr = minimize((c) => fitError(series, { ...params, crr: c, cda: bestCda(c) }, target), ...CRR_BOUNDS, 1e-6, 8)
   const cda = bestCda(crr)
-  return { cda, crr, error: fitError(series, { ...params, cda, crr }, target) }
+  return {
+    cda, crr, error: fitError(series, { ...params, cda, crr }, target),
+    atBound: nearBound(cda, CDA_BOUNDS) || nearBound(crr, CRR_BOUNDS)
+  }
 }

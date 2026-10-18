@@ -1,9 +1,12 @@
-import { Card, Group, SegmentedControl, Stack, Text } from '@mantine/core'
+import type { ReactNode } from 'react'
+import { Card, Checkbox, Group, SegmentedControl, Stack, Text } from '@mantine/core'
 import { DraftNumberInput } from '../../components/DraftNumberInput'
 import { kmToMi, miToKm, type Units } from '../../core/units'
+import { riderHeightFactor, type WindExposure } from '../../core/windModel'
 import type { AirspeedSource, ManualWind } from '../../data/segments'
-import { compassPoint, speedUnit } from '../../lib/format'
+import { compassPoint, formatSpeed, speedUnit } from '../../lib/format'
 import type { WindModelResult } from './useWindModel'
+import { exposureSummary } from './windExposure'
 
 interface Props {
   source: AirspeedSource
@@ -15,11 +18,18 @@ interface Props {
   /** Wind models need a GPS track for the direction of travel. */
   windPossible: boolean
   model: { isLoading: boolean, error: unknown, data?: WindModelResult }
+  /** Scales 10 m winds to rider height. */
+  exposure: WindExposure
+  /** Where the exposure comes from, shown under weather and manual winds. */
+  exposureNote?: ReactNode
 }
 
 /** Where air speed comes from: a sensor, still air, Open-Meteo wind, or a wind the user enters. */
-export function AirspeedCard ({ source, onSourceChange, wind, onWindChange, units, measuredAvailable, windPossible, model }: Props) {
+export function AirspeedCard ({
+  source, onSourceChange, wind, onWindChange, units, measuredAvailable, windPossible, model, exposure, exposureNote
+}: Props) {
   const metric = units === 'metric'
+  const factor = riderHeightFactor(exposure)
   return (
     <Card withBorder padding='lg'>
       <Text size='sm' fw={500} mb={6}>Air speed</Text>
@@ -39,7 +49,11 @@ export function AirspeedCard ({ source, onSourceChange, wind, onWindChange, unit
               ? 'Fetching hourly wind from Open-Meteo…'
               : model.error
                 ? `Couldn't get the wind: ${(model.error as Error).message}`
-                : model.data && `Wind ${model.data.meanWindSpeed.toFixed(1)} km/h from ${Math.round(model.data.windDirection)}° (${compassPoint(model.data.windDirection)}), Open-Meteo ${model.data.source === 'archive' ? 'reanalysis' : 'forecast models'} at 10 m. Treat results as indicative.`}
+                : model.data && (
+                  `Wind ${formatSpeed(model.data.meanWindSpeed, units)} at 10 m from ${Math.round(model.data.windDirection)}° ` +
+                  `(${compassPoint(model.data.windDirection)}), Open-Meteo ${model.data.source === 'archive' ? 'reanalysis' : 'forecast models'}: ` +
+                  `about ${formatSpeed(model.data.meanWindSpeed * factor, units)} at rider height (${exposureSummary(exposure)}). Treat results as indicative.`
+                )}
           </Text>
         )}
         {source === 'manual' && (
@@ -51,9 +65,18 @@ export function AirspeedCard ({ source, onSourceChange, wind, onWindChange, unit
               <DraftNumberInput size='xs' label={`From (° · ${compassPoint(wind.direction)})`} decimalScale={0} step={5} min={0} max={360}
                 value={wind.direction} onCommit={(direction) => onWindChange({ ...wind, direction })} />
             </Group>
-            <Text size='xs' c='dimmed'>The direction the wind blows from: 0° north, 90° east. Use it when you measured the wind, or when the weather data looks wrong.</Text>
+            <Checkbox size='xs' label='Measured at rider height' checked={!!wind.atRiderHeight}
+              onChange={(e) => onWindChange({ ...wind, atRiderHeight: e.currentTarget.checked || undefined })} />
+            <Text size='xs' c='dimmed'>
+              The direction the wind blows from: 0° north, 90° east.{' '}
+              {wind.atRiderHeight
+                ? 'The speed is used as entered.'
+                : `Forecasts and weather stations give the wind at 10 m: about ${formatSpeed(wind.speed * factor, units)} at rider height (${exposureSummary(exposure)}).`}
+            </Text>
           </>
         )}
+        {(source === 'wind' || (source === 'manual' && !wind.atRiderHeight)) && windPossible && exposureNote &&
+          <Text size='xs' c='dimmed'>{exposureNote}</Text>}
         {!windPossible && <Text size='xs' c='dimmed'>Wind models need a GPS track for the direction of travel.</Text>}
       </Stack>
     </Card>

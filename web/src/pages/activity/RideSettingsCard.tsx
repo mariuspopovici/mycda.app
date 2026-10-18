@@ -1,10 +1,12 @@
 import { useState } from 'react'
-import { ActionIcon, Button, Card, Group, Modal, NumberInput, SimpleGrid, Stack, Text, Textarea, Title, Tooltip } from '@mantine/core'
+import { ActionIcon, Button, Card, Group, Modal, NumberInput, Select, SimpleGrid, Stack, Text, Textarea, Title, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconCalculator } from '@tabler/icons-react'
 import { AirDensityCalculator, type WeatherContext } from '../../components/AirDensityCalculator'
 import { kgPerM3ToLbPerFt3, kgToLbs, lbPerFt3ToKgPerM3, lbsToKg } from '../../core/units'
-import { saveRideSettings, type Activity, type RideDefaults } from '../../data/activities'
+import { riderHeightFactor, WIND_EXPOSURES, type WindExposure } from '../../core/windModel'
+import { DEFAULT_WIND_EXPOSURE, isWindExposure, saveRideSettings, type Activity, type RideDefaults } from '../../data/activities'
+import { EXPOSURE_LABELS } from '../analysis/windExposure'
 import { totalMassKg, type UserPrefs } from '../../data/userPrefs'
 
 type Field = number | string
@@ -15,7 +17,13 @@ interface Draft {
   rho: Field
   crr: Field
   dloss: Field
+  windExposure: WindExposure | ''
 }
+
+const exposureOptions = WIND_EXPOSURES.map((value) => ({
+  value,
+  label: `${EXPOSURE_LABELS[value].name}: ${EXPOSURE_LABELS[value].description} (×${riderHeightFactor(value).toFixed(2)})`
+}))
 
 const parsed = (v: Field) => {
   const n = typeof v === 'number' ? v : parseFloat(v)
@@ -35,7 +43,8 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
       mass: d.mass === undefined ? '' : Math.round((metric ? d.mass : kgToLbs(d.mass)) * 10) / 10,
       rho: d.rho === undefined ? '' : metric ? d.rho : Math.round(kgPerM3ToLbPerFt3(d.rho) * 1e5) / 1e5,
       crr: d.crr ?? '',
-      dloss: d.dloss ?? ''
+      dloss: d.dloss ?? '',
+      windExposure: d.windExposure ?? ''
     }
   }
   const [draft, setDraft] = useState<Draft>(() => toDraft(activity))
@@ -50,7 +59,8 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
       mass: mass === undefined ? undefined : metric ? mass : lbsToKg(mass),
       rho: rho === undefined ? undefined : metric ? rho : lbPerFt3ToKgPerM3(rho),
       crr: parsed(draft.crr),
-      dloss: parsed(draft.dloss)
+      dloss: parsed(draft.dloss),
+      windExposure: draft.windExposure || undefined
     }
   }
   const dirty = JSON.stringify(draft) !== JSON.stringify(toDraft(activity))
@@ -93,6 +103,10 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
           <NumberInput label='Drivetrain loss (%)' decimalScale={1} step={0.5} min={0} max={10} placeholder={`Profile: ${prefs.dloss}`}
             value={draft.dloss} onChange={(dloss) => set({ dloss })} />
         </SimpleGrid>
+        <Select label='Wind exposure' clearable data={exposureOptions}
+          description='How sheltered the course is. Weather and forecast winds are measured at 10 m; this scales them to rider height.'
+          placeholder={`Default: ${EXPOSURE_LABELS[DEFAULT_WIND_EXPOSURE].name.toLowerCase()}`}
+          value={draft.windExposure || null} onChange={(v) => set({ windExposure: isWindExposure(v) ? v : '' })} />
         <Textarea label='Notes' autosize minRows={2} maxRows={8}
           placeholder='Conditions, course, equipment, anything that applies to the whole ride…'
           value={draft.notes} onChange={(e) => set({ notes: e.currentTarget.value })} />

@@ -9,6 +9,7 @@ import {
 import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
 import type { User } from 'firebase/auth'
 import { apiUrl, db, storage } from '../firebase'
+import { WIND_EXPOSURES, type WindExposure } from '../core/windModel'
 
 export type ActivityStatus = 'New' | 'Processed' | 'Error'
 
@@ -44,6 +45,25 @@ export interface RideDefaults {
   rho?: number
   crr?: number
   dloss?: number
+  /** How exposed the course is to the wind (ADR-0014); unset means mixed. */
+  windExposure?: WindExposure
+}
+
+/** Wind exposure when neither the analysis nor the ride sets one. */
+export const DEFAULT_WIND_EXPOSURE: WindExposure = 'mixed'
+
+export const isWindExposure = (value: unknown): value is WindExposure => WIND_EXPOSURES.includes(value as WindExposure)
+
+function toRideDefaults (data: unknown): RideDefaults | undefined {
+  if (!data || typeof data !== 'object') return undefined
+  const defaults: RideDefaults = {}
+  for (const key of ['mass', 'rho', 'crr', 'dloss'] as const) {
+    const value = (data as Record<string, unknown>)[key]
+    if (typeof value === 'number' && Number.isFinite(value)) defaults[key] = value
+  }
+  const exposure = (data as Record<string, unknown>).windExposure
+  if (isWindExposure(exposure)) defaults.windExposure = exposure
+  return defaults
 }
 
 const toDate = (value: unknown) => (value && typeof (value as Timestamp).toDate === 'function'
@@ -71,9 +91,7 @@ export function toActivity (id: string, data: DocumentData): Activity {
     fitFile: data.fitFile,
     processedWith: typeof data.processedWith === 'number' ? data.processedWith : undefined,
     notes: typeof data.notes === 'string' ? data.notes : undefined,
-    analysisDefaults: data.analysisDefaults && typeof data.analysisDefaults === 'object'
-      ? Object.fromEntries(Object.entries(data.analysisDefaults).filter(([, v]) => typeof v === 'number' && Number.isFinite(v)))
-      : undefined
+    analysisDefaults: toRideDefaults(data.analysisDefaults)
   }
 }
 

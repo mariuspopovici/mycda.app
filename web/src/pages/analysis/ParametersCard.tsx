@@ -21,6 +21,8 @@ export interface FitOption {
   key: FitTargetKey
   label: string
   disabled?: boolean
+  /** The target can separate Crr from CdA (a single closure can't). */
+  crrFittable: boolean
 }
 
 /** The fitted starting point of the analysis. */
@@ -28,6 +30,8 @@ export interface Suggestion {
   cda: number
   /** How it was fitted, e.g. "closure of the run". */
   basis: string
+  /** The fit ended at the edge of the search range. */
+  atBound: boolean
 }
 
 interface Props {
@@ -93,6 +97,9 @@ export function ParametersCard ({ value, units, onChange, onFit, fitOptions, sug
               {fitOptions.map((option) => (
                 <Menu.Item key={option.key} disabled={option.disabled} onClick={() => onFit({ target: option.key, fitCrr })}>
                   {option.label}
+                  {fitCrr && !option.disabled && !option.crrFittable && (
+                    <Text size='xs' c='dimmed'>CdA only: one closure can't separate Crr from CdA</Text>
+                  )}
                 </Menu.Item>
               ))}
             </Menu.Dropdown>
@@ -103,6 +110,11 @@ export function ParametersCard ({ value, units, onChange, onFit, fitOptions, sug
           // stacked: the card is narrow, and the note wraps
           <Stack gap={4} align='flex-start'>
             <Text size='xs' c='dimmed'>Suggested CdA {suggestion.cda.toFixed(3)} from {suggestion.basis}.</Text>
+            {suggestion.atBound && (
+              <Text size='xs' c='orange'>
+                This is at the edge of the plausible range. Check the power data, mass, air density and air speed source.
+              </Text>
+            )}
             {Math.abs(value.cda - suggestion.cda) > 0.0005 && (
               <Button size='compact-xs' variant='light' onClick={() => set({ cda: suggestion.cda })}>
                 Reset to {suggestion.cda.toFixed(3)}
