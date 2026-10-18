@@ -1,0 +1,9 @@
+# Signed-in pages hold each rider's own data; there is nothing public to index there.
+User-agent: *
+Disallow: /activities
+Disallow: /activity/
+Disallow: /profile
+Disallow: /auth/
+Disallow: /reset
+
+Sitemap: https://mycda.app/sitemap.xml

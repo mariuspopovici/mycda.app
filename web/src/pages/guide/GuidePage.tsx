@@ -2,6 +2,8 @@ import { useEffect } from 'react'
 import { Link, Navigate, NavLink as RouterNavLink, useLocation, useNavigate, useParams } from 'react-router'
 import { Anchor, Box, Button, Grid, Group, NavLink, Select, Stack, Text, Title } from '@mantine/core'
 import { IconArrowLeft, IconArrowRight } from '@tabler/icons-react'
+import { usePageMeta } from '../../lib/pageMeta'
+import { guidePageMeta } from '../../lib/publicPages'
 import { GUIDE_SECTIONS, guideSection } from './sections'
 
 /** The user guide: one page per section, with a contents sidebar (a menu on phones). */
@@ -19,12 +21,7 @@ export function GuidePage () {
     else window.scrollTo(0, 0)
   }, [slug, hash])
 
-  useEffect(() => {
-    if (!section) return
-    const previous = document.title
-    document.title = `${section.title} · MyCdA guide`
-    return () => { document.title = previous }
-  }, [section])
+  usePageMeta(section ? guidePageMeta(section) : { noindex: true })
 
   if (!section) return <Navigate to={`/guide/${GUIDE_SECTIONS[0].slug}`} replace />
   const prev = GUIDE_SECTIONS[index - 1]

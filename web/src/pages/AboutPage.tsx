@@ -2,8 +2,11 @@ import { Link } from 'react-router'
 import { Anchor, Button, Group, List, Stack, Text, Title } from '@mantine/core'
 import { IconBrandGithub, IconBrandInstagram, IconBug, IconCoffee } from '@tabler/icons-react'
 import { SUPPORT_URL } from '../lib/links'
+import { usePageMeta } from '../lib/pageMeta'
+import { PUBLIC_PAGES } from '../lib/publicPages'
 
 export function AboutPage () {
+  usePageMeta(PUBLIC_PAGES.about)
   return (
     <Stack gap='md' py='md' maw={760}>
       <Title order={1}>About MyCdA</Title>

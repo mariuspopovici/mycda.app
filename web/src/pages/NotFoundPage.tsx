@@ -1,7 +1,9 @@
 import { Link } from 'react-router'
 import { Button, Stack, Text, Title } from '@mantine/core'
+import { usePageMeta } from '../lib/pageMeta'
 
 export function NotFoundPage () {
+  usePageMeta({ title: 'Page not found', noindex: true })
   return (
     <Stack align='center' py={80} gap='md'>
       <Title order={1}>Page not found</Title>

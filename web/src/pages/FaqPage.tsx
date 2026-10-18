@@ -1,5 +1,7 @@
 import { Link, useLocation } from 'react-router'
 import { Accordion, Anchor, Code, Image, List, SimpleGrid, Stack, Table, Text, Title } from '@mantine/core'
+import { usePageMeta } from '../lib/pageMeta'
+import { PUBLIC_PAGES } from '../lib/publicPages'
 import { CSV_COLUMNS } from './guide/csvColumns'
 
 const PROTOCOL = [
@@ -18,6 +20,7 @@ const PROTOCOL = [
 
 export function FaqPage () {
   const { hash } = useLocation()
+  usePageMeta(PUBLIC_PAGES.faq)
   return (
     <Stack gap='md' py='md' maw={900}>
       <Title order={1}>Frequently asked questions</Title>

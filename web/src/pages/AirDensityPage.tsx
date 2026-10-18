@@ -4,10 +4,13 @@ import { useAuth } from '../auth/AuthContext'
 import { AirDensityCalculator } from '../components/AirDensityCalculator'
 import type { Units } from '../core/units'
 import { HelpLink } from '../components/HelpLink'
+import { usePageMeta } from '../lib/pageMeta'
+import { PUBLIC_PAGES } from '../lib/publicPages'
 
 /** Standalone air density calculator (/rho); works signed out. */
 export function AirDensityPage () {
   const { user } = useAuth()
+  usePageMeta(PUBLIC_PAGES.rho)
   const [units, setUnits] = useState<Units>('metric')
   return (
     <Stack gap='md' py='md' maw={720}>

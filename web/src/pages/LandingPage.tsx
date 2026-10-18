@@ -2,6 +2,8 @@ import { Link } from 'react-router'
 import { BackgroundImage, Box, Button, Card, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core'
 import { IconChartArea, IconClipboardCheck, IconCloudUpload } from '@tabler/icons-react'
 import { useAuth } from '../auth/AuthContext'
+import { usePageMeta } from '../lib/pageMeta'
+import { PUBLIC_PAGES } from '../lib/publicPages'
 import { RelaunchAnnouncement } from './RelaunchAnnouncement'
 
 const FEATURES = [
@@ -24,6 +26,7 @@ const FEATURES = [
 
 export function LandingPage () {
   const { user } = useAuth()
+  usePageMeta(PUBLIC_PAGES.home)
   return (
     <Stack gap='xl' py='md'>
       <BackgroundImage src='/images/tuck-1200px.jpg' radius='md'>
