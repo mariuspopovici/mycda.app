@@ -74,6 +74,9 @@ test('sign up, set preferences, upload, rename, open and delete an activity', as
 })
 
 test('rejected files show why, and legacy hash URLs redirect after signing in', async ({ page }) => {
+  // old links to lazily loaded pages (activity, analysis) must also reach sign-in
+  await page.goto('/#/activity/abc')
+  await expect(page).toHaveURL(/\/login$/)
   await page.goto('/#/profile')
   await expect(page).toHaveURL(/\/login$/)
   await page.getByRole('textbox', { name: 'Email', exact: true }).fill(email)

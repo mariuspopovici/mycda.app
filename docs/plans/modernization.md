@@ -8,8 +8,8 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 | 1 | Analysis core in TypeScript with tests | Done (`93f3288`) |
 | 1b | Physics fixes | Done (`4eaf00c`) |
 | 2 | Backend modernization | Done, deployed 2026-10-17 (optional Storage-direct reads deferred) |
-| 3 | New app shell | Done in code, not yet hosted |
-| 4 | Analysis screens | Done in code, not yet hosted |
+| 3 | New app shell | Done, live 2026-10-18 |
+| 4 | Analysis screens | Done, live 2026-10-18 |
 | 5 | Cutover | In progress |
 
 ## Phase 0: Lock down production ✅
@@ -98,7 +98,9 @@ Implementation notes:
 - [x] Track `firebase.json` and `.firebaserc`. `.gitignore`'s `firebase.*` had also hidden `web/src/firebase.ts`, so the app's Firebase setup was missing from git. A fresh clone now builds and passes its tests.
 - [x] Preview channel deployed (`preview`, expires 2026-11-01). Routes, deep links, caching and production config verified.
 - [x] CI (`.github/workflows/ci.yml`): the web app (typecheck, lint, tests, build), Cloud Functions (lint, tests), and the emulator suites (rules, functions end to end, Playwright in Chrome) with Java 21. Green on `modernize` (PR #38). No automated deploy yet.
-- [ ] Use the preview on real accounts, then promote: `firebase hosting:clone mycda-c43c6:preview mycda-c43c6:live` (or `firebase deploy --only hosting`)
+- [x] Preview used on a real account, then promoted to live (2026-10-18, `hosting:clone preview → live`). The previous release (legacy app, 2025-04-27) stays available for rollback in the Hosting console.
+- [x] Old-link check on the live site: an old `/#/activity/…` link went to the home page, because the redirect ran in an effect and raced the lazily loaded route. The rewrite now happens before the router starts.
+- [ ] Redeploy hosting from the current config: no-cache for `index.html` and app routes (the promoted preview predates that fix), plus the redirect fix
 - [ ] Delete `src/`, `build/`, `config/`, the root webpack toolchain, `parity.test.ts` and the `/cors` proxy
 - [ ] Stop `npm run build` from running `npm version patch`
 - [ ] Update `README.md` and its screenshots
