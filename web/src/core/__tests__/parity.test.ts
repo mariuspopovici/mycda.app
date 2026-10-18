@@ -91,7 +91,7 @@ describe('unit conversions match legacy', () => {
 
 describe('air density matches @mariuspopovici/rho', () => {
   const require = createRequire(import.meta.url)
-  const rho = require('../../../../node_modules/@mariuspopovici/rho')
+  const rho = require('@mariuspopovici/rho')
   it.each([
     [20.5, 1019.3, 20.5, 0],
     [20, 1010, 20, 2000],
