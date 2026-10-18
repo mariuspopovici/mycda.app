@@ -23,7 +23,7 @@ Created by the browser at upload time. The ID is a client-generated UUID, which 
 | `averagePower` | number | function | W |
 | `fitFile` | string | function | Storage path of the parsed `.json.gz` |
 | `notes` | string | client | The rider's notes about the ride |
-| `analysisDefaults` | `{mass?, rho?, crr?, dloss?}` | client | Ride-level analysis parameters, metric. They override the profile, and a saved segment's own values override them |
+| `analysisDefaults` | `{mass?, rho?, crr?, dloss?, windExposure?}` | client | Ride-level analysis parameters, metric. They override the profile, and a saved segment's own values override them. `windExposure` is `open`, `mixed` or `sheltered` (unset: mixed; ADR-0014) |
 | `processedWith` | number | function | Upload pipeline version that set the status (2 = content detection and fit-file-parser 6). Absent when the legacy pipeline processed the activity |
 
 The activity list queries `where('uid','==',uid).where('status','==','Processed'|'Error')`. See `firestore.indexes.json`.
@@ -44,7 +44,8 @@ A saved CdA/Crr analysis of one or more ranges of an activity.
 | `cda`, `crr` | number | |
 | `dloss` | number | % |
 | `airspeedSource` | `measured` · `ground` · `wind` · `manual` | |
-| `wind` | `{speed, direction}` or null | Manual wind: km/h, and degrees the wind blows from |
+| `wind` | `{speed, direction, atRiderHeight?}` or null | Manual wind: km/h, and degrees the wind blows from. Without `atRiderHeight: true`, the speed is a 10 m value scaled by the exposure (ADR-0014) |
+| `windExposure` | `open` · `mixed` · `sheltered` or null | Exposure the analysis used, for `wind` and `manual`; absent on segments saved before ADR-0014 |
 
 The series are read from the activity, not stored.
 

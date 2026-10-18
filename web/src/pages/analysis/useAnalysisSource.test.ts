@@ -18,6 +18,11 @@ describe('analysisUrl', () => {
     })
   })
 
+  it('passes on a manual wind measured at rider height', () => {
+    const url = analysisUrl('a1', ranges, 'Test 1', { airspeedSource: 'manual', wind: { speed: 6, direction: 90, atRiderHeight: true } })
+    expect(parseAnalysisStart(paramsOf(url)).wind).toEqual({ speed: 6, direction: 90, atRiderHeight: true })
+  })
+
   it('leaves out what is not given, and ignores invalid values', () => {
     expect(parseAnalysisStart(paramsOf(analysisUrl('a1', ranges, 'Laps')))).toEqual({})
     const start = parseAnalysisStart(new URLSearchParams('mass=-3&rho=abc&airspeed=gale&wind=12'))

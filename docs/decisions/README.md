@@ -19,3 +19,4 @@ Copy [template.md](template.md) to `NNNN-short-title.md` and add it to the index
 | [0011](0011-functions-2nd-gen-and-secret-manager.md) | Cloud Functions on 2nd gen with Secret Manager | Accepted | 2026-10-17 |
 | [0012](0012-segments-during-coexistence.md) | Segment documents while both apps are in use | Accepted | 2026-10-18 |
 | [0013](0013-segments-v2-ranges.md) | Segments store ranges and metric parameters (version 2) | Accepted | 2026-10-18 |
+| [0014](0014-wind-at-rider-height-and-head-component.md) | Scale wind to rider height and use the head component for drag | Accepted | 2026-10-18 |

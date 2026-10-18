@@ -13,7 +13,8 @@ import {
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { lbsToKg, type Units } from '../core/units'
-import type { LatLng, Track } from '../core/windModel'
+import type { LatLng, Track, WindExposure } from '../core/windModel'
+import { isWindExposure } from './activities'
 
 export const SEGMENT_VERSION = 2
 
@@ -30,7 +31,15 @@ export interface ManualWind {
   speed: number
   /** Degrees the wind blows from. */
   direction: number
+  /**
+   * The speed was measured at rider height. Otherwise it is a 10 m value (a forecast or weather
+   * station) and is scaled down by the wind exposure.
+   */
+  atRiderHeight?: boolean
 }
+
+/** Air speed sources that use a wind, and so the wind exposure. */
+export const usesWind = (source: AirspeedSource) => source === 'wind' || source === 'manual'
 
 export interface SegmentSummary {
   id: string
@@ -67,6 +76,8 @@ export interface Segment extends SegmentSummary {
   dloss?: number
   airspeedSource?: AirspeedSource
   wind?: ManualWind
+  /** Wind exposure the analysis was saved with (wind and manual sources; ADR-0014). */
+  windExposure?: WindExposure
   /** Legacy segments only. */
   laps: StoredLap[]
   /** Series copied into legacy segments (metric). Version 2 segments read the activity instead. */
@@ -130,8 +141,9 @@ export function toSegment (id: string, data: DocumentData, ownerUnits: Units): S
     dloss: optionalNum(data.dloss),
     airspeedSource: ['measured', 'ground', 'wind', 'manual'].includes(source) ? source : undefined,
     wind: data.wind && Number.isFinite(data.wind.speed) && Number.isFinite(data.wind.direction)
-      ? { speed: data.wind.speed, direction: data.wind.direction }
+      ? { speed: data.wind.speed, direction: data.wind.direction, ...(data.wind.atRiderHeight === true ? { atRiderHeight: true } : {}) }
       : undefined,
+    windExposure: isWindExposure(data.windExposure) ? data.windExposure : undefined,
     laps: Array.isArray(data.laps)
       ? data.laps.map((lap: StoredLap) => ({ ...lap, start_time: lap.start_time && toDate(lap.start_time).toISOString() }))
       : [],
@@ -177,6 +189,7 @@ export interface SegmentValues {
   isBaseline: boolean
   airspeedSource: AirspeedSource
   wind?: ManualWind
+  windExposure?: WindExposure
 }
 
 /** The version 2 document body; legacy-only fields are removed on update. */
@@ -193,6 +206,7 @@ export function segmentDocument (values: SegmentValues, ranges: TimeRange[]) {
     isBaseline: values.isBaseline,
     airspeedSource: values.airspeedSource,
     wind: values.airspeedSource === 'manual' && values.wind ? values.wind : null,
+    windExposure: usesWind(values.airspeedSource) && values.windExposure ? values.windExposure : null,
     // range spans all ranges: it orders the activity's segment list
     range: { start: ranges[0].start, end: ranges[ranges.length - 1].end },
     ranges: ranges.map((r) => ({ start: r.start, end: r.end }))

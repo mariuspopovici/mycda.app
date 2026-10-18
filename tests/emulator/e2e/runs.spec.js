@@ -24,10 +24,13 @@ test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, 
   const settings = page.locator('.mantine-Card-root', { has: page.getByRole('heading', { name: 'Ride settings' }) })
   await settings.getByRole('textbox', { name: 'Crr', exact: true }).fill('0.005')
   await settings.getByRole('textbox', { name: 'Notes' }).fill('Still morning, TT bike, new helmet')
+  await settings.getByRole('combobox', { name: 'Wind exposure' }).click()
+  await page.getByRole('option', { name: /^Open: fields, seafront/ }).click()
   await settings.getByRole('button', { name: 'Save ride settings' }).click()
   await expect(page.getByText('Ride settings saved.')).toBeVisible()
   await page.reload()
   await expect(settings.getByRole('textbox', { name: 'Notes' })).toHaveValue('Still morning, TT bike, new helmet')
+  await expect(settings.getByRole('combobox', { name: 'Wind exposure' })).toHaveValue(/^Open/)
 
   // tick the out and back legs and analyze them as one run
   await page.getByRole('checkbox', { name: 'Include lap 2' }).check()
@@ -43,20 +46,29 @@ test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, 
   await expect(page.getByText(/Suggested CdA 0\.26\d from closure of the run/)).toBeVisible()
   await expect(page.getByText(/Run closure error: 0\.0\d m/)).toBeVisible()
 
-  // manual wind changes air speed, and Reset returns to the suggestion
+  // manual wind changes air speed, the suggestion is refitted for it, and Reset returns to it
   await page.getByRole('radiogroup').filter({ hasText: 'Manual' }).getByText('Manual').click()
   await page.getByRole('textbox', { name: /Wind speed/ }).fill('12')
   await page.getByRole('textbox', { name: /^From/ }).fill('315')
   await expect(page.getByText('Air speed', { exact: true }).first()).toBeVisible()
+  // a manual wind is a 10 m value, scaled by the ride's exposure, unless measured at rider height
+  await expect(page.getByText(/about 7\.2 km\/h at rider height \(open exposure, ×0\.60\)/)).toBeVisible()
+  await page.getByRole('checkbox', { name: 'Measured at rider height' }).check()
+  await expect(page.getByText('The speed is used as entered.', { exact: false })).toBeVisible()
+  await page.getByRole('checkbox', { name: 'Measured at rider height' }).uncheck()
   await page.getByRole('textbox', { name: 'CdA', exact: true }).fill('0.300')
-  await page.getByRole('button', { name: /^Reset to 0\.26\d$/ }).click()
-  await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
+  const reset = page.getByRole('button', { name: /^Reset to 0\.\d{3}$/ })
+  const suggested = (await reset.textContent()).replace('Reset to ', '')
+  await expect(page.getByText(`Suggested CdA ${suggested} from closure of the run`)).toBeVisible()
+  await reset.click()
+  await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(suggested)
 
   await page.getByRole('button', { name: 'Save', exact: true }).click()
   await expect(page).toHaveURL(/\/analysis\/[0-9a-f-]{36}$/)
   await page.reload()
-  await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
+  await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(suggested)
   await expect(page.getByRole('textbox', { name: /Wind speed/ })).toHaveValue('12')
+  await expect(page.getByText(/open exposure, ×0\.60/)).toBeVisible()
   await expect(page.getByText('2 ranges joined', { exact: false })).toBeVisible()
 
   await page.getByRole('link', { name: '← Activity' }).click()
@@ -105,6 +117,19 @@ test('tests table: pairs the out and back legs, fits, saves and opens the test',
     await expect(card.getByRole('row', { name: /Test 1/ }).getByRole('cell', { name: /^0\.26\d$/ })).toBeVisible()
   }
   await setShared()
+
+  // ρ can come from the air density calculator
+  await card.getByRole('button', { name: 'Open the air density calculator' }).click()
+  const calculator = page.getByRole('dialog', { name: 'Air density calculator' })
+  await calculator.getByText('Humidity', { exact: true }).click()
+  await calculator.getByRole('textbox', { name: 'Temperature (°C)' }).fill('20')
+  await calculator.getByRole('textbox', { name: 'Relative humidity (%)' }).fill('50')
+  await calculator.getByRole('textbox', { name: 'Sea-level pressure (hPa)' }).fill('1013.25')
+  await calculator.getByRole('textbox', { name: 'Altitude (m)' }).fill('0')
+  await calculator.getByRole('button', { name: 'Use this value' }).click()
+  await expect(calculator).toBeHidden()
+  await expect(card.getByRole('textbox', { name: /^ρ/ })).toHaveValue(/^1\.198\d$/)
+  await card.getByRole('textbox', { name: /^ρ/ }).fill('1.2')
 
   // an unsaved test opens a new analysis with the table's parameters
   await card.getByRole('button', { name: 'Test 1', exact: true }).click()

@@ -38,7 +38,7 @@ export function analysisUrl (activityId: string, ranges: TimeRange[], name: stri
     if (start[key] !== undefined) params.set(key, String(start[key]))
   }
   if (start.airspeedSource) params.set('airspeed', start.airspeedSource)
-  if (start.wind) params.set('wind', `${start.wind.speed},${start.wind.direction}`)
+  if (start.wind) params.set('wind', `${start.wind.speed},${start.wind.direction}${start.wind.atRiderHeight ? ',rider' : ''}`)
   return `/activity/${activityId}/analysis?${params}`
 }
 
@@ -49,14 +49,18 @@ export function parseAnalysisStart (params: URLSearchParams): AnalysisStart {
     return Number.isFinite(n) && n >= 0 ? n : undefined
   }
   const airspeed = params.get('airspeed')
-  const [speed, direction] = (params.get('wind') ?? '').split(',').map(Number)
+  const [speedText, directionText, height] = (params.get('wind') ?? '').split(',')
+  const speed = Number(speedText)
+  const direction = Number(directionText)
   return {
     mass: number('mass'),
     rho: number('rho'),
     crr: number('crr'),
     dloss: number('dloss'),
     airspeedSource: ['measured', 'ground', 'wind', 'manual'].includes(airspeed ?? '') ? airspeed as AirspeedSource : undefined,
-    wind: Number.isFinite(speed) && Number.isFinite(direction) && params.has('wind') ? { speed, direction } : undefined
+    wind: speedText && directionText && Number.isFinite(speed) && Number.isFinite(direction)
+      ? { speed, direction, ...(height === 'rider' ? { atRiderHeight: true } : {}) }
+      : undefined
   }
 }
 

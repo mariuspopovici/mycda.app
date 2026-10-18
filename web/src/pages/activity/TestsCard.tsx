@@ -1,24 +1,24 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router'
 import {
-  ActionIcon, Anchor, Badge, Button, Card, Grid, Group, MultiSelect, SimpleGrid, Table, Text, Title, Tooltip
+  ActionIcon, Anchor, Badge, Button, Card, Grid, Group, Modal, MultiSelect, SimpleGrid, Table, Text, Title, Tooltip
 } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
-import { IconFocus2, IconPlus, IconRefresh, IconTrash } from '@tabler/icons-react'
+import { IconCalculator, IconFocus2, IconPlus, IconRefresh, IconTrash } from '@tabler/icons-react'
+import { AirDensityCalculator, type WeatherContext } from '../../components/AirDensityCalculator'
 import { DraftNumberInput } from '../../components/DraftNumberInput'
 import type { ActivitySeries } from '../../core/activitySeries'
 import { summarizeCdA } from '../../core/segmentStats'
 import { detectTests, evaluateTest, lapGeometries, type SharedParameters, type TestResult } from '../../core/testRuns'
 import { kgPerM3ToLbPerFt3, kgToLbs, lbPerFt3ToKgPerM3, lbsToKg, secondsToHms } from '../../core/units'
-import { windModelAirSpeed } from '../../core/windModel'
-import type { Activity } from '../../data/activities'
+import { DEFAULT_WIND_EXPOSURE, type Activity } from '../../data/activities'
 import type { ActivityData } from '../../data/activityData'
 import { createSegment, type AirspeedSource, type ManualWind, type SegmentSummary, type TimeRange } from '../../data/segments'
 import { totalMassKg, type UserPrefs } from '../../data/userPrefs'
 import { formatDistance, formatPower, formatSpeed } from '../../lib/format'
 import { AirspeedCard } from '../analysis/AirspeedCard'
 import { analysisUrl } from '../analysis/useAnalysisSource'
-import { canModelWind, useWindModel } from '../analysis/useWindModel'
+import { canModelWind, useAirspeed } from '../analysis/useWindModel'
 
 interface Props {
   activity: Activity
@@ -57,16 +57,9 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
   const windPossible = canModelWind(series)
   const [airspeedSource, setAirspeedSource] = useState<AirspeedSource>(measured ? 'measured' : 'ground')
   const [manualWind, setManualWind] = useState<ManualWind>({ speed: 10, direction: 270 })
-  const wind = useWindModel(series, airspeedSource === 'wind')
-  const airspeed = useMemo(() => {
-    if (airspeedSource === 'measured') return series.airspeed
-    if (airspeedSource === 'wind') return wind.data?.airspeed
-    if (airspeedSource === 'manual' && windPossible) {
-      return windModelAirSpeed(series.location, series.speed, series.speed.map(() => manualWind.speed), series.speed.map(() => manualWind.direction))
-        .map((p) => p.airspeed)
-    }
-    return series.speed
-  }, [airspeedSource, series, wind.data, windPossible, manualWind])
+  // follows the ride settings as they're saved (ADR-0014)
+  const exposure = activity.analysisDefaults?.windExposure ?? DEFAULT_WIND_EXPOSURE
+  const { airspeed, model: wind } = useAirspeed(series, airspeedSource, manualWind, exposure, windPossible)
 
   const rows = useMemo(() => tests.map((laps) => {
     const parts = laps.flatMap((n) => geometries.filter((g) => g.number === n))
@@ -93,7 +86,8 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
     rho: shared.rho,
     dloss: shared.dloss,
     airspeedSource,
-    wind: airspeedSource === 'manual' ? manualWind : undefined
+    wind: airspeedSource === 'manual' ? manualWind : undefined,
+    windExposure: exposure
   })
 
   const saveAll = async () => {
@@ -124,6 +118,15 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
   const lapOptions = data.laps.map((l) => ({ value: String(l.number), label: `Lap ${l.number} · ${formatDistance(l.distance, units)}` }))
   const height = (m: number) => (metric ? m : m * 3.281)
 
+  // the calculator looks up the weather where and when the first test starts, else at the ride's start
+  const [calculatorOpen, setCalculatorOpen] = useState(false)
+  const firstStart = rows.find((r) => r.timeRanges.length)?.timeRanges[0].start
+  const startIndex = firstStart ? Math.max(series.time.findIndex((t) => t.getTime() >= firstStart.getTime()), 0) : 0
+  const startFix = series.location.slice(startIndex).find((p) => p)
+  const weatherContext: WeatherContext | undefined = startFix
+    ? { lat: startFix.lat, lng: startFix.lng, time: series.time[startIndex], altitude: series.altitude[startIndex] }
+    : undefined
+
   return (
     <Card withBorder padding='lg'>
       <Group justify='space-between' align='flex-start' mb={4} gap='xs'>
@@ -148,7 +151,14 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
             <DraftNumberInput size='xs' label={`ρ (${metric ? 'kg/m³' : 'lb/ft³'})`} decimalScale={metric ? 4 : 5} step={metric ? 0.001 : 0.0001}
               min={metric ? 0.5 : 0.03} max={metric ? 1.5 : 0.095}
               value={metric ? Math.round(shared.rho * 1e4) / 1e4 : Math.round(kgPerM3ToLbPerFt3(shared.rho) * 1e5) / 1e5}
-              onCommit={(n) => set({ rho: metric ? n : lbPerFt3ToKgPerM3(n) })} />
+              onCommit={(n) => set({ rho: metric ? n : lbPerFt3ToKgPerM3(n) })}
+              rightSection={(
+                <Tooltip label='Air density calculator'>
+                  <ActionIcon size='sm' variant='subtle' onClick={() => setCalculatorOpen(true)} aria-label='Open the air density calculator'>
+                    <IconCalculator size={16} />
+                  </ActionIcon>
+                </Tooltip>
+              )} />
             <DraftNumberInput size='xs' label='Crr' decimalScale={4} step={0.0005} min={0} max={0.05}
               value={shared.crr} onCommit={(crr) => set({ crr })} />
             <DraftNumberInput size='xs' label='Drivetrain loss (%)' decimalScale={1} step={0.5} min={0} max={10}
@@ -157,7 +167,8 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
         </Grid.Col>
         <Grid.Col span={{ base: 12, md: 5 }}>
           <AirspeedCard source={airspeedSource} onSourceChange={setAirspeedSource} wind={manualWind} onWindChange={setManualWind}
-            units={units} measuredAvailable={measured} windPossible={windPossible} model={wind} />
+            units={units} measuredAvailable={measured} windPossible={windPossible} model={wind} exposure={exposure}
+            exposureNote='Set the exposure in the ride settings below.' />
         </Grid.Col>
       </Grid>
 
@@ -238,6 +249,11 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
           </Button>
         </Group>
       </Group>
+
+      <Modal opened={calculatorOpen} onClose={() => setCalculatorOpen(false)} title='Air density calculator' size='lg'>
+        <AirDensityCalculator units={units} context={weatherContext}
+          onUse={(rho) => { set({ rho }); setCalculatorOpen(false) }} />
+      </Modal>
     </Card>
   )
 }
