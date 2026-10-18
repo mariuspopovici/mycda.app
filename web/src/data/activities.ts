@@ -7,7 +7,8 @@ import {
   type DocumentData, type Timestamp
 } from 'firebase/firestore'
 import { deleteObject, ref, uploadBytesResumable } from 'firebase/storage'
-import { db, storage } from '../firebase'
+import type { User } from 'firebase/auth'
+import { apiUrl, db, storage } from '../firebase'
 
 export type ActivityStatus = 'New' | 'Processed' | 'Error'
 
@@ -29,6 +30,8 @@ export interface Activity {
   averagePower?: number
   /** Storage path of the parsed .json.gz */
   fitFile?: string
+  /** Upload pipeline version that produced the status; absent for the legacy pipeline. */
+  processedWith?: number
 }
 
 const toDate = (value: unknown) => (value && typeof (value as Timestamp).toDate === 'function'
@@ -53,7 +56,8 @@ export function toActivity (id: string, data: DocumentData): Activity {
     distance: toNumber(data.distance),
     averageSpeed: toNumber(data.averageSpeed),
     averagePower: toNumber(data.averagePower),
-    fitFile: data.fitFile
+    fitFile: data.fitFile,
+    processedWith: typeof data.processedWith === 'number' ? data.processedWith : undefined
   }
 }
 
@@ -138,4 +142,34 @@ export async function deleteActivity (activity: Activity) {
   })))
 
   await deleteDoc(doc(db, 'activities', activity.id))
+}
+
+/** Processing normally takes seconds; after this an activity still at "New" is considered stalled. */
+export const STALLED_AFTER_MS = 10 * 60_000
+
+/** Upload or processing that never finished (the legacy app hid these). */
+export const isStalled = (activity: Activity, now = Date.now()) =>
+  activity.status === 'New' && (activity.timestamp?.getTime() ?? 0) < now - STALLED_AFTER_MS
+
+/** Version of the current upload pipeline (functions/index.js PIPELINE_VERSION). */
+export const PIPELINE_VERSION = 2
+
+/**
+ * Activities worth retrying in bulk: stalled ones, and errors from the legacy parser that the
+ * current one may read. Errors from the current parser are final unless the file changes.
+ */
+export const needsRetry = (activity: Activity, now = Date.now()) =>
+  isStalled(activity, now) || (activity.status === 'Error' && (activity.processedWith ?? 0) < PIPELINE_VERSION)
+
+/** Activities whose processing can be retried. */
+export const canRetry = (activity: Activity, now = Date.now()) => activity.status === 'Error' || isStalled(activity, now)
+
+/** Runs processing again on the stored upload; the activity document updates with the outcome. */
+export async function reprocessActivity (user: User, id: string, fetchFn: typeof fetch = fetch) {
+  const response = await fetchFn(`${apiUrl}/activity/${encodeURIComponent(id)}/reprocess`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${await user.getIdToken()}` }
+  })
+  if (!response.ok) throw new Error(`Retry failed (${response.status}).`)
+  return await response.json() as { status: ActivityStatus, statusMessage: string | null }
 }

@@ -1,9 +1,9 @@
 import { useState } from 'react'
-import { Alert, Button, Center, Group, Loader, Modal, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Alert, Button, Center, Group, Loader, Modal, Progress, Stack, Text, TextInput, Title } from '@mantine/core'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
 import { useUser } from '../../auth/AuthContext'
-import { deleteActivity, renameActivity, useActivities, type Activity } from '../../data/activities'
+import { deleteActivity, needsRetry, renameActivity, reprocessActivity, useActivities, type Activity } from '../../data/activities'
 import { useUserPrefs } from '../../data/userPrefs'
 import { ActivitiesTable } from './ActivitiesTable'
 import { UploadDropzone } from './UploadDropzone'
@@ -52,6 +52,48 @@ export function ActivitiesPage () {
   const { activities, error } = useActivities(user.uid)
   const { prefs } = useUserPrefs()
   const [renaming, setRenaming] = useState<Activity>()
+  const [retrying, setRetrying] = useState<Set<string>>(new Set())
+  const [batch, setBatch] = useState<{ done: number, total: number }>()
+
+  const retryable = activities?.filter((a) => needsRetry(a)) ?? []
+
+  const retry = async (activity: Activity) => {
+    setRetrying((s) => new Set(s).add(activity.id))
+    try {
+      const result = await reprocessActivity(user, activity.id)
+      return result.status === 'Processed'
+    } catch (e) {
+      notifications.show({ color: 'red', title: `Couldn't retry ${activity.name}`, message: (e as Error).message })
+      return false
+    } finally {
+      setRetrying((s) => {
+        const next = new Set(s)
+        next.delete(activity.id)
+        return next
+      })
+    }
+  }
+
+  const retryOne = async (activity: Activity) => {
+    if (await retry(activity)) notifications.show({ color: 'green', message: `${activity.name} is ready.` })
+  }
+
+  /** One at a time, to keep the function's load and the user's quota modest. */
+  const retryAll = async () => {
+    const queue = [...retryable]
+    let recovered = 0
+    setBatch({ done: 0, total: queue.length })
+    for (const [i, activity] of queue.entries()) {
+      if (await retry(activity)) recovered++
+      setBatch({ done: i + 1, total: queue.length })
+    }
+    setBatch(undefined)
+    notifications.show({
+      color: recovered ? 'green' : 'gray',
+      title: `${recovered} of ${queue.length} activities recovered`,
+      message: recovered < queue.length ? 'The rest show why they could not be processed. Hover over Error for details.' : undefined
+    })
+  }
 
   const confirmDelete = (activity: Activity) => modals.openConfirmModal({
     title: 'Delete activity',
@@ -70,10 +112,23 @@ export function ActivitiesPage () {
       </div>
       <UploadDropzone uid={user.uid} />
       {error && <Alert color='red' title="Couldn't load your activities">{error.message}</Alert>}
+      {retryable.length > 0 && (
+        <Alert color='orange' title={`${retryable.length} ${retryable.length === 1 ? 'activity needs' : 'activities need'} attention`}>
+          <Stack gap='xs'>
+            <Text size='sm'>
+              Some uploads failed or never finished processing. MyCdA now reads more file types, so retrying may recover them.
+              Anything that still fails says why, and can be deleted.
+            </Text>
+            {batch
+              ? <Progress value={(batch.done / batch.total) * 100} animated aria-label={`Retried ${batch.done} of ${batch.total}`} />
+              : <Group><Button size='xs' variant='light' color='orange' onClick={retryAll}>Retry all</Button></Group>}
+          </Stack>
+        </Alert>
+      )}
       {!activities && !error && <Center py='xl'><Loader /></Center>}
       {activities?.length === 0 && <Text c='dimmed' ta='center' py='xl'>No activities yet. Upload your first ride above.</Text>}
       {activities && activities.length > 0 && (
-        <ActivitiesTable activities={activities} units={prefs.units} onRename={setRenaming} onDelete={confirmDelete} />
+        <ActivitiesTable activities={activities} units={prefs.units} onRename={setRenaming} onDelete={confirmDelete} onRetry={retryOne} retrying={retrying} />
       )}
       <RenameModal activity={renaming} onClose={() => setRenaming(undefined)} />
     </Stack>

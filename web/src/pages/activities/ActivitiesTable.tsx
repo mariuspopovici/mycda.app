@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router'
 import { ActionIcon, Anchor, Badge, Box, Card, Group, Loader, Pagination, Popover, Stack, Table, Text, Tooltip, VisuallyHidden } from '@mantine/core'
-import { IconAlertCircle, IconCheck, IconPencil, IconTrash } from '@tabler/icons-react'
-import type { Activity } from '../../data/activities'
+import { IconAlertCircle, IconCheck, IconClockPause, IconPencil, IconRefresh, IconTrash } from '@tabler/icons-react'
+import { canRetry, isStalled, type Activity } from '../../data/activities'
 import type { Units } from '../../core/units'
 import { formatDateTime, formatDistance, formatPower, formatSpeed } from '../../lib/format'
 
@@ -26,6 +26,13 @@ function StatusBadge ({ activity }: { activity: Activity }) {
       </Popover>
     )
   }
+  if (isStalled(activity)) {
+    return (
+      <Tooltip label="Processing didn't finish. Retry it, or delete the activity and upload again." multiline w={260}>
+        <Badge color='orange' variant='light' leftSection={<IconClockPause size={12} />}>Stalled</Badge>
+      </Tooltip>
+    )
+  }
   return <Badge color='gray' variant='light' leftSection={<Loader size={10} />}>Processing</Badge>
 }
 
@@ -35,9 +42,16 @@ function ActivityName ({ activity }: { activity: Activity }) {
     : <Text size='sm' fw={500}>{activity.name}</Text>
 }
 
-function RowActions ({ activity, onRename, onDelete }: Pick<Props, 'onRename' | 'onDelete'> & { activity: Activity }) {
+function RowActions ({ activity, onRename, onDelete, onRetry, retrying }: Pick<Props, 'onRename' | 'onDelete' | 'onRetry' | 'retrying'> & { activity: Activity }) {
   return (
     <Group gap={4} justify='flex-end' wrap='nowrap'>
+      {canRetry(activity) && (
+        <Tooltip label='Retry processing'>
+          <ActionIcon variant='subtle' color='blue' loading={retrying.has(activity.id)} onClick={() => onRetry(activity)} aria-label={`Retry processing ${activity.name}`}>
+            <IconRefresh size={18} />
+          </ActionIcon>
+        </Tooltip>
+      )}
       <Tooltip label='Rename'>
         <ActionIcon variant='subtle' color='gray' onClick={() => onRename(activity)} aria-label={`Rename ${activity.name}`}>
           <IconPencil size={18} />
@@ -57,9 +71,12 @@ interface Props {
   units: Units
   onRename: (activity: Activity) => void
   onDelete: (activity: Activity) => void
+  onRetry: (activity: Activity) => void
+  /** Activities currently being retried. */
+  retrying: Set<string>
 }
 
-export function ActivitiesTable ({ activities, units, onRename, onDelete }: Props) {
+export function ActivitiesTable ({ activities, units, onRename, onDelete, onRetry, retrying }: Props) {
   const [page, setPage] = useState(1)
   const pages = Math.max(1, Math.ceil(activities.length / PAGE_SIZE))
   const current = Math.min(page, pages)
@@ -81,9 +98,9 @@ export function ActivitiesTable ({ activities, units, onRename, onDelete }: Prop
               <Text size='sm' c={activity.status === 'Processed' ? undefined : 'dimmed'} lineClamp={2}>
                 {activity.status === 'Processed'
                   ? `${formatDistance(activity.distance, units)} · ${formatSpeed(activity.averageSpeed, units)} · ${formatPower(activity.averagePower)}`
-                  : activity.status === 'Error' ? activity.statusMessage || 'This file could not be processed.' : 'Processing…'}
+                  : activity.status === 'Error' ? activity.statusMessage || 'This file could not be processed.' : isStalled(activity) ? "Processing didn't finish." : 'Processing…'}
               </Text>
-              <RowActions activity={activity} onRename={onRename} onDelete={onDelete} />
+              <RowActions activity={activity} onRename={onRename} onDelete={onDelete} onRetry={onRetry} retrying={retrying} />
             </Group>
           </Card>
         ))}
@@ -110,7 +127,7 @@ export function ActivitiesTable ({ activities, units, onRename, onDelete }: Prop
                 <Table.Td ta='right'>{formatDistance(activity.distance, units)}</Table.Td>
                 <Table.Td ta='right'>{formatSpeed(activity.averageSpeed, units)}</Table.Td>
                 <Table.Td ta='right'>{formatPower(activity.averagePower)}</Table.Td>
-                <Table.Td><RowActions activity={activity} onRename={onRename} onDelete={onDelete} /></Table.Td>
+                <Table.Td><RowActions activity={activity} onRename={onRename} onDelete={onDelete} onRetry={onRetry} retrying={retrying} /></Table.Td>
               </Table.Tr>
             ))}
           </Table.Tbody>

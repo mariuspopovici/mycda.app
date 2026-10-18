@@ -21,6 +21,7 @@ Created by the browser at upload time. The ID is a client-generated UUID, which 
 | `averageSpeed` | number | function | km/h |
 | `averagePower` | number | function | W |
 | `fitFile` | string | function | Storage path of the parsed `.json.gz` |
+| `processedWith` | number | function | Upload pipeline version that set the status (2 = content detection and fit-file-parser 6). Absent when the legacy pipeline processed the activity |
 
 The activity list queries `where('uid','==',uid).where('status','==','Processed'|'Error')`. See `firestore.indexes.json`.
 
@@ -120,6 +121,7 @@ The legacy app caches the last 5 fetched activities in `localStorage` (`Activity
 
 ## Known issues
 
-- Deleting an activity removes only its Firestore document. Its Storage files and segments are orphaned.
+- The legacy app deleted only the activity document, leaving its Storage files and segments behind. The new app deletes all three.
+- The legacy activity list only queried `Processed` and `Error`, so activities whose upload or processing never finished stayed at `New` and were never shown. The new app shows them as **Stalled** after 10 minutes and can retry them (`POST /api/activity/:id/reprocess`).
 - CSV files without date-times are dated by their upload time (`object.timeCreated`), since the format carries no date.
 - Function URLs are hardcoded to the production project in `Activity.vue`, `services/weather.js` and `services/mapping.js`.

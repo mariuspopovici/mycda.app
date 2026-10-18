@@ -146,6 +146,41 @@ describe('GET /api/activity/:id', () => {
   })
 })
 
+describe('POST /api/activity/:id/reprocess', () => {
+  const reprocess = (id, user) => fetch(`${API}/activity/${id}/reprocess`, {
+    method: 'POST',
+    headers: user ? { Authorization: `Bearer ${user.token}` } : {}
+  })
+
+  it('processes an upload whose trigger never ran, and clears an old error message', async () => {
+    const id = newActivityId()
+    // the file lands before its activity exists, so the trigger skips it, like a lost trigger
+    await upload(users.alice, id, 'fit', sampleFit())
+    await new Promise((resolve) => setTimeout(resolve, 2000))
+    await db.doc(`activities/${id}`).set({ id, uid: users.alice.uid, status: 'Error', statusMessage: 'old parser failure' })
+
+    const response = await reprocess(id, users.alice)
+    expect(response.status).toBe(200)
+    expect(await response.json()).toEqual({ status: 'Processed', statusMessage: null })
+    const doc = (await db.doc(`activities/${id}`).get()).data()
+    expect(doc).toMatchObject({ status: 'Processed', averagePower: 250 })
+    expect(doc.statusMessage).toBeUndefined()
+  })
+
+  it('marks activities whose upload never finished as errors', async () => {
+    const id = await createActivity(users.alice)
+    const response = await reprocess(id, users.alice)
+    expect(await response.json()).toMatchObject({ status: 'Error', statusMessage: expect.stringMatching(/upload didn't finish/) })
+  })
+
+  it("only works on the caller's own activities", async () => {
+    const id = await createActivity(users.alice)
+    expect((await reprocess(id, users.bob)).status).toBe(404)
+    expect((await reprocess(id)).status).toBe(403)
+    expect((await db.doc(`activities/${id}`).get()).data().status).toBe('New')
+  })
+})
+
 describe('GET /api/cors', () => {
   const cors = (service, url) => get(`/cors?service=${service}&url=${encodeURIComponent(url)}`, users.alice)
 

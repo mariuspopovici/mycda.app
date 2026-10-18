@@ -86,3 +86,19 @@ describe('authErrorMessage', () => {
     expect(authErrorMessage(undefined)).toMatch(/Something went wrong/)
   })
 })
+
+describe('retry rules', () => {
+  it('flags stalled uploads and legacy errors for bulk retry', async () => {
+    const { isStalled, needsRetry, canRetry, STALLED_AFTER_MS } = await import('../data/activities')
+    const now = Date.UTC(2026, 9, 18, 12)
+    const base = { id: 'a', uid: 'u', name: 'A' }
+    const fresh = { ...base, status: 'New' as const, timestamp: new Date(now - 60_000) }
+    const stalled = { ...base, status: 'New' as const, timestamp: new Date(now - STALLED_AFTER_MS - 1) }
+    const legacyError = { ...base, status: 'Error' as const }
+    const currentError = { ...base, status: 'Error' as const, processedWith: 2 }
+    expect(isStalled(fresh, now)).toBe(false)
+    expect(isStalled(stalled, now)).toBe(true)
+    expect([fresh, stalled, legacyError, currentError].map((a) => needsRetry(a, now))).toEqual([false, true, true, false])
+    expect(canRetry(currentError, now)).toBe(true)
+  })
+})

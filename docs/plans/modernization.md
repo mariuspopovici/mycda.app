@@ -85,7 +85,8 @@ Bring MyCdA.app back to life on a maintained stack without breaking existing use
 - [x] Segments readable and writable by both apps ([ADR-0012](../decisions/0012-segments-during-coexistence.md)), including legacy display-unit `mass`/`ve` and kg/m³ `rho` ([ADR-0008](../decisions/0008-metric-only-analysis-core.md)). One baseline per activity. Over-long ranges are blocked before hitting the 1 MiB limit.
 - [x] Activity and analysis pages load lazily (Plotly is a separate ~400 kB gzipped chunk).
 - [x] Playwright tests: lap and drag selection, analysis, the suggested CdA recovering a known value, save as baseline, reopen, delete, and the calculator.
-- [ ] Follow-up: an activity whose processing never finishes stays at "Processing" with no retry. Seen intermittently in the emulator with several simultaneous uploads.
+- [x] Stuck and failed uploads. The legacy list never showed activities left at `New`, so years of interrupted uploads surfaced in the new app. Activities at `New` for over 10 minutes now show as **Stalled**. Stalled and error rows can be retried (`POST /api/activity/:id/reprocess`), and "Retry all" covers stalled activities plus errors from the legacy parser. `processedWith` marks results of the current pipeline, which are final.
+- [ ] Deploy functions for the reprocess route and `processedWith`
 
 Implementation notes:
 - plotly.js 4.1 resets every axis to empty-chart defaults when `react()` gets unchanged data arrays and changed shapes. `PlotlyChart` bumps `datarevision` on every update, and charts keep the user's zoom with `uirevision`.

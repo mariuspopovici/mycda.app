@@ -25,6 +25,7 @@ Cloud Functions use the Admin SDK and bypass the rules, so they must do their ow
 | Route | Access control |
 |---|---|
 | `GET /activity/:id` | Returns 404 unless `activities/{id}.uid` is the caller's. Missing and foreign activities look the same, so activity IDs can't be probed |
+| `POST /activity/:id/reprocess` | Same ownership check. Re-runs processing on the caller's own stored upload (`userdata/{uid}/activities/{id}.fit\|.csv`); marks the activity as an error if no upload exists |
 | `GET /cors?service=&url=` | `service` must be `openweather` or `maps` (`PROXY_SERVICES`). `url` must be `https`, on exactly that service's host, with no credentials or port. `API_KEY` in the URL is replaced with the service's key from Secret Manager (`OPENWEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`) |
 
 `/cors` exists only because the legacy app called keyed APIs from the browser. It is removed once weather and elevation move to Open-Meteo ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md)).
