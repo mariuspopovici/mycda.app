@@ -4,70 +4,64 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Architecture, design notes, decision records (ADRs), the migration plan and dated engineering logs live in [docs/](docs/README.md). Read [docs/plans/modernization.md](docs/plans/modernization.md) for current status. Record decisions that are costly to reverse as a new ADR in `docs/decisions/`, and measured investigations in `docs/log/`.
+MyCdA.app estimates a cyclist's aerodynamic drag area (CdA) and rolling resistance (Crr) from power, speed and elevation data with R. Chung's virtual elevation (VE) method. It is a React 19 + Vite + TypeScript + Mantine app (`web/`) on Firebase (Auth, Firestore, Storage, Cloud Functions, Hosting), with OpenStreetMap (Leaflet) maps and Open-Meteo weather.
 
-MyCdA.app estimates a cyclist's aerodynamic drag (CdA) and rolling resistance (Crr) from power/speed/elevation data using R. Chung's Virtual Elevation (VE) method. It is a Vue 2 SPA (old `vuejs-templates/webpack` scaffold: webpack 3, Babel 6, bootstrap-vue, Vuex, plotly) backed by Firebase (Auth, Firestore, Storage, Cloud Functions).
+Architecture, design notes, decision records (ADRs), the modernization plan and dated engineering logs live in [docs/](docs/README.md). Record decisions that are costly to reverse as a new ADR in `docs/decisions/`, and measured investigations in `docs/log/`.
+
+| Path | Contents |
+|---|---|
+| `web/` | The web app (deployed to Firebase Hosting from `web/dist`) |
+| `functions/` | Cloud Functions, 2nd gen, Node 22, CommonJS: upload processing and the `api` HTTPS function |
+| `tests/emulator/` | Security rules, functions end-to-end and Playwright browser tests against the Firebase emulators |
+| `firestore.rules`, `storage.rules` | Owner-only security rules |
+| `docs/` | Engineering archive |
 
 ## Commands
 
-Frontend (repo root):
-- `npm run dev` — webpack-dev-server with hot reload on localhost:8080 (eslint-loader runs during bundling).
-- `npm run lint` — eslint (`standard` + `plugin:vue/essential`) over `src/`.
-- `npm run build` — **runs `npm version patch` first** (bumps version and creates a git commit/tag, hence the `1.0.xx` commits in history), then builds to `dist/`. `npm run build --report` adds the bundle analyzer.
+Web app (`web/`):
+- `npm --prefix web run dev`: Vite against production Firebase, configured by `web/.env.local` (gitignored; see `web/.env.example`).
+- Against the emulators: `npm --prefix tests/emulator run emulators` in one terminal and `npm --prefix web run dev:emulators` in another (project `demo-mycda`; the header shows "emulators").
+- `npm --prefix web test`: Vitest. Run one file from `web/` with `npx vitest run src/core/__tests__/core.test.ts`; `-u` updates snapshots. Tests run in emulator mode via the committed `web/.env.test`. Component tests opt into jsdom per file, and `src/test/setup.ts` adds the browser APIs Mantine needs.
+- `npm --prefix web run lint`, `npm --prefix web run build` (`tsc -b` + Vite). `npm --prefix web run test:all-fixtures` sweeps every private ride.
 
-Cloud Functions (`functions/`, 2nd gen, Node 22, CommonJS):
-- `npm --prefix functions test` — Node's built-in test runner (`test/**/*.test.js`): parsing, format detection, FIT recovery cases built with `test/fit-builder.js`. `npm --prefix functions run test:all-fixtures` also sweeps the private rides.
-- `npm --prefix functions run lint` — ESLint 9 flat config; also runs automatically as a predeploy step.
-- `firebase deploy --only functions`. Secrets (`OPENWEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`) live in Secret Manager: `firebase functions:secrets:set <NAME>`; the emulator reads `functions/.secret.local` (gitignored).
+Cloud Functions (`functions/`):
+- `npm --prefix functions test`: Node's test runner (`test/**/*.test.js`) covering parsing, format detection, and FIT recovery cases built with `test/fit-builder.js`. `npm --prefix functions run test:all-fixtures` also sweeps the private rides.
+- `npm --prefix functions run lint`: ESLint 9 flat config. It also runs as a predeploy step.
 
-New React app (`web/`, being built to replace the Vue app — see Migration below):
-- `npm --prefix web run dev` — Vite against production Firebase, configured by `web/.env.local` (gitignored; `node web/scripts/env-from-legacy.mjs` generates it from `config/prod.env.js`, see `web/.env.example`).
-- Local development against the emulators: `npm --prefix tests/emulator run emulators` in one terminal, `npm --prefix web run dev:emulators` in another (project `demo-mycda`; the header shows "emulators").
-- `npm --prefix web test` — Vitest. Run one file with `npx vitest run src/core/__tests__/core.test.ts` from `web/`; `-u` updates snapshots. Component tests opt into jsdom per file; `src/test/setup.ts` adds the browser APIs Mantine needs.
-- `npm --prefix web run lint`, `npm --prefix web run build` (`tsc -b` + Vite).
+Emulator tests (`tests/emulator/`, project `demo-mycda`, needs Java): `npm --prefix tests/emulator test` runs:
+- `test:rules`: security rules;
+- `test:functions`: upload → `processActivityFile` → `GET /api/activity/:id`, reprocessing, and ownership checks;
+- `test:e2e`: Playwright in Chrome against the web app. `SCREENSHOTS=1` also saves review screenshots to `test-results/screens/`.
 
-Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/emulator test` runs `test:e2e` (Playwright in Chrome against the web app; `SCREENSHOTS=1` adds review screenshots), `test:rules` (security rules in the Firestore + Storage emulators) and `test:functions` (end-to-end: upload → `processActivityFile` → `GET /api/activity/:id`, ownership checks, `/cors` allowlist, in the Auth + Functions + Firestore + Storage emulators). Needs Java.
+Deploy: `firebase deploy --only functions|hosting|firestore:rules,storage`. Hosting builds `web/` in a predeploy hook. To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`.
 
-CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22 with npm 11, Java 21, the runner's Chrome), about 3 minutes. Each package's `.npmrc` sets `legacy-peer-deps=false` so lockfiles include peer dependencies whatever the user-level npm config says; `npm ci` fails in CI otherwise. To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`. The Hosting emulator is on port 5002, because macOS AirPlay holds 5000.
-
-## Migration in progress
-
-The Vue 2 app in `src/` is being replaced by a React 19 + Vite + TypeScript + Mantine app in `web/`, with OpenStreetMap (Leaflet) instead of Google Maps and Open-Meteo instead of DarkSky/OpenWeatherMap. Firestore collections and Storage paths must stay unchanged so existing user data keeps working.
-
-- `web/src/` app structure: `firebase.ts` (SDK setup, emulator switch, `apiUrl`), `auth/` (AuthProvider, `useAuth`/`useUser`, RequireAuth, error messages), `data/` (Firestore/Storage access: `activities.ts`, `userPrefs.ts`), `layout/`, `pages/`, `router.tsx`, `lib/` (formatting, legacy hash URL mapping). Mantine 9, React Router 8, TanStack Query 5, Firebase 12 modular SDK. `userprefs` keeps the legacy shape (weights in display units) so both apps can share it; analysis converts with `totalMassKg()`.
-- Analysis UI: `pages/activity/` (chart with zoom-to-select, laps, loops, map, saved analyses) and `pages/analysis/` (VE chart, parameters, fit, wind model, save), both lazy-loaded routes. `components/PlotlyChart.tsx` wraps plotly.js-basic (loaded on demand; bumps `datarevision` on every update to work around a plotly 4.1 autorange bug, so use `uirevision` to keep zoom); `components/RideMap.tsx` is Leaflet + OSM. `data/activityData.ts` fetches `GET /api/activity/:id`; `data/segments.ts` reads and writes segments in the legacy-compatible shape (ADR-0012).
-- `web/src/core/` holds the framework-free domain logic (virtual elevation, CdA/Crr fitting, range selection and stats, wind model, hourly weather sampling, air density, loop finder, spike filter, segment stats, units), ported from `src/services/` and the Vue components. Network clients live in `web/src/services/` (e.g. `openMeteo.ts`, with an injectable `fetch`).
-- `web/src/core/__tests__/parity.test.ts` runs the ports against the legacy `src/services/*.js` on the CSV fixtures; `core.test.ts` holds physics checks and golden snapshots that outlive the legacy code. Ports intentionally reproduce legacy quirks (commented in the code); fix them deliberately and update snapshots, not silently.
-- `functions/activity.js` holds the Firebase-free file parsing so tests (including `web/`'s) can import it: `parseActivityFile` detects the format from the file's *contents* (uploads are named `.fit` unless the name ends in `csv`), unwraps gzip/zip, parses FIT in list mode and assembles sessions/laps itself, and throws `ActivityFileError` with user-facing messages. `functions/index.js` only wires triggers and HTTP routes.
-
-## Configuration
-
-`config/dev.env.js` and `config/prod.env.js` (copied from the `sample.*.env.js` files, gitignored) hold the keys that webpack's DefinePlugin injects as `process.env.*`: Firebase config (`FB_*`), `GOOGLE_MAPS_API_KEY`, and `WEATHER_API` (`OpenWeatherMap` or `DarkSky`) selecting the weather provider. Values must be double-quoted string literals (e.g. `` `"value"` ``).
-
-Third-party API keys for weather/elevation calls are **not** used directly by the browser: the client calls the `api/cors` Cloud Function with a URL containing the literal placeholder `API_KEY` plus a `service` name, and the function substitutes the service's Secret Manager key server-side. Each service is restricted to its own host by `PROXY_SERVICES`; the proxy goes away once the new app uses Open-Meteo.
-
-Security rules are owner-only: `activities` and `userprefs` by `uid`, `segments` through their parent activity's `uid`, Storage under `userdata/{uid}/`.
+CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22 with npm 11, Java 21, the runner's Chrome) in about 3 minutes. It doesn't deploy.
 
 ## Architecture
 
-### Data flow for an activity
-1. `Upload.vue` creates an `activities` Firestore doc and uploads the .FIT/.CSV file to Storage, named with the activity ID.
-2. The `processActivityFile` Storage trigger (`functions/index.js`) checks the activity belongs to the uploader, parses the file (`functions/activity.js`), writes a gzipped `<activityId>.json.gz` next to the original, and updates the activity doc's status/metadata (`Processed` or `Error` + `statusMessage`).
-3. `Activity.vue` fetches the parsed data via the authenticated Express endpoint `api/activity/:id` (Firebase ID token as Bearer header) and caches it in localStorage (`services/cache.js`, LRU by capacity).
-4. `CdA.vue` runs the VE analysis on a lap or chart selection and saves results to the `segments` collection.
+### Activity data flow
+1. The browser creates `activities/{id}` (`uid`, status `New`) and uploads the file to Storage at `userdata/{uid}/activities/{id}.fit|.csv` (`web/src/data/activities.ts`).
+2. `processActivityFile` (Storage trigger, `functions/index.js`) checks the activity belongs to the uploader and parses the file. It writes `{id}.json.gz` next to the original and sets `status`, `statusMessage`, the summary fields and `processedWith` (pipeline version).
+3. The activity page fetches `GET /api/activity/:id` (Firebase ID token as Bearer) through TanStack Query (`web/src/data/activityData.ts`).
+4. The analysis page saves results to `segments` (`web/src/data/segments.ts`, legacy-compatible shape, ADR-0012). `POST /api/activity/:id/reprocess` re-runs step 2 for stalled or failed uploads.
 
-Cloud Function URLs are hardcoded to the production project (`https://us-central1-mycda-c43c6.cloudfunctions.net/api/...`) in `Activity.vue`, `services/weather.js` and `services/mapping.js`.
+The data model is in `docs/architecture/data-model.md`. Collection and Storage shapes are shared with years of existing user data, so change them only with an ADR and a migration.
 
-### Firestore collections
-`activities` (upload metadata/status), `segments` (saved CdA/Crr analyses, baseline flags, notes), `userprefs` (per-user settings keyed by uid; loaded into the Vuex store in `store/store.js`). The Firestore `db` instance is exported from `src/main.js` and imported by components.
+### web/src
+- `core/`: framework-free domain logic, all unit-tested. It covers virtual elevation, CdA/Crr fitting, range selection and stats, wind model, hourly weather sampling, air density, loop finder, spike filter, segment stats and units. All of it is metric (ADR-0008); imperial exists only in the UI. `core/__tests__/` also holds golden snapshots: a snapshot diff is a behaviour change, so explain it in the commit.
+- `data/`: Firestore, Storage and API access. `services/`: network clients such as `openMeteo.ts`, each with an injectable `fetch`.
+- `auth/`: AuthProvider, `useAuth`/`useUser` and RequireAuth (waits for the restored session).
+- `pages/`, `layout/`, `components/` and `router.tsx`. The activity and analysis pages are lazy-loaded routes (they pull in Plotly and Leaflet). Legacy `/#/…` URLs are rewritten in `router.tsx` before the router starts.
+- `components/PlotlyChart.tsx` wraps plotly.js-basic, loaded on demand. It bumps `datarevision` on every update to work around a plotly 4.1 autorange bug, so charts that should keep the user's zoom set `uirevision`.
+- `userprefs` weights are stored in display units (the legacy shape). Analysis converts with `totalMassKg()`.
 
-### Analysis services (`src/services/`)
-- `ve.js` — `VirtualElevation`: solves the power equation for slope at each point to produce a virtual elevation profile from power, ground speed, air speed, elevation, time, rho, mass, Crr, CdA, and drivetrain loss. Speeds are in km/h or mph depending on `units`. Pass ground speed as air speed when there is no air speed data.
-- `windmodel.js` — `WindModel`: derives air speed from GPS bearing plus wind speed/direction (yaw/headwind components); its output feeds VE as air speed.
-- `weather.js` — `WeatherServiceFactory.create(config, user)` returns a DarkSky or OpenWeatherMap service (both proxied through `api/cors`). Used for wind data and air-density inputs (`RhoCalculator.vue`, with the `@mariuspopovici/rho` package).
-- `loopdetect.js` — detects loops in the GPS track so VE can be aligned on loop start/end markers.
-
-Routes requiring login set `meta.requiresAuth` in `src/router/index.js`. The `@` import alias resolves to `src/`.
+### functions
+- `activity.js` holds the Firebase-free parsing, imported by tests in `web/` as well. `parseActivityFile` detects the format from file *contents*, because uploads are named `.fit` unless the name ends in `csv`. It unwraps gzip and zip, parses FIT in list mode, assembles sessions and laps itself, and throws `ActivityFileError` with user-facing messages.
+- `index.js` wires the trigger and the Express `api` (ID-token auth, owner checks returning 404 for foreign activities). Bump `PIPELINE_VERSION` when parsing changes in a way that should make old errors retryable.
 
 ## Gotchas
-- `firebase.json` hosting serves `public/`, but the webpack build writes to `dist/`; copy or repoint before deploying hosting.
+- `.gitignore` once had `firebase.*`, which silently ignored `web/src/firebase.ts`. Check `git status --ignored` when files seem to vanish.
+- Each package's `.npmrc` sets `legacy-peer-deps=false`, so lockfiles include peer dependencies whatever the user-level npm config says. Without it, `npm ci` fails in CI.
+- Firestore keeps a streaming connection open: in Playwright, wait for content, never `networkidle`. Mantine renders some content twice (desktop table and phone cards), so filter text locators with `{ visible: true }`.
+- The Hosting emulator is on port 5002, because macOS AirPlay holds 5000. Hosting header regexes are RE2 (no lookahead); use globs.
+- Private ride fixtures (`web/src/core/__fixtures__/private/`, gitignored) contain GPS tracks. Refer to them by file ID, never by name or place.

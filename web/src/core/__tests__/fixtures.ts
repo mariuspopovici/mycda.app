@@ -39,19 +39,6 @@ export function circuitTrack (laps = 3, pointsPerLap = 150): LatLng[] {
   return track
 }
 
-/**
- * Removes the conditions where the legacy VE was wrong (non-1 s intervals, stops, tailwinds faster
- * than the rider) so legacy and current VE must agree.
- */
-export function withoutLegacyBugs<T extends { time: Date[], speed: number[], airspeed: number[] }> (s: T): T {
-  return {
-    ...s,
-    time: s.time.map((_, i) => new Date(i * 1000)),
-    speed: s.speed.map((v) => Math.max(v, 0.5)),
-    airspeed: s.airspeed.map((v) => Math.max(v, 0))
-  }
-}
-
 /** Compares two numeric arrays with a relative tolerance. */
 export function expectClose (actual: number[], expected: number[], relTol = 1e-12) {
   if (actual.length !== expected.length) {

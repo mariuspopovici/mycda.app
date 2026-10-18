@@ -26,9 +26,7 @@ Cloud Functions use the Admin SDK and bypass the rules, so they must do their ow
 |---|---|
 | `GET /activity/:id` | Returns 404 unless `activities/{id}.uid` is the caller's. Missing and foreign activities look the same, so activity IDs can't be probed |
 | `POST /activity/:id/reprocess` | Same ownership check. Re-runs processing on the caller's own stored upload (`userdata/{uid}/activities/{id}.fit\|.csv`); marks the activity as an error if no upload exists |
-| `GET /cors?service=&url=` | `service` must be `openweather` or `maps` (`PROXY_SERVICES`). `url` must be `https`, on exactly that service's host, with no credentials or port. `API_KEY` in the URL is replaced with the service's key from Secret Manager (`OPENWEATHER_API_KEY`, `GOOGLE_MAPS_API_KEY`) |
 
-`/cors` exists only because the legacy app called keyed APIs from the browser. It is removed once weather and elevation move to Open-Meteo ([ADR-0005](../decisions/0005-open-meteo-for-weather-and-elevation.md)).
 
 ## Tests
 
@@ -42,4 +40,4 @@ It covers owner access, cross-user denial for reads, lists, updates and deletes,
 
 ## History
 
-Until October 2026 the rules allowed any signed-in user to read and write every document and file, `/activity/:id` did not check ownership, and `/cors` would fetch any URL with the real API key substituted in. A signed-in user could therefore read other users' rides or obtain the project's API keys. These were fixed in commit `93f3288` and deployed on 2026-10-17. Rotate the OpenWeatherMap and Google keys if exposure is a concern.
+Until October 2026 the rules allowed any signed-in user to read and write every document and file, `/activity/:id` did not check ownership, and `/cors` would fetch any URL with the real API key substituted in. A signed-in user could therefore read other users' rides or obtain the project's API keys. These were fixed in commit `93f3288` and deployed on 2026-10-17. The `/cors` proxy was removed with the legacy app, and its two Secret Manager keys were destroyed, on 2026-10-18. Rotate the OpenWeatherMap and Google keys if exposure is a concern.

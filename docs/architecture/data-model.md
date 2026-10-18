@@ -117,7 +117,7 @@ Header row required. Columns are matched by name (case-insensitive), in any orde
 
 ## Browser storage
 
-The legacy app caches the last 5 fetched activities in `localStorage` (`ActivityCache*` keys, pako-deflated). The new app must use different keys, or clear these, to avoid reading stale shapes.
+The app doesn't persist activity data in the browser. TanStack Query caches it in memory for the session. Browsers that used the legacy app may still hold its `ActivityCache*` keys in `localStorage`, which nothing reads any more.
 
 ## Known issues
 

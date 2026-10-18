@@ -17,8 +17,8 @@ Run a single file or test from `web/`: `npx vitest run src/core/__tests__/core.t
 
 | File | Kind | Notes |
 |---|---|---|
-| `core.test.ts` | Behaviour + golden | Physics invariants, one test per fixed bug, golden snapshots of VE on the committed CSV fixtures |
-| `parity.test.ts` | Legacy parity | Runs the legacy `src/services/*.js` on the same inputs. VE parity uses `withoutLegacyBugs()` (1 s spacing, always moving, no reverse air speed), where both implementations must agree. Delete this file with the legacy app |
+| `core.test.ts` | Behaviour + golden | Physics invariants, one test per fixed bug, golden snapshots of VE on the committed CSV fixtures. The legacy parity tests were removed with the legacy app; these snapshots carry the guarantee forward |
+| `airDensity.test.ts` | Parity + physics | Air density against `@mariuspopovici/rho`, and its physical trends |
 | `private.test.ts` | Real rides | Curated rides from the gitignored `__fixtures__/private/`. Skipped when absent |
 | `fixtures.ts` | Helpers | `loadActivityPoints()` runs a `.fit`/`.csv` through the real Cloud Functions parsing (`functions/activity.js`) and a JSON round trip, the same path production data takes |
 
@@ -44,7 +44,7 @@ gcloud storage cp "gs://mycda-c43c6.appspot.com/userdata/<UID>/activities/*.csv"
 
 - The curated list in `private.test.ts` covers 1 s and smart recording, stops, long gaps, partial GPS, no GPS, laps, loops and measured air speed. See [log/2026-10-17-fixture-survey.md](../log/2026-10-17-fixture-survey.md).
 - Golden files for private rides are written to `private/__golden__/` with `toMatchFileSnapshot`, so nothing derived from a ride is committed.
-- The full sweep (`ALL_FIXTURES=1`) runs parity on every file and skips files the upload pipeline rejects.
+- The full sweep (`ALL_FIXTURES=1`) checks that every file yields finite VE and valid loops, and skips files the upload pipeline rejects.
 
 ## Upload parsing tests
 

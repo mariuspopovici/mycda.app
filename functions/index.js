@@ -8,7 +8,6 @@ const { getStorage } = require("firebase-admin/storage");
 const { setGlobalOptions } = require("firebase-functions/v2");
 const { onRequest } = require("firebase-functions/v2/https");
 const { onObjectFinalized } = require("firebase-functions/v2/storage");
-const { defineSecret } = require("firebase-functions/params");
 const logger = require("firebase-functions/logger");
 const express = require("express");
 const compression = require("compression");
@@ -22,7 +21,7 @@ const {
 const gzip = promisify(zlib.gzip);
 const gunzip = promisify(zlib.gunzip);
 
-// The legacy app calls https://us-central1-mycda-c43c6.cloudfunctions.net/api. Without an explicit
+// The web app calls https://us-central1-mycda-c43c6.cloudfunctions.net/api. Without an explicit
 // region the CLI places Storage triggers on the default bucket's "us" multi-region in us-east1.
 setGlobalOptions({ region: "us-central1" });
 
@@ -39,16 +38,6 @@ const PIPELINE_VERSION = 2;
 
 /** Uploaded activity files: userdata/{uid}/activities/{activityId}.fit|.csv */
 const ACTIVITY_FILE_PATH = /^userdata\/([^/]+)\/activities\/([^/]+)\.(fit|csv)$/i;
-
-/**
- * Services the legacy web app calls through /cors. Each may only be called on its own HTTPS host,
- * so the API key substituted for the API_KEY placeholder can never be sent to an arbitrary URL.
- * Set keys with `firebase functions:secrets:set <NAME>`.
- */
-const PROXY_SERVICES = {
-  openweather: { host: "api.openweathermap.org", key: defineSecret("OPENWEATHER_API_KEY") },
-  maps: { host: "maps.googleapis.com", key: defineSecret("GOOGLE_MAPS_API_KEY") }
-};
 
 const app = express();
 app.use(compression());
@@ -78,58 +67,6 @@ async function validateFirebaseIdToken(req, res, next) {
     res.status(403).send("Unauthorized");
   }
 }
-
-/**
- * Proxies a GET request to one of the PROXY_SERVICES, replacing the API_KEY placeholder in the url
- * with the service's key.
- *
- *   GET /api/cors?service=openweather&url=<encoded url>
- */
-app.get("/cors", async (req, res) => {
-  const { url, service } = req.query;
-
-  if (typeof url !== "string" || typeof service !== "string") {
-    res.status(400).send("URL and service are required.");
-    return;
-  }
-
-  const config = Object.prototype.hasOwnProperty.call(PROXY_SERVICES, service) && PROXY_SERVICES[service];
-  if (!config) {
-    res.status(403).send("Unknown service.");
-    return;
-  }
-
-  let target;
-  try {
-    target = new URL(url);
-  } catch (error) {
-    res.status(400).send("Invalid URL.");
-    return;
-  }
-
-  if (target.protocol !== "https:" || target.hostname !== config.host ||
-      target.username || target.password || target.port) {
-    res.status(403).send("URL not allowed for this service.");
-    return;
-  }
-
-  const apiKey = config.key.value();
-  if (!apiKey) {
-    res.status(403).send("Service API key not configured.");
-    return;
-  }
-
-  try {
-    const response = await fetch(target.toString().replace("API_KEY", encodeURIComponent(apiKey)));
-    const body = await response.text();
-    res.status(response.ok ? 200 : 502)
-      .type(response.headers.get("content-type") || "text/plain")
-      .send(body);
-  } catch (error) {
-    logger.error("Proxy request failed", { service, error: error.message });
-    res.status(500).send("An error occurred while processing cors proxy request.");
-  }
-});
 
 /**
  * Returns the caller's parsed activity: summary, laps and data points (see docs/architecture/data-model.md).
@@ -195,7 +132,7 @@ app.post("/activity/:activity/reprocess", async (req, res) => {
 });
 
 exports.api = onRequest(
-  { cors: true, secrets: Object.values(PROXY_SERVICES).map((s) => s.key) },
+  { cors: true },
   app
 );
 

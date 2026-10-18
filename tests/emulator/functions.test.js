@@ -180,15 +180,3 @@ describe('POST /api/activity/:id/reprocess', () => {
     expect((await db.doc(`activities/${id}`).get()).data().status).toBe('New')
   })
 })
-
-describe('GET /api/cors', () => {
-  const cors = (service, url) => get(`/cors?service=${service}&url=${encodeURIComponent(url)}`, users.alice)
-
-  it('only proxies known services on their own host', async () => {
-    expect((await cors('darksky', 'https://api.darksky.net/forecast/API_KEY/1,2')).status).toBe(403)
-    expect((await cors('openweather', 'https://attacker.example/?k=API_KEY')).status).toBe(403)
-    expect((await cors('openweather', 'http://api.openweathermap.org/?k=API_KEY')).status).toBe(403)
-    expect((await cors('maps', 'https://maps.googleapis.com:8443/?k=API_KEY')).status).toBe(403)
-    expect((await get('/cors?service=maps', users.alice)).status).toBe(400)
-  })
-})

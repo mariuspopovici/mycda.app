@@ -1,21 +1,19 @@
 /**
- * Parity and golden tests on real rides from the gitignored __fixtures__/private folder.
+ * Golden and robustness tests on real rides from the gitignored __fixtures__/private folder.
  * Skipped when the folder is absent. Golden files are written next to the fixtures so no
  * ride-derived data is committed.
  *
  *   npm test                      the curated rides below
- *   npm run test:all-fixtures     every file in the folder (parity only)
+ *   npm run test:all-fixtures     every file in the folder (robustness only)
  */
 import { existsSync, readdirSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import LegacyLoopFinder from '../../../../src/services/loopdetect.js'
-import LegacyVirtualElevation from '../../../../src/services/ve.js'
 import { hasLocation, toActivitySeries } from '../activitySeries'
 import { findLoops } from '../loopFinder'
 import { virtualElevation } from '../virtualElevation'
 import { travelBearings, windModelAirSpeed } from '../windModel'
-import { PRIVATE_FIXTURES_DIR, expectClose, loadActivityPoints, withoutLegacyBugs } from './fixtures'
+import { PRIVATE_FIXTURES_DIR, loadActivityPoints } from './fixtures'
 
 const CURATED_RIDES: Record<string, string> = {
   '179e07b9-7ef4-424c-9fdb-8dc0c7f01608.fit': 'GPS loops — 1 s, one long gap',
@@ -53,13 +51,8 @@ describe.skipIf(rides.length === 0)('private rides', () => {
       }
       const s = toActivitySeries(points)
 
-      const clean = withoutLegacyBugs(s)
-      const legacy = new LegacyVirtualElevation(clean.power, clean.speed, clean.airspeed, clean.altitude, clean.time, 'metric', 2)
-      expectClose(
-        virtualElevation({ ...clean, elevation: clean.altitude, drivetrainLoss: 2 }, PARAMS),
-        legacy.calculateVirtualElevation(PARAMS.rho, PARAMS.mass, PARAMS.crr, PARAMS.cda),
-        1e-9
-      )
+      const ve = virtualElevation({ ...s, elevation: s.altitude, drivetrainLoss: 2 }, PARAMS)
+      expect(ve.every(Number.isFinite)).toBe(true)
 
       if (hasLocation(s)) {
         if (travelBearings(s.location)) {
@@ -67,14 +60,11 @@ describe.skipIf(rides.length === 0)('private rides', () => {
           expect(air.every((p) => Number.isFinite(p.airspeed))).toBe(true)
         }
 
-        // the legacy finder only ever saw the fixes, without gaps
-        const fixes = s.location.filter((p) => p !== null)
-        const legacyLoops = new LegacyLoopFinder(fixes.map((p) => ({ ...p }))).findLoops(3, 60, 1000)
-        expect(findLoops(fixes, 3, 60, 1000)).toEqual(legacyLoops)
+        const loops = findLoops(s.location, 3, 60, 1000)
+        expect(loops.every((l) => l.endIndex < s.time.length && s.location[l.startIndex] && s.location[l.endIndex])).toBe(true)
       }
 
       if (!ALL) {
-        const ve = virtualElevation({ ...s, elevation: s.altitude, drivetrainLoss: 2 }, PARAMS)
         const golden = { points: s.time.length, gps: s.location.filter((p) => p !== null).length, ve: ve.map((v) => Math.round(v * 1e6) / 1e6) }
         await expect(JSON.stringify(golden)).toMatchFileSnapshot(
           resolve(PRIVATE_FIXTURES_DIR, '__golden__', ride.replace(/\.\w+$/, '.json'))

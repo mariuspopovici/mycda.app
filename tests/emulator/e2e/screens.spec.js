@@ -13,6 +13,11 @@ test.skip(!process.env.SCREENSHOTS, 'set SCREENSHOTS=1')
 
 test('screens', async ({ page }) => {
   test.setTimeout(180_000)
+  // README shots: viewport only, without the development "emulators" badge
+  const readme = async (name) => {
+    await page.evaluate(() => document.querySelectorAll('header p').forEach((p) => { if (p.textContent === 'emulators') p.style.display = 'none' }))
+    await page.screenshot({ path: out(`readme-${name}`) })
+  }
   const shoot = async (name, scheme = 'light') => {
     await page.emulateMedia({ colorScheme: scheme })
     await page.evaluate((s) => localStorage.setItem('mycda-color-scheme', s), scheme)
@@ -26,6 +31,7 @@ test('screens', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 800 })
   await page.goto('/')
   await shoot('landing'); await shoot('landing', 'dark')
+  await readme('landing')
   await page.goto('/login'); await shoot('login', 'dark')
 
   await page.goto('/signup')
@@ -49,6 +55,7 @@ test('screens', async ({ page }) => {
   ])
   await expect(page.getByText('Ready').filter({ visible: true })).toHaveCount(2, { timeout: 60_000 })
   await shoot('activities'); await shoot('activities', 'dark')
+  await readme('activities')
   await page.locator('input[type=file]').setInputFiles({ name: 'Circuit.fit', mimeType: 'application/octet-stream', buffer: circuitRide() })
   await page.getByRole('link', { name: 'Circuit' }).click({ timeout: 60_000 })
   await expect(page.locator('.leaflet-container')).toBeVisible()
@@ -56,6 +63,8 @@ test('screens', async ({ page }) => {
   await page.getByRole('row', { name: /^2 / }).click()
   await page.waitForTimeout(1500)
   await page.screenshot({ path: out('activity-dark'), fullPage: true })
+  await page.evaluate(() => window.scrollTo(0, 0))
+  await readme('activity')
   await page.getByRole('button', { name: 'Analyze selection' }).click()
   await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 })
   await page.getByRole('radiogroup').getByText('Loops', { exact: true }).click()
@@ -67,10 +76,16 @@ test('screens', async ({ page }) => {
   await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 })
   await page.waitForTimeout(1500)
   await page.screenshot({ path: out('analysis-light'), fullPage: true })
+  await page.getByRole('button', { name: 'Suggest CdA' }).click()
+  await page.getByRole('menuitem', { name: 'Match recorded elevation' }).click()
+  // let the suggestion notification close
+  await page.waitForTimeout(5500)
+  await readme('analysis')
   await page.goto('/faq'); await shoot('faq')
 
   await page.setViewportSize({ width: 390, height: 844 })
   await page.goto('/activities'); await shoot('activities-mobile')
+  await readme('mobile')
   await page.getByRole('button', { name: 'Toggle navigation' }).click()
   await page.screenshot({ path: out('nav-mobile-light') })
 })
