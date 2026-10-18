@@ -134,6 +134,8 @@ test('tests table: pairs the out and back legs, fits, saves and opens the test',
   // an unsaved test opens a new analysis with the table's parameters
   await card.getByRole('button', { name: 'Test 1', exact: true }).click()
   await expect(page).toHaveURL(/\/analysis\?ranges=.*&crr=0\.005&dloss=0/)
+  // the URL changes before the lazy analysis route renders: wait for it, or the activity page's fields still match
+  await expect(page.getByRole('button', { name: 'Suggest CdA' })).toBeVisible()
   await expect(page.getByRole('textbox', { name: 'Crr', exact: true })).toHaveValue('0.005')
   await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
   await page.goBack()
@@ -148,6 +150,7 @@ test('tests table: pairs the out and back legs, fits, saves and opens the test',
   // opening a saved test opens its analysis
   await card.getByRole('button', { name: 'Test 1', exact: true }).click()
   await expect(page).toHaveURL(/\/analysis\/[0-9a-f-]{36}$/)
+  await expect(page.getByRole('button', { name: 'Suggest CdA' })).toBeVisible()
   await expect(page.getByRole('textbox', { name: 'Crr', exact: true })).toHaveValue('0.005')
   await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
 })
