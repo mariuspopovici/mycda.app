@@ -28,7 +28,7 @@ New React app (`web/`, being built to replace the Vue app — see Migration belo
 
 Emulator tests (`tests/emulator/`, project `demo-mycda`): `npm --prefix tests/emulator test` runs `test:e2e` (Playwright in Chrome against the web app; `SCREENSHOTS=1` adds review screenshots), `test:rules` (security rules in the Firestore + Storage emulators) and `test:functions` (end-to-end: upload → `processActivityFile` → `GET /api/activity/:id`, ownership checks, `/cors` allowlist, in the Auth + Functions + Firestore + Storage emulators). Needs Java.
 
-CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22, Java 21, the runner's Chrome). To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`. The Hosting emulator is on port 5002, because macOS AirPlay holds 5000.
+CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22 with npm 11, Java 21, the runner's Chrome), about 3 minutes. Each package's `.npmrc` sets `legacy-peer-deps=false` so lockfiles include peer dependencies whatever the user-level npm config says; `npm ci` fails in CI otherwise. To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`. The Hosting emulator is on port 5002, because macOS AirPlay holds 5000.
 
 ## Migration in progress
 
