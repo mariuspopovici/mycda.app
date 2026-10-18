@@ -15,6 +15,12 @@ export interface VirtualElevationSeries {
   time: Array<Date | number>
   /** Drivetrain loss in percent, applied to power. */
   drivetrainLoss?: number
+  /**
+   * Indexes where a new range starts in a series joined from several ranges (e.g. the out and
+   * back legs of a test). VE holds level across each join: the jump in position and speed
+   * between ranges isn't integrated.
+   */
+  breaks?: number[]
 }
 
 export interface VirtualElevationParams {
@@ -42,12 +48,14 @@ const KMH_PER_MS = 3.6
  *
  *   m·g·Δh = P·Δt − Crr·m·g·v·Δt − ½·CdA·ρ·v_air·|v_air|·v·Δt − ½·m·(v² − v₀²)
  *
+ * At `breaks` (joins between ranges) VE holds level.
  * Where there is nothing to integrate (stopped, pauses, repeated timestamps) the virtual elevation
  * follows the real elevation change, which is ~0 while standing still. Unlike snapping to the real
  * elevation, this keeps any drift visible, and drift is what CdA and Crr are tuned to remove.
  */
 export function virtualElevation (series: VirtualElevationSeries, params: VirtualElevationParams): number[] {
-  const { power, speed, airspeed, elevation, time, drivetrainLoss = 0 } = series
+  const { power, speed, airspeed, elevation, time, drivetrainLoss = 0, breaks = [] } = series
+  const joins = new Set(breaks)
   const { rho, mass, crr, cda } = params
   const efficiency = 1 - drivetrainLoss / 100
   const ve: number[] = []
@@ -55,6 +63,11 @@ export function virtualElevation (series: VirtualElevationSeries, params: Virtua
   power.forEach((watts, i) => {
     if (i === 0) {
       ve.push(elevation[0])
+      return
+    }
+
+    if (joins.has(i)) {
+      ve.push(ve[i - 1])
       return
     }
 

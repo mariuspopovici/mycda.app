@@ -14,20 +14,35 @@ export interface Parameters {
   dloss: number
 }
 
-export type FitRequest = { target: 'elevation' | 'loops', fitCrr: boolean }
+export type FitTargetKey = 'run' | 'loops' | 'elevation'
+export type FitRequest = { target: FitTargetKey, fitCrr: boolean }
+
+export interface FitOption {
+  key: FitTargetKey
+  label: string
+  disabled?: boolean
+}
+
+/** The fitted starting point of the analysis. */
+export interface Suggestion {
+  cda: number
+  /** How it was fitted, e.g. "closure of the run". */
+  basis: string
+}
 
 interface Props {
   value: Parameters
   units: Units
   onChange: (value: Parameters) => void
   onFit: (request: FitRequest) => void
-  canFitLoops: boolean
+  fitOptions: FitOption[]
+  suggestion?: Suggestion
   weatherContext?: WeatherContext
 }
 
 const CDA_SLIDER: [number, number] = [0.1, 0.6]
 
-export function ParametersCard ({ value, units, onChange, onFit, canFitLoops, weatherContext }: Props) {
+export function ParametersCard ({ value, units, onChange, onFit, fitOptions, suggestion, weatherContext }: Props) {
   const metric = units === 'metric'
   const [calculatorOpen, setCalculatorOpen] = useState(false)
   const [fitCrr, setFitCrr] = useState(false)
@@ -75,14 +90,23 @@ export function ParametersCard ({ value, units, onChange, onFit, canFitLoops, we
               <Button variant='light' leftSection={<IconSparkles size={16} />}>Suggest CdA</Button>
             </Menu.Target>
             <Menu.Dropdown>
-              <Menu.Item onClick={() => onFit({ target: 'elevation', fitCrr })}>Match recorded elevation</Menu.Item>
-              <Menu.Item disabled={!canFitLoops} onClick={() => onFit({ target: 'loops', fitCrr })}>
-                Close the loops{canFitLoops ? '' : ' (find loops first)'}
-              </Menu.Item>
+              {fitOptions.map((option) => (
+                <Menu.Item key={option.key} disabled={option.disabled} onClick={() => onFit({ target: option.key, fitCrr })}>
+                  {option.label}
+                </Menu.Item>
+              ))}
             </Menu.Dropdown>
           </Menu>
           <Checkbox size='xs' label='Fit Crr too' checked={fitCrr} onChange={(e) => setFitCrr(e.currentTarget.checked)} />
         </Group>
+        {suggestion && (
+          <Group gap={6} wrap='nowrap'>
+            <Text size='xs' c='dimmed'>Suggested CdA {suggestion.cda.toFixed(3)} from {suggestion.basis}.</Text>
+            {Math.abs(value.cda - suggestion.cda) > 0.0005 && (
+              <Button size='compact-xs' variant='subtle' onClick={() => set({ cda: suggestion.cda })}>Reset to suggested</Button>
+            )}
+          </Group>
+        )}
       </Stack>
 
       <Modal opened={calculatorOpen} onClose={() => setCalculatorOpen(false)} title='Air density calculator' size='lg'>

@@ -16,8 +16,8 @@ function FitBounds ({ points }: { points: LatLngTuple[] }) {
 
 export interface RideMapProps {
   track: Track
-  /** Index range to highlight. */
-  selection?: { start: number, end: number }
+  /** Index ranges to highlight. */
+  selection?: Array<{ start: number, end: number }>
   /** Index of a point to mark, e.g. the one hovered on a chart. */
   marker?: number
   height?: number
@@ -28,7 +28,7 @@ export function RideMap ({ track, selection, marker, height = 360 }: RideMapProp
   const theme = useMantineTheme()
   const dark = useComputedColorScheme('light') === 'dark'
   const segments = useMemo(() => trackSegments(track), [track])
-  const selected = useMemo(() => (selection ? trackSegments(track, selection.start, selection.end) : []), [track, selection])
+  const selected = useMemo(() => (selection ?? []).flatMap((r) => trackSegments(track, r.start, r.end)), [track, selection])
   const all = useMemo(() => segments.flat(), [segments])
   const focus = useMemo(() => (selected.length ? selected.flat() : all), [selected, all])
 

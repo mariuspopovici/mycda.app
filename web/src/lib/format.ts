@@ -25,3 +25,8 @@ const dateTime = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeS
 export function formatDateTime (date: Date | undefined): string {
   return date ? dateTime.format(date) : '–'
 }
+
+const COMPASS = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+
+/** 16-point compass name for a bearing in degrees. */
+export const compassPoint = (degrees: number) => COMPASS[Math.round((((degrees % 360) + 360) % 360) / 22.5) % 16]

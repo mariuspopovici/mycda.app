@@ -47,7 +47,10 @@ export function SegmentsTable ({ activityId, segments, onShow, onDelete }: Props
                     </Group>
                     {segment.description && <Text size='xs' c='dimmed' lineClamp={1}>{segment.description}</Text>}
                   </Table.Td>
-                  <Table.Td><Text size='sm'>{segment.rangeStart.toLocaleTimeString()}–{segment.rangeEnd.toLocaleTimeString()}</Text></Table.Td>
+                  <Table.Td>
+                    <Text size='sm'>{segment.rangeStart.toLocaleTimeString()}–{segment.rangeEnd.toLocaleTimeString()}</Text>
+                    {segment.ranges.length > 1 && <Text size='xs' c='dimmed'>{segment.ranges.length} ranges joined</Text>}
+                  </Table.Td>
                   <Table.Td ta='right' fw={600}>{segment.cda.toFixed(3)}</Table.Td>
                   <Table.Td ta='right'>{segment.crr.toFixed(4)}</Table.Td>
                   <Table.Td ta='right' c={color}>{comparison ? `${signed(-comparison.cdaDeltaPct, 1)} %` : '–'}</Table.Td>

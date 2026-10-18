@@ -32,6 +32,18 @@ export interface Activity {
   fitFile?: string
   /** Upload pipeline version that produced the status; absent for the legacy pipeline. */
   processedWith?: number
+  /** The rider's notes about the ride. */
+  notes?: string
+  /** Analysis parameters for this ride, overriding the profile's defaults. */
+  analysisDefaults?: RideDefaults
+}
+
+/** Ride-level analysis parameters, metric: mass kg, rho kg/m³, dloss %. */
+export interface RideDefaults {
+  mass?: number
+  rho?: number
+  crr?: number
+  dloss?: number
 }
 
 const toDate = (value: unknown) => (value && typeof (value as Timestamp).toDate === 'function'
@@ -57,7 +69,11 @@ export function toActivity (id: string, data: DocumentData): Activity {
     averageSpeed: toNumber(data.averageSpeed),
     averagePower: toNumber(data.averagePower),
     fitFile: data.fitFile,
-    processedWith: typeof data.processedWith === 'number' ? data.processedWith : undefined
+    processedWith: typeof data.processedWith === 'number' ? data.processedWith : undefined,
+    notes: typeof data.notes === 'string' ? data.notes : undefined,
+    analysisDefaults: data.analysisDefaults && typeof data.analysisDefaults === 'object'
+      ? Object.fromEntries(Object.entries(data.analysisDefaults).filter(([, v]) => typeof v === 'number' && Number.isFinite(v)))
+      : undefined
   }
 }
 
@@ -82,6 +98,12 @@ export function useActivities (uid: string) {
 
 export async function renameActivity (id: string, name: string) {
   await updateDoc(doc(db, 'activities', id), { name })
+}
+
+/** Saves the ride's notes and analysis parameters (unset parameters fall back to the profile). */
+export async function saveRideSettings (id: string, settings: { notes: string, analysisDefaults: RideDefaults }) {
+  const defaults = Object.fromEntries(Object.entries(settings.analysisDefaults).filter(([, v]) => v !== undefined))
+  await updateDoc(doc(db, 'activities', id), { notes: settings.notes, analysisDefaults: defaults })
 }
 
 /** Storage file name for an upload. The server detects the real format from the contents. */

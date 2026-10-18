@@ -27,7 +27,7 @@ test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete
   await expect(page.locator('.leaflet-container')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Analyze selection' })).toBeDisabled()
 
-  await page.getByRole('row', { name: /^2 / }).click()
+  await page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Include lap 2', exact: true }) }).click()
   await expect(page.getByText('Lap 2', { exact: true })).toBeVisible()
   await expect(page.getByText('03:19')).toBeVisible()
 
@@ -50,9 +50,9 @@ test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete
   await expect(page.getByText('Selection', { exact: true })).toBeVisible()
 
   // back to lap 2 and analyze it
-  await page.getByRole('row', { name: /^2 / }).click()
+  await page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Include lap 2', exact: true }) }).click()
   await page.getByRole('button', { name: 'Analyze selection' }).click()
-  await expect(page).toHaveURL(/\/analysis\?from=\d+&to=\d+&name=Lap\+2/)
+  await expect(page).toHaveURL(/\/analysis\?ranges=\d+-\d+&name=Lap\+2/)
   await expect(page.getByRole('heading', { name: 'Lap 2' })).toBeVisible()
   await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 })
 
@@ -62,7 +62,7 @@ test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete
 
   await page.getByRole('button', { name: 'Suggest CdA' }).click()
   await page.getByRole('menuitem', { name: 'Match recorded elevation' }).click()
-  await expect(page.getByText(/Suggested CdA 0\.26\d/)).toBeVisible()
+  await expect(page.locator('.mantine-Notification-root').getByText(/Suggested CdA 0\.26\d/)).toBeVisible()
   await expect(page.getByRole('textbox', { name: 'CdA', exact: true })).toHaveValue(/^0\.26\d$/)
 
   await page.getByRole('textbox', { name: 'Name' }).fill('Lap 2 – drops')

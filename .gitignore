@@ -15,7 +15,10 @@ npm-debug.log*
 # Firebase CLI cache (firebase.json and .firebaserc are tracked: CI deploys from them)
 .firebase/
 
-# Personal activity files used as local test fixtures (contain GPS tracks)
+# Ride files contain GPS tracks: never commit them (tests generate FIT files with functions/test/fit-builder.js)
+*.fit
+*.FIT
+*.fit.gz
 web/src/core/__fixtures__/private/
 
 # Playwright output

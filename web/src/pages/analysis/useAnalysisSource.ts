@@ -1,73 +1,94 @@
 import { useQuery } from '@tanstack/react-query'
-import { useActivityData, type ActivityData } from '../../data/activityData'
-import { getSegment, type Segment, type StoredLap } from '../../data/segments'
+import { doc, getDoc } from 'firebase/firestore'
+import { db } from '../../firebase'
+import { toActivity, type Activity } from '../../data/activities'
+import { useActivityData } from '../../data/activityData'
+import { getSegment, type Segment, type TimeRange } from '../../data/segments'
 import { useUserPrefs } from '../../data/userPrefs'
-import type { ActivitySeries } from '../../core/activitySeries'
-import { rangeFromAxis, sliceRange } from '../../core/selection'
+import { combineRanges, combineWindows, type CombinedSeries } from '../../core/ranges'
 
 export interface AnalysisSource {
-  series: ActivitySeries
-  laps: StoredLap[]
+  series: CombinedSeries
+  /** The ranges being analysed, saved with the segment. */
+  ranges: TimeRange[]
+  /** Lap windows, for the laps overlay. */
+  laps: TimeRange[]
   defaultName: string
+  activity?: Activity
   segment?: Segment
 }
 
-/** Laps in the stored shape, so new segments stay readable by the legacy app. */
-function storedLaps (data: ActivityData): StoredLap[] {
-  return data.laps.map((lap) => ({
-    start_time: lap.start.toISOString(),
-    total_elapsed_time: lap.elapsedTime,
-    total_distance: lap.distance,
-    start_distance: lap.startDistance,
-    avg_power: lap.averagePower,
-    avg_speed: lap.averageSpeed
-  }))
-}
+/** Encodes ranges for the analysis URL: `from-to,from-to` in epoch ms. */
+export const encodeRanges = (ranges: TimeRange[]) => ranges.map((r) => `${r.start.getTime()}-${r.end.getTime()}`).join(',')
 
-function sliceSeries (series: ActivitySeries, from: number, to: number): ActivitySeries | undefined {
-  const range = rangeFromAxis(series.time.map((t) => t.getTime()), from, to)
-  if (!range) return undefined
-  return {
-    time: sliceRange(series.time, range),
-    power: sliceRange(series.power, range),
-    altitude: sliceRange(series.altitude, range),
-    speed: sliceRange(series.speed, range),
-    airspeed: sliceRange(series.airspeed, range),
-    distance: sliceRange(series.distance, range),
-    location: sliceRange(series.location, range)
-  }
+/** Parses `ranges` (or the legacy single `from`/`to` pair) from the analysis URL. */
+export function parseRanges (params: URLSearchParams): TimeRange[] {
+  const encoded = params.get('ranges')
+  const pairs = encoded
+    ? encoded.split(',').map((pair) => pair.split('-').map(Number))
+    : [[Number(params.get('from')), Number(params.get('to'))]]
+  return pairs
+    .filter(([a, b]) => Number.isFinite(a) && Number.isFinite(b) && b > a)
+    .map(([a, b]) => ({ start: new Date(a), end: new Date(b) }))
 }
 
 /**
- * The data being analysed: a time range of the activity, or a saved segment. Saved segments use
- * their own copy of the series, so they reproduce exactly what was saved.
+ * The data being analysed: ranges of the activity (one, or several joined into a run), or a saved
+ * segment. Version 2 segments read their ranges from the activity; legacy segments reproduce the
+ * series they copied.
  */
-export function useAnalysisSource (activityId: string, segmentId: string | undefined, from: number, to: number, name: string) {
+export function useAnalysisSource (activityId: string, segmentId: string | undefined, ranges: TimeRange[], name: string) {
   const { prefs, isLoading: prefsLoading } = useUserPrefs()
   const segmentQuery = useQuery({
     queryKey: ['segment', segmentId, prefs.units],
     queryFn: () => getSegment(segmentId!, prefs.units),
     enabled: !!segmentId && !prefsLoading
   })
+  const activityQuery = useQuery({
+    queryKey: ['activityDoc', activityId],
+    queryFn: async () => {
+      const snapshot = await getDoc(doc(db, 'activities', activityId))
+      return snapshot.exists() ? toActivity(snapshot.id, snapshot.data()) : undefined
+    }
+  })
   const segment = segmentQuery.data
-  // saved segments without their own series fall back to the activity
-  const needActivity = !segmentId || (segmentQuery.isSuccess && !segment?.series)
-  const activityQuery = useActivityData(activityId, { enabled: needActivity })
+  const legacySeries = segment?.series
+  const needData = !segmentId || (segmentQuery.isSuccess && !!segment && !legacySeries)
+  const dataQuery = useActivityData(activityId, { enabled: needData })
 
   if (segmentId && segmentQuery.isSuccess && !segment) return { error: new Error('This analysis no longer exists.') }
-  const error = segmentQuery.error ?? (needActivity ? activityQuery.error : null)
+  const error = segmentQuery.error ?? activityQuery.error ?? (needData ? dataQuery.error : null)
   if (error) return { error }
+  if (activityQuery.isLoading || (segmentId && !segmentQuery.isSuccess)) return { loading: true }
+  const activity = activityQuery.data ?? undefined
 
-  if (segment?.series) {
-    const source: AnalysisSource = { series: segment.series, laps: segment.laps, defaultName: segment.name, segment }
+  if (segment && legacySeries) {
+    const source: AnalysisSource = {
+      series: combineRanges(legacySeries, [{ start: 0, end: legacySeries.time.length - 1 }]),
+      ranges: segment.ranges,
+      laps: segment.laps.map((lap) => {
+        const start = new Date(lap.start_time)
+        return { start, end: new Date(start.getTime() + (Number(lap.total_elapsed_time) || 0) * 1000) }
+      }),
+      defaultName: segment.name,
+      activity,
+      segment
+    }
     return { source }
   }
-  const data = activityQuery.data
-  if (!data || (segmentId && !segment)) return { loading: true }
 
-  const range = segment ? [segment.rangeStart.getTime(), segment.rangeEnd.getTime()] : [from, to]
-  const series = sliceSeries(data.series, range[0], range[1])
-  if (!series) return { error: new Error('The selected range has too few points to analyze.') }
-  const source: AnalysisSource = { series, laps: storedLaps(data), defaultName: segment?.name ?? name, segment }
+  const data = dataQuery.data
+  if (!data) return { loading: true }
+  const wanted = segment ? segment.ranges : ranges
+  const series = combineWindows(data.series, wanted)
+  if (!series || series.time.length < 2) return { error: new Error('The selected range has too few points to analyze.') }
+  const source: AnalysisSource = {
+    series,
+    ranges: wanted,
+    laps: data.laps.map((lap) => ({ start: lap.start, end: new Date(lap.start.getTime() + lap.elapsedTime * 1000) })),
+    defaultName: segment?.name ?? name,
+    activity,
+    segment
+  }
   return { source }
 }

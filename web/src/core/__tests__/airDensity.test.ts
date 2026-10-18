@@ -32,3 +32,18 @@ describe('air density physics', () => {
     expect(saturationVapourPressure(0)).toBeCloseTo(6.1078, 3)
   })
 })
+
+describe('air density inputs', () => {
+  it('converts relative humidity to dew point', async () => {
+    const { dewPointFromHumidity } = await import('../airDensity')
+    expect(dewPointFromHumidity(20, 100)).toBeCloseTo(20, 6)
+    expect(dewPointFromHumidity(20, 50)).toBeCloseTo(9.26, 1)
+    expect(dewPointFromHumidity(30, 30)).toBeCloseTo(10.5, 0)
+  })
+
+  it('accepts station pressure without an altitude adjustment', () => {
+    const station = pressureAtAltitude(1013.25, 800, 18)
+    expect(airDensity({ temperature: 18, dewPoint: 8, stationPressure: station }))
+      .toBeCloseTo(airDensity({ temperature: 18, dewPoint: 8, seaLevelPressure: 1013.25, altitude: 800 }), 12)
+  })
+})

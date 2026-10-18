@@ -21,13 +21,33 @@ Created by the browser at upload time. The ID is a client-generated UUID, which 
 | `averageSpeed` | number | function | km/h |
 | `averagePower` | number | function | W |
 | `fitFile` | string | function | Storage path of the parsed `.json.gz` |
+| `notes` | string | client | The rider's notes about the ride |
+| `analysisDefaults` | `{mass?, rho?, crr?, dloss?}` | client | Ride-level analysis parameters, metric. They override the profile, and a saved segment's own values override them |
 | `processedWith` | number | function | Upload pipeline version that set the status (2 = content detection and fit-file-parser 6). Absent when the legacy pipeline processed the activity |
 
 The activity list queries `where('uid','==',uid).where('status','==','Processed'|'Error')`. See `firestore.indexes.json`.
 
 ### `segments/{segmentId}`
 
-A saved CdA/Crr analysis of part of an activity. A segment is self-contained: it **copies the data series** for its range, so it can be reopened without re-fetching the activity.
+A saved CdA/Crr analysis of one or more ranges of an activity.
+
+**Version 2** (`version: 2`, [ADR-0013](../decisions/0013-segments-v2-ranges.md)), written since 2026-10-18:
+
+| Field | Type | Notes |
+|---|---|---|
+| `id`, `activity`, `name`, `description`, `isBaseline` | | as in the legacy shape below |
+| `ranges` | `{start, end}[]` | Analysed time ranges, in ride order; several for a joined run (out and back) |
+| `range` | `{start, end}` | Spans all ranges; orders the activity's segment list |
+| `mass` | number | kg |
+| `rho` | number | kg/m³ |
+| `cda`, `crr` | number | |
+| `dloss` | number | % |
+| `airspeedSource` | `measured` · `ground` · `wind` · `manual` | |
+| `wind` | `{speed, direction}` or null | Manual wind: km/h, and degrees the wind blows from |
+
+The series are read from the activity, not stored.
+
+**Legacy** (no `version`), as written by the Vue app and until 2026-10-18. A legacy segment is self-contained: it **copies the data series** for its range, so it can be reopened without re-fetching the activity. Saving one rewrites it as version 2.
 
 | Field | Type | Notes |
 |---|---|---|
