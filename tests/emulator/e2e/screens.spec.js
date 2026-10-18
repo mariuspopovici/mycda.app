@@ -60,7 +60,7 @@ test('screens', async ({ page }) => {
   await page.getByRole('link', { name: 'Circuit' }).click({ timeout: 60_000 })
   await expect(page.locator('.leaflet-container')).toBeVisible()
   await page.getByRole('switch', { name: 'Find loops' }).check()
-  await page.getByRole('row', { name: /^2 / }).click()
+  await page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Include lap 2', exact: true }) }).click()
   await page.waitForTimeout(1500)
   await page.screenshot({ path: out('activity-dark'), fullPage: true })
   await page.evaluate(() => window.scrollTo(0, 0))

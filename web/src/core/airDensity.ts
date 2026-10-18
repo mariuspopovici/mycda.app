@@ -26,20 +26,37 @@ export function pressureAtAltitude (seaLevelHpa: number, altitude: number, t: nu
   return seaLevelHpa * Math.exp((-G * M * altitude) / (R * (t + 273.15)))
 }
 
-export interface AirConditions {
+/**
+ * Dew point (°C) from temperature (°C) and relative humidity (%), by the Magnus formula
+ * (Alduchov & Eskridge coefficients; within ~0.1 °C for -40–50 °C).
+ */
+export function dewPointFromHumidity (temperature: number, relativeHumidity: number): number {
+  const a = 17.625
+  const b = 243.04
+  const gamma = Math.log(Math.max(relativeHumidity, 0.1) / 100) + (a * temperature) / (b + temperature)
+  return (b * gamma) / (a - gamma)
+}
+
+export type AirConditions = {
   /** Air temperature, °C. */
   temperature: number
   /** Dew point, °C. */
   dewPoint: number
-  /** Sea-level pressure, hPa. */
-  seaLevelPressure: number
-  /** Altitude of the ride, m. */
-  altitude?: number
-}
+} & (
+  /** Pressure reduced to sea level, as weather services report it, hPa; adjusted to `altitude`. */
+  | { seaLevelPressure: number, altitude?: number, stationPressure?: never }
+  /** Pressure measured where you rode (a barometer or altimeter's raw reading), hPa. */
+  | { stationPressure: number, seaLevelPressure?: never, altitude?: never }
+)
 
 /** Air density in kg/m³. */
-export function airDensity ({ temperature, dewPoint, seaLevelPressure, altitude = 0 }: AirConditions): number {
-  const pressure = altitude !== 0 ? pressureAtAltitude(seaLevelPressure, altitude, temperature) : seaLevelPressure
+export function airDensity (conditions: AirConditions): number {
+  const { temperature, dewPoint } = conditions
+  const pressure = conditions.stationPressure !== undefined
+    ? conditions.stationPressure
+    : (conditions.altitude ?? 0) !== 0
+        ? pressureAtAltitude(conditions.seaLevelPressure, conditions.altitude ?? 0, temperature)
+        : conditions.seaLevelPressure
   const vapour = saturationVapourPressure(dewPoint)
   const dry = pressure - vapour
   const kelvin = temperature + 273.15

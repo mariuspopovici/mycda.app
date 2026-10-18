@@ -1,18 +1,36 @@
 /**
- * `segments/{id}`: saved CdA/Crr analyses (docs/architecture/data-model.md).
+ * `segments/{id}`: saved CdA/Crr analyses (docs/architecture/data-model.md, ADR-0013).
  *
- * While the legacy app is still in use, segments are written in its shape: series copied from the
- * activity in metric, rho in kg/m³, and mass and ve in the owner's display units. `units` records
- * which units mass and ve are in, so they can be migrated to metric after cutover (ADR-0008).
+ * Version 2 documents store the analysed time ranges (one or more, e.g. the out and back legs of a
+ * test) and metric parameters; the series are read from the activity. Legacy documents (no
+ * `version`) copy the series and store mass and ve in the owner's display units (ADR-0012); they
+ * are still read as before, and editing one rewrites it as version 2.
  */
 import { useEffect, useState } from 'react'
 import {
-  collection, deleteDoc, doc, getDoc, onSnapshot, orderBy, query, setDoc, updateDoc, where, writeBatch,
+  collection, deleteDoc, deleteField, doc, getDoc, onSnapshot, orderBy, query, setDoc, updateDoc, where, writeBatch,
   type DocumentData, type Timestamp
 } from 'firebase/firestore'
 import { db } from '../firebase'
 import { lbsToKg, type Units } from '../core/units'
 import type { LatLng, Track } from '../core/windModel'
+
+export const SEGMENT_VERSION = 2
+
+export interface TimeRange {
+  start: Date
+  end: Date
+}
+
+export type AirspeedSource = 'measured' | 'ground' | 'wind' | 'manual'
+
+/** A constant wind entered by the user. */
+export interface ManualWind {
+  /** km/h */
+  speed: number
+  /** Degrees the wind blows from. */
+  direction: number
+}
 
 export interface SegmentSummary {
   id: string
@@ -22,11 +40,14 @@ export interface SegmentSummary {
   cda: number
   crr: number
   isBaseline: boolean
+  /** Start of the first range and end of the last. */
   rangeStart: Date
   rangeEnd: Date
+  /** The analysed ranges, in order; one for legacy segments. */
+  ranges: TimeRange[]
 }
 
-/** Lap summary in the API/legacy shape, as stored on segments. */
+/** Lap summary in the API/legacy shape, as stored on legacy segments. */
 export interface StoredLap {
   start_time: string | Date
   total_elapsed_time?: number
@@ -37,12 +58,18 @@ export interface StoredLap {
 }
 
 export interface Segment extends SegmentSummary {
-  laps: StoredLap[]
+  version: number
   /** kg */
   mass: number
   /** kg/m³ */
   rho: number
-  /** Series as saved (metric). Absent fields mean the activity didn't have them. */
+  /** % (version 2; legacy segments used the profile's) */
+  dloss?: number
+  airspeedSource?: AirspeedSource
+  wind?: ManualWind
+  /** Legacy segments only. */
+  laps: StoredLap[]
+  /** Series copied into legacy segments (metric). Version 2 segments read the activity instead. */
   series?: {
     time: Date[]
     power: number[]
@@ -59,8 +86,17 @@ const num = (value: unknown, fallback = 0) => {
   const n = typeof value === 'string' ? parseFloat(value) : value
   return typeof n === 'number' && Number.isFinite(n) ? n : fallback
 }
+const optionalNum = (value: unknown) => {
+  const n = num(value, NaN)
+  return Number.isFinite(n) ? n : undefined
+}
 
 function toSummary (id: string, data: DocumentData): SegmentSummary {
+  const rangeStart = toDate(data.range?.start)
+  const rangeEnd = toDate(data.range?.end)
+  const ranges: TimeRange[] = Array.isArray(data.ranges) && data.ranges.length
+    ? data.ranges.map((r: { start: unknown, end: unknown }) => ({ start: toDate(r.start), end: toDate(r.end) }))
+    : [{ start: rangeStart, end: rangeEnd }]
   return {
     id,
     activity: data.activity,
@@ -69,25 +105,33 @@ function toSummary (id: string, data: DocumentData): SegmentSummary {
     cda: num(data.cda),
     crr: num(data.crr),
     isBaseline: !!data.isBaseline,
-    rangeStart: toDate(data.range?.start),
-    rangeEnd: toDate(data.range?.end)
+    rangeStart,
+    rangeEnd,
+    ranges
   }
 }
 
 /**
  * Reads a segment. `ownerUnits` is the owner's display units, used for legacy documents that
- * don't record the units of mass and rho.
+ * don't record the units of mass.
  */
 export function toSegment (id: string, data: DocumentData, ownerUnits: Units): Segment {
-  const units: Units = data.units ?? ownerUnits
+  const version = num(data.version, 1)
+  const units: Units = version >= 2 ? 'metric' : data.units ?? ownerUnits
   const massValue = num(data.mass)
-  const rhoValue = num(data.rho)
-  const time: unknown[] | undefined = data.time
+  const time: unknown[] | undefined = version >= 2 ? undefined : data.time
+  const source = data.airspeedSource
   return {
     ...toSummary(id, data),
+    version,
     mass: units === 'imperial' ? lbsToKg(massValue) : massValue,
-    // the legacy app always stored kg/m³
-    rho: rhoValue,
+    // always kg/m³, including in legacy documents
+    rho: num(data.rho),
+    dloss: optionalNum(data.dloss),
+    airspeedSource: ['measured', 'ground', 'wind', 'manual'].includes(source) ? source : undefined,
+    wind: data.wind && Number.isFinite(data.wind.speed) && Number.isFinite(data.wind.direction)
+      ? { speed: data.wind.speed, direction: data.wind.direction }
+      : undefined,
     laps: Array.isArray(data.laps)
       ? data.laps.map((lap: StoredLap) => ({ ...lap, start_time: lap.start_time && toDate(lap.start_time).toISOString() }))
       : [],
@@ -128,26 +172,34 @@ export interface SegmentValues {
   mass: number
   /** kg/m³ */
   rho: number
+  /** % */
+  dloss: number
   isBaseline: boolean
-  /** m */
-  ve: number[]
+  airspeedSource: AirspeedSource
+  wind?: ManualWind
 }
 
-/** Converts metric analysis values to the legacy storage units. */
-function storedValues (values: SegmentValues, units: Units) {
-  const imperial = units === 'imperial'
+/** The version 2 document body; legacy-only fields are removed on update. */
+export function segmentDocument (values: SegmentValues, ranges: TimeRange[]) {
   return {
+    version: SEGMENT_VERSION,
     name: values.name,
     description: values.description,
     cda: values.cda,
     crr: values.crr,
-    mass: imperial ? values.mass * 2.205 : values.mass,
+    mass: values.mass,
     rho: values.rho,
-    ve: imperial ? values.ve.map((m) => m * 3.281) : values.ve,
+    dloss: values.dloss,
     isBaseline: values.isBaseline,
-    units
+    airspeedSource: values.airspeedSource,
+    wind: values.airspeedSource === 'manual' && values.wind ? values.wind : null,
+    // range spans all ranges: it orders the activity's segment list
+    range: { start: ranges[0].start, end: ranges[ranges.length - 1].end },
+    ranges: ranges.map((r) => ({ start: r.start, end: r.end }))
   }
 }
+
+const LEGACY_FIELDS = ['units', 've', 'time', 'power', 'speed', 'airspeed', 'altitude', 'distance', 'location', 'laps']
 
 /** Only one baseline per activity: clears the flag on the others. */
 async function clearOtherBaselines (activityId: string, keepId: string, others: SegmentSummary[]) {
@@ -157,40 +209,19 @@ async function clearOtherBaselines (activityId: string, keepId: string, others: 
   await batch.commit()
 }
 
-export async function createSegment (
-  activityId: string,
-  values: SegmentValues,
-  units: Units,
-  series: NonNullable<Segment['series']>,
-  laps: StoredLap[],
-  existing: SegmentSummary[]
-): Promise<string> {
+export async function createSegment (activityId: string, values: SegmentValues, ranges: TimeRange[], existing: SegmentSummary[]): Promise<string> {
   const id = crypto.randomUUID()
-  await setDoc(doc(db, 'segments', id), {
-    id,
-    activity: activityId,
-    ...storedValues(values, units),
-    range: {
-      start: series.time[0],
-      end: series.time[series.time.length - 1],
-      startDistance: series.distance[0] ?? 0,
-      endDistance: series.distance[series.distance.length - 1] ?? 0
-    },
-    time: series.time,
-    power: series.power,
-    speed: series.speed,
-    airspeed: series.airspeed,
-    altitude: series.altitude,
-    distance: series.distance,
-    location: series.location,
-    laps
-  })
+  await setDoc(doc(db, 'segments', id), { id, activity: activityId, ...segmentDocument(values, ranges) })
   if (values.isBaseline) await clearOtherBaselines(activityId, id, existing)
   return id
 }
 
-export async function updateSegment (id: string, activityId: string, values: SegmentValues, units: Units, existing: SegmentSummary[]) {
-  await updateDoc(doc(db, 'segments', id), storedValues(values, units))
+/** Saves an analysis, rewriting legacy documents as version 2. */
+export async function updateSegment (id: string, activityId: string, values: SegmentValues, ranges: TimeRange[], existing: SegmentSummary[]) {
+  await updateDoc(doc(db, 'segments', id), {
+    ...segmentDocument(values, ranges),
+    ...Object.fromEntries(LEGACY_FIELDS.map((f) => [f, deleteField()]))
+  })
   if (values.isBaseline) await clearOtherBaselines(activityId, id, existing)
 }
 

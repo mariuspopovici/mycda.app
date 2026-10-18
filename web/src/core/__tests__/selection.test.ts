@@ -53,3 +53,25 @@ describe('rangesForWindows', () => {
     ])).toEqual([{ start: 0, end: 1, window: 0 }, { start: 3, end: 5, window: 2 }])
   })
 })
+
+describe('multiRangeStats', () => {
+  it('adds totals and weights averages by moving time', async () => {
+    const { multiRangeStats, rangeStats } = await import('../selection')
+    const t0 = Date.UTC(2026, 0, 1)
+    const series = {
+      time: Array.from({ length: 10 }, (_, i) => new Date(t0 + i * 1000)),
+      power: [100, 100, 100, 100, 100, 0, 300, 300, 300, 300],
+      speed: [36, 36, 36, 36, 36, 0, 18, 18, 18, 18],
+      distance: [0, 0.01, 0.02, 0.03, 0.04, 0.04, 0.045, 0.05, 0.055, 0.06],
+      altitude: Array(10).fill(10)
+    }
+    const a = { start: 0, end: 4 }
+    const b = { start: 6, end: 9 }
+    const both = multiRangeStats(series, [a, b])
+    expect(both.distance).toBeCloseTo(0.04 + 0.015, 12)
+    expect(both.duration).toBe(4 + 3)
+    expect(both.averagePower).toBeCloseTo((100 * 4 + 300 * 3) / 7, 9)
+    expect(both.averageSpeed).toBeCloseTo(0.055 / (7 / 3600), 9)
+    expect(multiRangeStats(series, [a])).toEqual(rangeStats(series, a))
+  })
+})

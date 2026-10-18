@@ -32,6 +32,18 @@ export interface Activity {
   fitFile?: string
   /** Upload pipeline version that produced the status; absent for the legacy pipeline. */
   processedWith?: number
+  /** The rider's notes about the ride. */
+  notes?: string
+  /** Analysis parameters for this ride, overriding the profile's defaults. */
+  analysisDefaults?: RideDefaults
+}
+
+/** Ride-level analysis parameters, metric: mass kg, rho kg/m³, dloss %. */
+export interface RideDefaults {
+  mass?: number
+  rho?: number
+  crr?: number
+  dloss?: number
 }
 
 const toDate = (value: unknown) => (value && typeof (value as Timestamp).toDate === 'function'
@@ -57,7 +69,11 @@ export function toActivity (id: string, data: DocumentData): Activity {
     averageSpeed: toNumber(data.averageSpeed),
     averagePower: toNumber(data.averagePower),
     fitFile: data.fitFile,
-    processedWith: typeof data.processedWith === 'number' ? data.processedWith : undefined
+    processedWith: typeof data.processedWith === 'number' ? data.processedWith : undefined,
+    notes: typeof data.notes === 'string' ? data.notes : undefined,
+    analysisDefaults: data.analysisDefaults && typeof data.analysisDefaults === 'object'
+      ? Object.fromEntries(Object.entries(data.analysisDefaults).filter(([, v]) => typeof v === 'number' && Number.isFinite(v)))
+      : undefined
   }
 }
 
@@ -65,14 +81,14 @@ export function toActivity (id: string, data: DocumentData): Activity {
 export const byRideDateDesc = (a: Activity, b: Activity) =>
   ((b.activityDate ?? b.timestamp)?.getTime() ?? 0) - ((a.activityDate ?? a.timestamp)?.getTime() ?? 0)
 
-/** The user's activities, kept live so processing status updates appear without reloading. */
+/** The user's activities (unsorted; see sortActivities), kept live so processing status updates appear without reloading. */
 export function useActivities (uid: string) {
   const [state, setState] = useState<{ activities?: Activity[], error?: Error }>({})
 
   useEffect(() => onSnapshot(
     query(collection(db, 'activities'), where('uid', '==', uid)),
     (snapshot) => setState({
-      activities: snapshot.docs.map((d) => toActivity(d.id, d.data())).sort(byRideDateDesc)
+      activities: snapshot.docs.map((d) => toActivity(d.id, d.data()))
     }),
     (error) => setState({ error })
   ), [uid])
@@ -82,6 +98,12 @@ export function useActivities (uid: string) {
 
 export async function renameActivity (id: string, name: string) {
   await updateDoc(doc(db, 'activities', id), { name })
+}
+
+/** Saves the ride's notes and analysis parameters (unset parameters fall back to the profile). */
+export async function saveRideSettings (id: string, settings: { notes: string, analysisDefaults: RideDefaults }) {
+  const defaults = Object.fromEntries(Object.entries(settings.analysisDefaults).filter(([, v]) => v !== undefined))
+  await updateDoc(doc(db, 'activities', id), { notes: settings.notes, analysisDefaults: defaults })
 }
 
 /** Storage file name for an upload. The server detects the real format from the contents. */
@@ -172,4 +194,40 @@ export async function reprocessActivity (user: User, id: string, fetchFn: typeof
   })
   if (!response.ok) throw new Error(`Retry failed (${response.status}).`)
   return await response.json() as { status: ActivityStatus, statusMessage: string | null }
+}
+
+export type ActivitySort = 'uploaded' | 'rideNewest' | 'rideOldest' | 'name'
+
+export const ACTIVITY_SORTS: Array<{ value: ActivitySort, label: string }> = [
+  { value: 'uploaded', label: 'Recently uploaded' },
+  { value: 'rideNewest', label: 'Ride date, newest first' },
+  { value: 'rideOldest', label: 'Ride date, oldest first' },
+  { value: 'name', label: 'Name' }
+]
+
+const uploaded = (a: Activity) => a.timestamp?.getTime() ?? a.activityDate?.getTime() ?? 0
+const rideDate = (a: Activity) => a.activityDate?.getTime() ?? a.timestamp?.getTime() ?? 0
+const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' })
+
+/** Sorts a copy. "Recently uploaded" puts new uploads first, before their ride date is known. */
+export function sortActivities (activities: Activity[], sort: ActivitySort): Activity[] {
+  const list = [...activities]
+  switch (sort) {
+    case 'rideNewest': return list.sort((a, b) => rideDate(b) - rideDate(a))
+    case 'rideOldest': return list.sort((a, b) => rideDate(a) - rideDate(b))
+    case 'name': return list.sort((a, b) => collator.compare(a.name, b.name) || uploaded(b) - uploaded(a))
+    default: return list.sort((a, b) => uploaded(b) - uploaded(a))
+  }
+}
+
+const fold = (text: string) => text.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+
+/** Activities whose name or notes contain every word of the query (case- and accent-insensitive). */
+export function searchActivities (activities: Activity[], query: string): Activity[] {
+  const words = fold(query).split(/\s+/).filter(Boolean)
+  if (words.length === 0) return activities
+  return activities.filter((a) => {
+    const text = fold(`${a.name} ${a.notes ?? ''}`)
+    return words.every((w) => text.includes(w))
+  })
 }

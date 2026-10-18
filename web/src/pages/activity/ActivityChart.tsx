@@ -17,7 +17,8 @@ interface Props {
   series: ActivitySeries
   units: Units
   xAxis: XAxis
-  selection?: IndexRange
+  /** Selected ranges (several when laps are joined into a run). */
+  selection?: IndexRange[]
   /** Laps or loops drawn as alternating bands. */
   bands?: Band[]
   onSelect: (from: number, to: number) => void
@@ -59,12 +60,10 @@ export function ActivityChart ({ series, units, xAxis, selection, bands = [], on
       type: 'rect', xref: 'x', yref: 'paper', x0: at(band.start), x1: at(band.end), y0: 0, y1: 1,
       fillcolor: k % 2 ? theme.colors.violet[3] : theme.colors.violet[5], opacity: 0.12, line: { width: 0 }, layer: 'below'
     }))
-    if (selection) {
-      result.push({
-        type: 'rect', xref: 'x', yref: 'paper', x0: at(selection.start), x1: at(selection.end), y0: 0, y1: 1,
-        fillcolor: theme.colors.yellow[4], opacity: 0.25, line: { width: 1, color: theme.colors.yellow[7] }
-      })
-    }
+    selection?.forEach((range) => result.push({
+      type: 'rect', xref: 'x', yref: 'paper', x0: at(range.start), x1: at(range.end), y0: 0, y1: 1,
+      fillcolor: theme.colors.yellow[4], opacity: 0.25, line: { width: 1, color: theme.colors.yellow[7] }
+    }))
     return result
   }, [bands, selection, x, theme])
 

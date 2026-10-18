@@ -8,7 +8,7 @@ import { distanceUnit, speedUnit } from '../../lib/format'
 
 interface Props {
   time: Date[]
-  /** km */
+  /** km along the analysed run (continuous across joins) */
   distance: number[]
   /** m */
   elevation: number[]
@@ -20,11 +20,13 @@ interface Props {
   xAxis: 'time' | 'distance'
   showElevation: boolean
   bands: Array<IndexRange & { label: string }>
+  /** Indexes where joined ranges meet; drawn as dashed lines. */
+  joins?: number[]
   onHover?: (index: number | undefined) => void
 }
 
 /** Virtual elevation against recorded elevation on one axis, so drift shows directly. */
-export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed, units, xAxis, showElevation, bands, onHover }: Props) {
+export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed, units, xAxis, showElevation, bands, joins = [], onHover }: Props) {
   const theme = useMantineTheme()
   const metric = units === 'metric'
   const height = (m: number) => (metric ? m : mToFt(m))
@@ -56,6 +58,10 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
       type: 'rect', xref: 'x', yref: 'paper', x0: at(band.start), x1: at(band.end), y0: 0, y1: 1,
       fillcolor: k % 2 ? theme.colors.violet[3] : theme.colors.violet[5], opacity: 0.12, line: { width: 0 }, layer: 'below'
     }))
+    joins.forEach((i) => shapes.push({
+      type: 'line', xref: 'x', yref: 'paper', x0: at(i), x1: at(i), y0: 0, y1: 1,
+      line: { width: 1, dash: 'dash', color: theme.colors.gray[6] }
+    }))
     return {
       hovermode: 'x unified',
       dragmode: 'zoom',
@@ -69,7 +75,7 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
       yaxis: { title: { text: `Elevation (${metric ? 'm' : 'ft'})` } },
       ...(airspeed ? { yaxis2: { title: { text: `Air speed (${speedUnit(units)})` }, overlaying: 'y', side: 'right', showgrid: false } } : {})
     }
-  }, [bands, x, xAxis, units, metric, airspeed, theme])
+  }, [bands, joins, x, xAxis, units, metric, airspeed, theme])
 
   return (
     <PlotlyChart data={data} layout={layout} height={420} onHover={onHover}

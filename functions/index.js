@@ -177,9 +177,10 @@ async function processUpload(bucket, filePath, docRef, startTime) {
     }
 
     const stats = getActivityData(data, { includeDataPoints: false });
+    // timestamp stays the upload time (the activity list's default order), so retries don't move it
     await docRef.update({
       processedWith: PIPELINE_VERSION,
-      timestamp: new Date(),
+      processedAt: new Date(),
       activity_date: new Date(stats.timestamp),
       distance: stats.total_distance,
       averagePower: stats.avg_power,

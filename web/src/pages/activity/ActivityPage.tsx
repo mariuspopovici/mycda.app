@@ -13,7 +13,7 @@ import { useActivityData, type Lap } from '../../data/activityData'
 import { deleteSegment, useSegments, type SegmentSummary } from '../../data/segments'
 import { useUserPrefs } from '../../data/userPrefs'
 import { findLoops, precisionDigits } from '../../core/loopFinder'
-import { lapRange, rangeFromAxis, rangeStats, type IndexRange } from '../../core/selection'
+import { lapRange, multiRangeStats, rangeFromAxis, rangesForWindows, type IndexRange } from '../../core/selection'
 import { secondsToHms } from '../../core/units'
 import { hasLocation } from '../../core/activitySeries'
 import { RideMap } from '../../components/RideMap'
@@ -22,12 +22,20 @@ import { ActivityChart, type Band, type XAxis } from './ActivityChart'
 import { LapsTable } from './LapsTable'
 import { LoopSettings } from './LoopSettings'
 import { DEFAULT_LOOP_PREFS, type LoopPrefs } from './loopPrefs'
+import { RideSettingsCard } from './RideSettingsCard'
 import { SegmentsTable } from './SegmentsTable'
+import { encodeRanges } from '../analysis/useAnalysisSource'
 
-interface Selection extends IndexRange {
+interface Selection {
+  /** In ride order; several when laps are joined into a run. */
+  ranges: IndexRange[]
   label: string
-  lap?: number
+  /** Lap numbers when the selection is made of laps. */
+  laps?: number[]
 }
+
+/** "Lap 2", or "Laps 2 + 5" for laps joined into a run. */
+const lapsLabel = (laps: number[]) => (laps.length === 1 ? `Lap ${laps[0]}` : `Laps ${laps.join(' + ')}`)
 
 function useActivityDoc (id: string) {
   const [state, setState] = useState<{ activity?: Activity, missing?: boolean }>({})
@@ -107,18 +115,27 @@ export function ActivityPage () {
   const selectAxisRange = (from: number, to: number) => {
     const axis = xAxis === 'time' ? series.time.map((t) => t.getTime()) : series.distance
     const range = rangeFromAxis(axis, from, to)
-    if (range) setSelection({ ...range, label: 'Selection' })
+    if (range) setSelection({ ranges: [range], label: 'Selection' })
   }
-  const selectLap = (lap: Lap) => {
-    const range = lapRange(data.lapOfPoint, lap.number)
-    if (range) setSelection({ ...range, label: `Lap ${lap.number}`, lap: lap.number })
+  const selectLaps = (laps: number[]) => {
+    const sorted = [...new Set(laps)].sort((a, b) => a - b)
+    const ranges = sorted.flatMap((n) => {
+      const range = lapRange(data.lapOfPoint, n)
+      return range ? [range] : []
+    })
+    setSelection(ranges.length ? { ranges, label: lapsLabel(sorted), laps: sorted } : undefined)
+  }
+  const selectLap = (lap: Lap) => selectLaps([lap.number])
+  const toggleLap = (lap: Lap) => {
+    const current = selection?.laps ?? []
+    selectLaps(current.includes(lap.number) ? current.filter((n) => n !== lap.number) : [...current, lap.number])
   }
   const selectLoops = () => {
-    if (loops.length) setSelection({ start: loops[0].startIndex, end: loops[loops.length - 1].endIndex, label: `Loops 1–${loops.length}` })
+    if (loops.length) setSelection({ ranges: [{ start: loops[0].startIndex, end: loops[loops.length - 1].endIndex }], label: `Loops 1–${loops.length}` })
   }
   const showSegment = (segment: SegmentSummary) => {
-    const range = rangeFromAxis(series.time.map((t) => t.getTime()), segment.rangeStart.getTime(), segment.rangeEnd.getTime())
-    if (range) setSelection({ ...range, label: segment.name })
+    const ranges = rangesForWindows(series.time, segment.ranges)
+    if (ranges.length) setSelection({ ranges, label: segment.name })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
   const confirmDeleteSegment = (segment: SegmentSummary) => modals.openConfirmModal({
@@ -132,14 +149,14 @@ export function ActivityPage () {
   const analyze = () => {
     if (!selection) return
     const params = new URLSearchParams({
-      from: String(series.time[selection.start].getTime()),
-      to: String(series.time[selection.end].getTime()),
+      ranges: encodeRanges(selection.ranges.map((r) => ({ start: series.time[r.start], end: series.time[r.end] }))),
       name: selection.label
     })
     navigate(`/activity/${id}/analysis?${params}`)
   }
 
-  const stats = selection ? rangeStats(series, selection) : undefined
+  const stats = selection ? multiRangeStats(series, selection.ranges) : undefined
+  const start = series.location.find((p) => p)
 
   return (
     <Stack gap='lg' py='md'>
@@ -154,12 +171,18 @@ export function ActivityPage () {
           <div>
             <Text fw={600}>{selection ? selection.label : 'Whole ride'}</Text>
             <Text size='sm' c='dimmed'>
-              {selection ? 'Analyze it, or drag on the chart to change the selection. Double-click the chart to zoom out.' : 'Drag across the chart to zoom into a range, or pick a lap or loops.'}
+              {selection
+                ? selection.ranges.length > 1
+                  ? `${selection.ranges.length} ranges will be analyzed as one run, holding virtual elevation level at each join (e.g. an out-and-back test).`
+                  : 'Analyze it, drag on the chart to change it, or tick more laps to join them into one run.'
+                : 'Drag across the chart to zoom into a range, pick a lap, or tick several laps (e.g. out and back) to analyze them as one run.'}
             </Text>
           </div>
           <Group gap='xs'>
             {selection && <Button variant='default' leftSection={<IconX size={16} />} onClick={() => setSelection(undefined)}>Clear</Button>}
-            <Button leftSection={<IconChartLine size={18} />} disabled={!selection} onClick={analyze}>Analyze selection</Button>
+            <Button leftSection={<IconChartLine size={18} />} disabled={!selection} onClick={analyze}>
+              {selection && selection.ranges.length > 1 ? `Analyze ${selection.ranges.length} as one run` : 'Analyze selection'}
+            </Button>
           </Group>
         </Group>
         <SimpleGrid cols={{ base: 2, sm: 4, md: 6 }} spacing='md' mb='md'>
@@ -207,7 +230,7 @@ export function ActivityPage () {
           series={series}
           units={units}
           xAxis={xAxis}
-          selection={selection}
+          selection={selection?.ranges}
           bands={bands}
           onSelect={selectAxisRange}
           onClear={() => setSelection(undefined)}
@@ -218,14 +241,17 @@ export function ActivityPage () {
       <SimpleGrid cols={{ base: 1, md: gps ? 2 : 1 }}>
         <Card withBorder padding='lg'>
           <Title order={3} mb='sm'>Laps</Title>
-          <LapsTable laps={data.laps} units={units} selectedLap={selection?.lap} onSelect={selectLap} />
+          <LapsTable laps={data.laps} units={units} selectedLaps={selection?.laps ?? []} onSelect={selectLap} onToggle={toggleLap} />
         </Card>
         {gps && (
           <Card withBorder padding={0} style={{ overflow: 'hidden' }}>
-            <RideMap track={series.location} selection={selection} marker={hovered} height={400} />
+            <RideMap track={series.location} selection={selection?.ranges} marker={hovered} height={400} />
           </Card>
         )}
       </SimpleGrid>
+
+      <RideSettingsCard key={activity.id} activity={activity} prefs={prefs}
+        weatherContext={start ? { lat: start.lat, lng: start.lng, time: series.time[0], altitude: series.altitude[0] } : undefined} />
 
       <Card withBorder padding='lg'>
         <Title order={3} mb='sm'>Saved analyses</Title>

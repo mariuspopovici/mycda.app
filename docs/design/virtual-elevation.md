@@ -54,6 +54,14 @@ The core is metric only: km/h, m, kg and kg/m³ in, m out. Imperial is a display
 - missing air speed replaced by ground speed;
 - power above 1500 W replaced by the mean of the previous 5 accepted values (sensor spikes).
 
+## Joined runs
+
+An out-and-back test is recorded as separate laps (out, turnaround, back) and analysed as one run, so that wind and gradient cancel out. `combineRanges()` (`web/src/core/ranges.ts`) concatenates the chosen ranges and records each join in `breaks`. It also builds `runDistance`, which continues from where the previous range ended.
+
+At a join, `virtualElevation` holds VE level and doesn't integrate the step between the last point of one range and the first point of the next. Those points are at different places, times and speeds, so integrating the change in kinetic energy between them would show up as a false climb or drop, about 2.5 m for a 44 → 36 km/h change.
+
+The natural fit target is **closure of the run**: the run ends where it started, so VE should return to its starting height. The analysis page opens joined runs already fitted to that target.
+
 ## Fitting
 
 `web/src/core/fit.ts` ("Suggest CdA") finds the CdA, and optionally Crr, that best explains the ride. It uses golden-section search, with an inner search over CdA for each Crr. There are two targets:

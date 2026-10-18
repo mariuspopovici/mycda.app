@@ -111,3 +111,28 @@ export function rangesForWindows (time: Date[], windows: Array<{ start: Date, en
     return range ? [{ ...range, window }] : []
   })
 }
+
+/** Statistics over several ranges: totals add up, averages weight by moving time. */
+export function multiRangeStats (
+  series: { time: Date[], power: number[], speed: number[], distance: number[], altitude: number[] },
+  ranges: IndexRange[]
+): RangeStats {
+  const parts = ranges.map((r) => {
+    const stats = rangeStats(series, r)
+    // moving time, the weight rangeStats used for its averages
+    const moving = stats.averageSpeed > 0 ? stats.distance / stats.averageSpeed * 3600 : 0
+    return { stats, moving }
+  })
+  const moving = parts.reduce((sum, p) => sum + p.moving, 0)
+  const distance = parts.reduce((sum, p) => sum + p.stats.distance, 0)
+  return {
+    duration: parts.reduce((sum, p) => sum + p.stats.duration, 0),
+    distance,
+    averagePower: moving > 0 ? parts.reduce((sum, p) => sum + p.stats.averagePower * p.moving, 0) / moving : 0,
+    averageSpeed: moving > 0 ? distance / (moving / 3600) : 0,
+    maxPower: Math.max(0, ...parts.map((p) => p.stats.maxPower)),
+    maxSpeed: Math.max(0, ...parts.map((p) => p.stats.maxSpeed)),
+    elevationGain: parts.reduce((sum, p) => sum + p.stats.elevationGain, 0),
+    points: parts.reduce((sum, p) => sum + p.stats.points, 0)
+  }
+}

@@ -1,6 +1,6 @@
 # 0012. Segment documents while both apps are in use
 
-- **Status:** Accepted
+- **Status:** Superseded by [ADR-0013](0013-segments-v2-ranges.md) for writing (the legacy app was retired on 2026-10-18)
 - **Date:** 2026-10-18
 
 ## Context
