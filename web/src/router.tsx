@@ -57,8 +57,14 @@ export const routes: RouteObject[] = [{
 }]
 
 // Legacy hash URLs (/#/activity/…) are rewritten before the router starts, so it only ever sees
-// the new path; redirecting from an effect raced with lazy-loaded routes.
+// the new path (redirecting from an effect raced with lazy-loaded routes).
 const legacyPath = pathFromLegacyHash(window.location.hash)
 if (legacyPath) window.history.replaceState(null, '', legacyPath)
 
 export const router = createBrowserRouter(routes)
+
+// Opening an old link from a page already on the site changes only the hash, without a reload.
+window.addEventListener('hashchange', () => {
+  const path = pathFromLegacyHash(window.location.hash)
+  if (path) router.navigate(path, { replace: true })
+})

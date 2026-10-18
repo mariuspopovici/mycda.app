@@ -74,6 +74,10 @@ test('sign up, set preferences, upload, rename, open and delete an activity', as
 })
 
 test('rejected files show why, and legacy hash URLs redirect after signing in', async ({ page }) => {
+  // an old link opened from a page already on the site only changes the hash
+  await page.goto('/')
+  await page.goto('/#/faq')
+  await expect(page).toHaveURL(/\/faq$/)
   // old links to lazily loaded pages (activity, analysis) must also reach sign-in
   await page.goto('/#/activity/abc')
   await expect(page).toHaveURL(/\/login$/)
