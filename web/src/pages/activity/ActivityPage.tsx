@@ -1,19 +1,21 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import {
-  Alert, Anchor, Button, Card, Center, Group, Loader, SegmentedControl, SimpleGrid, Stack, Switch, Text, Title
+  Alert, Anchor, Badge, Button, Card, Center, Group, Loader, SegmentedControl, SimpleGrid, Stack, Switch, Tabs, Text, Title
 } from '@mantine/core'
+import { useMediaQuery } from '@mantine/hooks'
 import { modals } from '@mantine/modals'
 import { notifications } from '@mantine/notifications'
-import { IconChartLine, IconX } from '@tabler/icons-react'
+import { IconAdjustments, IconChartLine, IconX } from '@tabler/icons-react'
 import { doc, onSnapshot } from 'firebase/firestore'
 import { db } from '../../firebase'
-import { toActivity, type Activity } from '../../data/activities'
+import { rideOverrides, toActivity, type Activity } from '../../data/activities'
 import { useActivityData, type Lap } from '../../data/activityData'
 import { deleteSegment, useSegments, type SegmentSummary } from '../../data/segments'
 import { useUserPrefs } from '../../data/userPrefs'
 import { findLoops, precisionDigits } from '../../core/loopFinder'
 import { lapRange, multiRangeStats, rangeFromAxis, rangesForWindows, type IndexRange } from '../../core/selection'
+import { detectTests, lapGeometries } from '../../core/testRuns'
 import { secondsToHms } from '../../core/units'
 import { hasLocation } from '../../core/activitySeries'
 import { RideMap } from '../../components/RideMap'
@@ -22,7 +24,7 @@ import { ActivityChart, type Band, type XAxis } from './ActivityChart'
 import { LapsTable } from './LapsTable'
 import { LoopSettings } from './LoopSettings'
 import { DEFAULT_LOOP_PREFS, type LoopPrefs } from './loopPrefs'
-import { RideSettingsCard } from './RideSettingsCard'
+import { RideSettingsDrawer } from './RideSettingsDrawer'
 import { SegmentsTable } from './SegmentsTable'
 import { analysisUrl } from '../analysis/useAnalysisSource'
 import { TestsCard } from './TestsCard'
@@ -46,6 +48,12 @@ function useActivityDoc (id: string) {
     () => setState({ missing: true })), [id])
   return state
 }
+
+type Panel = 'tests' | 'laps' | 'saved'
+const PANELS: Panel[] = ['tests', 'laps', 'saved']
+
+/** "3 saved analyses", "1 lap" */
+const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`
 
 function Stat ({ label, value }: { label: string, value: string }) {
   return (
@@ -72,8 +80,20 @@ export function ActivityPage () {
   const [showLoops, setShowLoops] = useState(false)
   const [loopPrefs, setLoopPrefs] = useState<LoopPrefs>(DEFAULT_LOOP_PREFS)
 
+  // the open tab lives in the URL (?panel=saved), so Back from an analysis returns to it
+  const [params, setParams] = useSearchParams()
+  const requested = params.get('panel')
+  const panel = PANELS.find((p) => p === requested)
+  const setPanel = (next: Panel) => setParams((p) => { p.set('panel', next); return p }, { replace: true })
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const panelsRef = useRef<HTMLDivElement>(null)
+  const wide = useMediaQuery('(min-width: 48em)')
+
   const series = data?.series
   const gps = !!series && hasLocation(series)
+  const detected = useMemo(() => (data && data.laps.length > 1
+    ? detectTests(lapGeometries(data.series, data.lapOfPoint, data.laps.map((l) => l.number)))
+    : []), [data])
 
   const loops = useMemo(() => (series && gps && showLoops
     ? findLoops(series.location, precisionDigits(loopPrefs.precision), loopPrefs.minDuration, loopPrefs.maxDuration)
@@ -153,16 +173,45 @@ export function ActivityPage () {
     navigate(analysisUrl(id, selection.ranges.map((r) => ({ start: series.time[r.start], end: series.time[r.end] })), selection.label))
   }
 
+  const hasLaps = data.laps.length > 1
+  const activePanel: Panel = panel && (panel !== 'tests' || hasLaps) ? panel : hasLaps && detected.length ? 'tests' : 'laps'
+  const overrides = rideOverrides(activity)
+  const openPanel = (next: Panel) => {
+    setPanel(next)
+    panelsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   const stats = selection ? multiRangeStats(series, selection.ranges) : undefined
   const start = series.location.find((p) => p)
 
   return (
     <Stack gap='lg' py='md'>
       <Anchor component={Link} to='/activities' size='sm'>← Activities</Anchor>
-      <div>
-        <Title order={1}>{activity.name}</Title>
-        <Text c='dimmed'>{formatDateTime(data.start)}</Text>
-      </div>
+      <Group justify='space-between' align='flex-start' gap='sm'>
+        <div>
+          <Title order={1}>{activity.name}</Title>
+          <Text c='dimmed'>{formatDateTime(data.start)}</Text>
+          <Group gap={6} mt={4} wrap='wrap'>
+            {hasLaps && (
+              <Anchor component='button' size='sm' onClick={() => openPanel('tests')}>
+                {detected.length ? `${count(detected.length, 'test')} found` : 'No tests found'}
+              </Anchor>
+            )}
+            {hasLaps && <Text size='sm' c='dimmed'>·</Text>}
+            <Anchor component='button' size='sm' onClick={() => openPanel('laps')}>{count(data.laps.length, 'lap')}</Anchor>
+            <Text size='sm' c='dimmed'>·</Text>
+            <Anchor component='button' size='sm' onClick={() => openPanel('saved')}>{count(segments.length, 'saved analysis', 'saved analyses')}</Anchor>
+            <Text size='sm' c='dimmed'>·</Text>
+            <Anchor component='button' size='sm' onClick={() => setSettingsOpen(true)}>
+              {overrides.length ? `Ride settings: ${overrides.join(', ')}` : 'Ride settings: from your profile'}
+            </Anchor>
+          </Group>
+        </div>
+        <Button variant='default' leftSection={<IconAdjustments size={18} />} onClick={() => setSettingsOpen(true)}
+          rightSection={overrides.length ? <Badge size='sm' variant='light' circle>{overrides.length}</Badge> : undefined}>
+          Ride settings
+        </Button>
+      </Group>
 
       <Card withBorder padding='lg'>
         <Group justify='space-between' align='flex-start' mb='sm' gap='sm'>
@@ -236,31 +285,42 @@ export function ActivityPage () {
         />
       </Card>
 
-      <SimpleGrid cols={{ base: 1, md: gps ? 2 : 1 }}>
-        <Card withBorder padding='lg'>
-          <Group gap={4} mb='sm'><Title order={3}>Laps</Title><HelpLink to='activity#selecting' topic='Selecting laps and ranges' /></Group>
-          <LapsTable laps={data.laps} units={units} selectedLaps={selection?.laps ?? []} onSelect={selectLap} onToggle={toggleLap} />
+      {gps && (
+        <Card withBorder padding={0} style={{ overflow: 'hidden' }}>
+          <RideMap track={series.location} selection={selection?.ranges} marker={hovered} height={wide ? 400 : 300} />
         </Card>
-        {gps && (
-          <Card withBorder padding={0} style={{ overflow: 'hidden' }}>
-            <RideMap track={series.location} selection={selection?.ranges} marker={hovered} height={400} />
-          </Card>
-        )}
-      </SimpleGrid>
-
-      {data.laps.length > 1 && (
-        <TestsCard key={activity.id} activity={activity} data={data} prefs={prefs} segments={segments} onShow={selectLaps} />
       )}
 
-      <RideSettingsCard key={activity.id} activity={activity} prefs={prefs}
-        weatherContext={start ? { lat: start.lat, lng: start.lng, time: series.time[0], altitude: series.altitude[0] } : undefined} />
+      {/* the ride's panels share one place: tests first when there are any, laps otherwise */}
+      <Tabs value={activePanel} onChange={(v) => v && setPanel(v as Panel)} ref={panelsRef} style={{ scrollMarginTop: 72 }}>
+        <Tabs.List mb='md'>
+          {hasLaps && <Tabs.Tab value='tests' rightSection={<Badge size='sm' variant='light' circle>{detected.length}</Badge>}>Tests</Tabs.Tab>}
+          <Tabs.Tab value='laps' rightSection={<Badge size='sm' variant='light' circle>{data.laps.length}</Badge>}>Laps</Tabs.Tab>
+          <Tabs.Tab value='saved' rightSection={<Badge size='sm' variant='light' circle>{segments.length}</Badge>}>Saved analyses</Tabs.Tab>
+        </Tabs.List>
+        {hasLaps && (
+          <Tabs.Panel value='tests'>
+            <TestsCard key={activity.id} activity={activity} data={data} prefs={prefs} segments={segments} detected={detected} onShow={selectLaps} />
+          </Tabs.Panel>
+        )}
+        <Tabs.Panel value='laps'>
+          <Card withBorder padding='lg'>
+            <Group gap={4} mb='sm'><Title order={3}>Laps</Title><HelpLink to='activity#selecting' topic='Selecting laps and ranges' /></Group>
+            <LapsTable laps={data.laps} units={units} selectedLaps={selection?.laps ?? []} onSelect={selectLap} onToggle={toggleLap} />
+          </Card>
+        </Tabs.Panel>
+        <Tabs.Panel value='saved'>
+          <Card withBorder padding='lg'>
+            <Group gap={4} mb='sm'><Title order={3}>Saved analyses</Title><HelpLink to='comparing' topic='Comparing setups' /></Group>
+            {segments.length
+              ? <SegmentsTable activityId={id} segments={segments} onShow={showSegment} onDelete={confirmDeleteSegment} />
+              : <Text size='sm' c='dimmed'>None yet. Select a range above and analyze it.</Text>}
+          </Card>
+        </Tabs.Panel>
+      </Tabs>
 
-      <Card withBorder padding='lg'>
-        <Group gap={4} mb='sm'><Title order={3}>Saved analyses</Title><HelpLink to='comparing' topic='Comparing setups' /></Group>
-        {segments.length
-          ? <SegmentsTable activityId={id} segments={segments} onShow={showSegment} onDelete={confirmDeleteSegment} />
-          : <Text size='sm' c='dimmed'>None yet. Select a range above and analyze it.</Text>}
-      </Card>
+      <RideSettingsDrawer activity={activity} prefs={prefs} opened={settingsOpen} onClose={() => setSettingsOpen(false)}
+        weatherContext={start ? { lat: start.lat, lng: start.lng, time: series.time[0], altitude: series.altitude[0] } : undefined} />
     </Stack>
   )
 }

@@ -119,6 +119,18 @@ export async function renameActivity (id: string, name: string) {
 }
 
 /** Saves the ride's notes and analysis parameters (unset parameters fall back to the profile). */
+/** The ride settings that override the profile, by name, for the activity page's summary. */
+export function rideOverrides (activity: Activity): string[] {
+  const d = activity.analysisDefaults ?? {}
+  return [
+    d.mass !== undefined && 'mass',
+    d.rho !== undefined && 'air density',
+    d.crr !== undefined && 'Crr',
+    d.dloss !== undefined && 'drivetrain loss',
+    d.windExposure !== undefined && 'wind exposure'
+  ].filter((name): name is string => !!name)
+}
+
 export async function saveRideSettings (id: string, settings: { notes: string, analysisDefaults: RideDefaults }) {
   const defaults = Object.fromEntries(Object.entries(settings.analysisDefaults).filter(([, v]) => v !== undefined))
   await updateDoc(doc(db, 'activities', id), { notes: settings.notes, analysisDefaults: defaults })

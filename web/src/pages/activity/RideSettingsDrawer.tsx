@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ActionIcon, Button, Card, Group, Modal, NumberInput, Select, SimpleGrid, Stack, Text, Textarea, Title, Tooltip } from '@mantine/core'
+import { ActionIcon, Button, Drawer, Group, Modal, NumberInput, Select, SimpleGrid, Stack, Text, Textarea, Title, Tooltip } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { IconCalculator } from '@tabler/icons-react'
 import { AirDensityCalculator, type WeatherContext } from '../../components/AirDensityCalculator'
@@ -31,11 +31,30 @@ const parsed = (v: Field) => {
   return Number.isFinite(n) ? n : undefined
 }
 
+interface Props {
+  activity: Activity
+  prefs: UserPrefs
+  weatherContext?: WeatherContext
+  opened: boolean
+  onClose: () => void
+}
+
 /**
  * Notes about the ride, and analysis parameters that apply to every analysis of it (they override
- * the profile; empty fields fall back to it).
+ * the profile; empty fields fall back to it). A drawer: they're set once per ride, so they don't
+ * take room on the page.
  */
-export function RideSettingsCard ({ activity, prefs, weatherContext }: { activity: Activity, prefs: UserPrefs, weatherContext?: WeatherContext }) {
+export function RideSettingsDrawer ({ opened, onClose, ...form }: Props) {
+  return (
+    <Drawer opened={opened} onClose={onClose} position='right' size='md'
+      title={<Group gap={4}><Title order={3}>Ride settings</Title><HelpLink to='activity#ride-settings' topic='Ride settings' /></Group>}>
+      {/* remounted on each opening, so unsaved edits are dropped when it closes */}
+      {opened && <RideSettingsForm key={form.activity.id} {...form} onSaved={onClose} />}
+    </Drawer>
+  )
+}
+
+function RideSettingsForm ({ activity, prefs, weatherContext, onSaved }: Omit<Props, 'opened' | 'onClose'> & { onSaved: () => void }) {
   const metric = prefs.units === 'metric'
   const toDraft = (a: Activity): Draft => {
     const d = a.analysisDefaults ?? {}
@@ -71,6 +90,7 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
     try {
       await saveRideSettings(activity.id, { notes: draft.notes.trim(), analysisDefaults: defaults() })
       notifications.show({ color: 'green', message: 'Ride settings saved. New analyses of this ride start from them.' })
+      onSaved()
     } catch (e) {
       notifications.show({ color: 'red', title: "Couldn't save the ride settings", message: (e as Error).message })
     } finally {
@@ -80,13 +100,12 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
 
   const profileMass = totalMassKg(prefs)
   return (
-    <Card withBorder padding='lg'>
-      <Group gap={4} mb={4}><Title order={3}>Ride settings</Title><HelpLink to='activity#ride-settings' topic='Ride settings' /></Group>
+    <>
       <Text size='sm' c='dimmed' mb='md'>
         Parameters for every analysis of this ride, for example when you rode a different bike or kit. Leave a field empty to use your profile.
       </Text>
       <Stack gap='sm'>
-        <SimpleGrid cols={{ base: 1, xs: 2 }}>
+        <SimpleGrid cols={2}>
           <NumberInput label={`Total mass (${metric ? 'kg' : 'lbs'})`} decimalScale={1} step={0.5} min={0}
             placeholder={`Profile: ${(metric ? profileMass : kgToLbs(profileMass)).toFixed(1)}`}
             value={draft.mass} onChange={(mass) => set({ mass })} />
@@ -119,6 +138,6 @@ export function RideSettingsCard ({ activity, prefs, weatherContext }: { activit
         <AirDensityCalculator units={prefs.units} context={weatherContext}
           onUse={(rho) => { set({ rho: metric ? Math.round(rho * 1e4) / 1e4 : Math.round(kgPerM3ToLbPerFt3(rho) * 1e5) / 1e5 }); setCalculatorOpen(false) }} />
       </Modal>
-    </Card>
+    </>
   )
 }

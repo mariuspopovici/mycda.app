@@ -6,8 +6,9 @@ export function TestsGuide () {
     <>
       <Text>
         A typical session holds several tests: out and back runs in different positions or with different equipment. The{' '}
-        <Ui>Tests</Ui> card on the activity page shows all of them on one screen. MyCdA pairs the legs, fits a CdA for each test
-        with the same parameters, and lets you save them all at once. It appears on rides with more than one lap.
+        <Ui>Tests</Ui> tab on the activity page shows all of them on one screen. MyCdA pairs the legs, fits a CdA for each test
+        with the same parameters, and lets you save them all at once. It appears on rides with more than one lap, and opens first
+        when tests are found.
       </Text>
 
       <H2 id='pairing'>How tests are found</H2>
