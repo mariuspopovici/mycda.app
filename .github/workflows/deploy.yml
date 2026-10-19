@@ -1,0 +1,84 @@
+name: Deploy
+
+# Pushing a tag vX.Y.Z publishes that commit to Firebase (Hosting, Functions, Firestore and
+# Storage rules), after checking that it's on master, that the tag matches web/package.json's
+# version, and that the CI suites pass.
+on:
+  push:
+    tags: ['v*']
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check the release tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Tag matches web/package.json
+        run: |
+          version=$(node -p "require('./web/package.json').version")
+          if [ "${GITHUB_REF_NAME}" != "v${version}" ]; then
+            echo "::error::Tag ${GITHUB_REF_NAME} doesn't match web/package.json version ${version}; tag v${version}, or bump the version first."
+            exit 1
+          fi
+      - name: Commit is on master
+        run: |
+          if ! git merge-base --is-ancestor "${GITHUB_SHA}" origin/master; then
+            echo "::error::${GITHUB_REF_NAME} points at a commit that isn't on master."
+            exit 1
+          fi
+
+  ci:
+    name: CI
+    needs: check
+    uses: ./.github/workflows/ci.yml
+
+  deploy:
+    name: Deploy to Firebase
+    needs: ci
+    runs-on: ubuntu-latest
+    # repository settings → Environments → production: optional approval before each release
+    environment: production
+    permissions:
+      contents: read
+      id-token: write # keyless sign-in to Google Cloud
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            functions/package-lock.json
+      # lockfiles are written by npm 11; Node 22 bundles npm 10, which resolves optional peers differently
+      - run: npm install -g npm@11.6.1 firebase-tools@15.34.0
+      - run: npm ci
+        working-directory: functions
+      - run: npm ci
+        working-directory: web
+      # Workload Identity Federation: GitHub's OIDC token is exchanged for a short-lived token of the
+      # deploy service account, so no key is stored in GitHub
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+      # Hosting's predeploy builds and prerenders web/ with the production Firebase web config
+      # (public values, shipped to every browser)
+      - run: firebase deploy --project mycda-c43c6 --only hosting,functions,firestore,storage --non-interactive --force
+        env:
+          VITE_FIREBASE_API_KEY: ${{ vars.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: mycda-c43c6.firebaseapp.com
+          VITE_FIREBASE_PROJECT_ID: mycda-c43c6
+          VITE_FIREBASE_STORAGE_BUCKET: mycda-c43c6.appspot.com
+          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ vars.VITE_FIREBASE_MESSAGING_SENDER_ID }}
+          VITE_API_URL: https://us-central1-mycda-c43c6.cloudfunctions.net/api
+          VITE_USE_EMULATORS: 'false'

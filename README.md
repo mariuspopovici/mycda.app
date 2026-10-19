@@ -58,6 +58,16 @@ npm --prefix tests/emulator test    # security rules, functions end to end, brow
 
 CI runs all of them on every push (`.github/workflows/ci.yml`).
 
+### Releasing
+
+Bump `version` in `web/package.json` on `master`, then tag that commit with the same version and push the tag:
+
+```bash
+git tag v2.1.0 && git push origin v2.1.0
+```
+
+The Deploy workflow checks that the tag matches the version and is on `master`, runs CI, and deploys to Firebase. The version shows in the app's footer.
+
 ### Setting up your own instance
 
 1. Create a Firebase project on the Blaze plan. Enable Email/Password sign-in, Firestore and Storage.

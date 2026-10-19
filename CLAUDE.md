@@ -33,9 +33,9 @@ Emulator tests (`tests/emulator/`, project `demo-mycda`, needs Java 21 for fireb
 - `test:functions`: upload → `processActivityFile` → `GET /api/activity/:id`, reprocessing, and ownership checks;
 - `test:e2e`: Playwright in Chrome against the web app. `SCREENSHOTS=1` also saves review screenshots to `test-results/screens/`.
 
-Deploy: `firebase deploy --only functions|hosting|firestore:rules,storage`. Hosting builds and prerenders `web/` in a predeploy hook (needs Chrome and `web/.env.local`). To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`.
+Releases: bump `version` in `web/package.json` on master, then push a tag `v<that version>`. `.github/workflows/deploy.yml` checks the tag matches the version and is on master, runs the CI suites, and deploys Hosting, Functions, and Firestore and Storage rules, signing in to Google Cloud as `github-deploy@mycda-c43c6.iam.gserviceaccount.com` through Workload Identity Federation (no stored key). Manual deploys still work: `firebase deploy --only functions|hosting|firestore:rules,storage`. Hosting builds and prerenders `web/` in a predeploy hook (needs Chrome and `web/.env.local`). To try hosting changes without touching the live site, run `firebase hosting:channel:deploy preview`.
 
-CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22 with npm 11, Java 21, the runner's Chrome) in about 3 minutes. It doesn't deploy.
+CI: `.github/workflows/ci.yml` runs the web, functions and emulator suites on every push (Node 22 with npm 11, Java 21, the runner's Chrome) in about 3 minutes; release tags run it through `deploy.yml`.
 
 ## Architecture
 
