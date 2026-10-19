@@ -26,6 +26,8 @@ interface Props {
   data: ActivityData
   prefs: UserPrefs
   segments: SegmentSummary[]
+  /** Tests found in the laps (detectTests), the starting list. */
+  detected: number[][]
   /** Shows the test's laps on the chart. */
   onShow: (laps: number[]) => void
 }
@@ -39,14 +41,14 @@ const hasMeasuredAirspeed = (s: ActivitySeries) => s.airspeed.some((a, i) => Mat
  * Every test of the ride on one screen. Out and back legs are paired automatically (editable); each
  * test is fitted by closure with shared parameters, and can be saved or opened as an analysis.
  */
-export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
+export function TestsCard ({ activity, data, prefs, segments, detected, onShow }: Props) {
   const navigate = useNavigate()
   const { series, lapOfPoint } = data
   const units = prefs.units
   const metric = units === 'metric'
   const lapNumbers = useMemo(() => data.laps.map((l) => l.number), [data.laps])
   const geometries = useMemo(() => lapGeometries(series, lapOfPoint, lapNumbers), [series, lapOfPoint, lapNumbers])
-  const [tests, setTests] = useState<number[][]>(() => detectTests(geometries))
+  const [tests, setTests] = useState<number[][]>(detected)
 
   const ride = activity.analysisDefaults ?? {}
   const [shared, setShared] = useState<SharedParameters>(() => ({
@@ -139,7 +141,7 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
       </Group>
       <Text size='sm' c='dimmed' mb='md'>
         Out and back legs are paired from the laps (pick other laps to change a test). Each test's CdA is fitted so the run
-        ends at the height it started, with the parameters below. Starting values come from the ride settings.
+        ends at the height it started, with the parameters below. Starting values come from Ride settings, at the top of the page.
       </Text>
 
       <Grid gap='md' mb='md'>
@@ -169,7 +171,7 @@ export function TestsCard ({ activity, data, prefs, segments, onShow }: Props) {
         <Grid.Col span={{ base: 12, md: 5 }}>
           <AirspeedCard source={airspeedSource} onSourceChange={setAirspeedSource} wind={manualWind} onWindChange={setManualWind}
             units={units} measuredAvailable={measured} windPossible={windPossible} model={wind} exposure={exposure}
-            exposureNote='Set the exposure in the ride settings below.' />
+            exposureNote='Set the exposure in Ride settings, at the top of the page.' />
         </Grid.Col>
       </Grid>
 

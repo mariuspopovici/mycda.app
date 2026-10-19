@@ -27,6 +27,7 @@ test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete
   await expect(page.locator('.leaflet-container')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Analyze selection' })).toBeDisabled()
 
+  await page.getByRole('tab', { name: /^Laps/ }).click()
   await page.getByRole('row').filter({ has: page.getByRole('checkbox', { name: 'Include lap 2', exact: true }) }).click()
   await expect(page.getByText('Lap 2', { exact: true })).toBeVisible()
   await expect(page.getByRole('paragraph').filter({ hasText: /^00:03:19$/ })).toBeVisible()
@@ -74,6 +75,7 @@ test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete
 
   // listed on the activity, with baseline badge
   await page.getByRole('link', { name: '← Activity' }).click()
+  await page.getByRole('tab', { name: /^Saved analyses/ }).click()
   const row = page.getByRole('row', { name: /Lap 2 – drops/ })
   await expect(row.getByText('Baseline')).toBeVisible()
   await expect(row.getByText(/^0\.26\d$/)).toBeVisible()

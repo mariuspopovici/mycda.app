@@ -250,7 +250,7 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
     confirmProps: { color: 'red' },
     onConfirm: async () => {
       await deleteSegment(segment.id)
-      navigate(`/activity/${activityId}`, { replace: true })
+      navigate(`/activity/${activityId}?panel=saved`, { replace: true })
     }
   })
 
@@ -269,7 +269,7 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
 
   return (
     <Stack gap='lg' py='md'>
-      <Anchor component={Link} to={`/activity/${activityId}`} size='sm'>← Activity</Anchor>
+      <Anchor component={Link} to={`/activity/${activityId}${segment ? '?panel=saved' : ''}`} size='sm'>← Activity</Anchor>
       <div>
         <Group gap={6}><Title order={1}>{details.name.trim() || 'Analysis'}</Title><HelpLink to='analysis#reading' topic='Reading the chart' /></Group>
         <Text c='dimmed'>

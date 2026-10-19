@@ -20,19 +20,27 @@ test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, 
   await page.getByRole('link', { name: 'Out and back' }).first().click({ timeout: 60_000 })
   await expect(page.locator('.js-plotly-plot')).toBeVisible({ timeout: 30_000 })
 
-  // ride settings override the profile for this ride
-  const settings = page.locator('.mantine-Card-root', { has: page.getByRole('heading', { name: 'Ride settings' }) })
+  // ride settings override the profile for this ride; they open in a drawer from the header
+  await expect(page.getByRole('button', { name: 'Ride settings: from your profile' })).toBeVisible()
+  await page.getByRole('button', { name: 'Ride settings', exact: true }).click()
+  const settings = page.getByRole('dialog')
   await settings.getByRole('textbox', { name: 'Crr', exact: true }).fill('0.005')
   await settings.getByRole('textbox', { name: 'Notes' }).fill('Still morning, TT bike, new helmet')
   await settings.getByRole('combobox', { name: 'Wind exposure' }).click()
   await page.getByRole('option', { name: /^Open: fields, seafront/ }).click()
   await settings.getByRole('button', { name: 'Save ride settings' }).click()
   await expect(page.getByText('Ride settings saved.')).toBeVisible()
+  await expect(settings).toHaveCount(0)
   await page.reload()
+  // the summary names what the ride overrides, and the button counts it
+  await page.getByRole('button', { name: 'Ride settings: Crr, wind exposure' }).click()
   await expect(settings.getByRole('textbox', { name: 'Notes' })).toHaveValue('Still morning, TT bike, new helmet')
   await expect(settings.getByRole('combobox', { name: 'Wind exposure' })).toHaveValue(/^Open/)
+  await page.keyboard.press('Escape')
+  await expect(page.getByRole('button', { name: /^Ride settings 2$/ })).toBeVisible()
 
-  // tick the out and back legs and analyze them as one run
+  // tick the out and back legs and analyze them as one run (the Tests tab opens first on this ride)
+  await page.getByRole('tab', { name: /^Laps/ }).click()
   await page.getByRole('checkbox', { name: 'Include lap 2' }).check()
   await page.getByRole('checkbox', { name: 'Include lap 4' }).check()
   await expect(page.getByText('Laps 2 + 4', { exact: true })).toBeVisible()
@@ -72,6 +80,7 @@ test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, 
   await expect(page.getByText('2 ranges joined', { exact: false })).toBeVisible()
 
   await page.getByRole('link', { name: '← Activity' }).click()
+  await page.getByRole('button', { name: '1 saved analysis' }).click()
   await expect(page.getByRole('row', { name: /Laps 2 \+ 4/ }).getByText('2 ranges joined')).toBeVisible()
 })
 
@@ -104,6 +113,9 @@ test('tests table: pairs the out and back legs, fits, saves and opens the test',
   await page.getByRole('link', { name: 'Out and back' }).first().click({ timeout: 60_000 })
 
   const card = page.locator('.mantine-Card-root', { has: page.getByRole('heading', { name: 'Tests' }) })
+  // the summary under the title counts the tests found, and the Tests tab opens first
+  await expect(page.getByRole('button', { name: '1 test found' })).toBeVisible({ timeout: 30_000 })
+  await expect(page.getByRole('tab', { name: /^Tests/ })).toHaveAttribute('aria-selected', 'true')
   await expect(card.getByRole('row', { name: /Test 1/ })).toBeVisible({ timeout: 30_000 })
   await expect(card.getByRole('row')).toHaveCount(2)
   // the legs are laps 2 and 4, around a turnaround lap
@@ -145,7 +157,9 @@ test('tests table: pairs the out and back legs, fits, saves and opens the test',
   await expect(page.getByText('Saved 1 test.')).toBeVisible()
   await expect(card.getByRole('button', { name: 'All tests saved' })).toBeDisabled()
   if (process.env.SCREENSHOTS) await card.screenshot({ path: 'test-results/screens/tests-card.png' })
+  await page.getByRole('tab', { name: /^Saved analyses/ }).click()
   await expect(page.getByRole('row', { name: /Test 1 \(laps 2 \+ 4\)/ }).getByText('2 ranges joined')).toBeVisible()
+  await page.getByRole('tab', { name: /^Tests/ }).click()
 
   // opening a saved test opens its analysis
   await card.getByRole('button', { name: 'Test 1', exact: true }).click()
