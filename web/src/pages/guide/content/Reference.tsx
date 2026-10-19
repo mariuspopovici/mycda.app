@@ -1,6 +1,6 @@
 import { Anchor, Code, List, Table, Text } from '@mantine/core'
 import { CSV_COLUMNS } from '../csvColumns'
-import { AppLink, Bullets, H2 } from '../parts'
+import { AppLink, Bullets, GuideLink, H2 } from '../parts'
 
 const GLOSSARY: Array<[string, string]> = [
   ['CdA', 'Drag area: drag coefficient × frontal area, in m². The aerodynamic drag of you and your bike.'],
@@ -70,6 +70,7 @@ export function Reference () {
       <Bullets>
         <List.Item>Your activities, files and analyses are stored in your account. Only you can see them.</List.Item>
         <List.Item>Weather lookups send the ride's approximate location and time to Open-Meteo. Maps load tiles from OpenStreetMap.</List.Item>
+        <List.Item><GuideLink to='analysis#explain'>Explain this run</GuideLink> sends the run's computed numbers, never its GPS track, name or notes, to Google Gemini, and only when you ask.</List.Item>
         <List.Item>Deleting an activity deletes its file and analyses. See the <AppLink to='/privacy'>privacy policy</AppLink> for details.</List.Item>
       </Bullets>
 

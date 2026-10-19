@@ -23,6 +23,9 @@ import { csvFileName, downloadText, toCsv } from '../../lib/csv'
 import { LoopSettings } from '../activity/LoopSettings'
 import { DEFAULT_LOOP_PREFS, type LoopPrefs } from '../activity/loopPrefs'
 import { AirspeedCard } from './AirspeedCard'
+import { ExplainRunCard } from './ExplainRunCard'
+import { runDiagnostics } from '../../core/runDiagnostics'
+import { assistantAvailable } from '../../services/assistant'
 import { EXPOSURE_LABELS } from './windExposure'
 import { ParametersCard, type FitOption, type FitRequest, type FitTargetKey, type Parameters, type Suggestion } from './ParametersCard'
 import { SaveCard, type SaveDetails } from './SaveCard'
@@ -147,6 +150,8 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
   const [saved, setSaved] = useState(() => (segment ? snapshot() : undefined))
   const [saving, setSaving] = useState(false)
 
+  // marks an explanation out of date when the air speed changes (e.g. the weather arrives)
+  const airspeedSum = useMemo(() => airspeed.reduce((sum, a) => sum + a, 0), [airspeed])
   const veSeries = useMemo(() => ({
     ...series, airspeed, elevation: series.altitude, drivetrainLoss: parameters.dloss
   }), [series, airspeed, parameters.dloss])
@@ -335,6 +340,18 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
           </Stack>
         </Grid.Col>
       </Grid>
+
+      {assistantAvailable && (
+        <ExplainRunCard
+          stateKey={JSON.stringify({ deferred, airspeedSource, airspeedSum, exposure, manualWind })}
+          context={() => ({
+            diagnostics: runDiagnostics(veSeries, deferred, targets[defaultTarget]!),
+            parameters: deferred,
+            airspeedSource,
+            fitBasis: BASIS[defaultTarget],
+            units
+          })} />
+      )}
 
       <Grid gap='lg'>
         <Grid.Col span={{ base: 12, md: gps ? 6 : 12 }}>
