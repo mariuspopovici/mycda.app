@@ -18,6 +18,8 @@ export default defineConfig({
       output: {
         // large, rarely changing libraries get their own cacheable chunks
         manualChunks (id) {
+          // the run explainer's SDKs load only when it's used (services/assistant.ts)
+          if (/node_modules\/(@firebase\/(ai|app-check)|firebase\/(ai|app-check))\//.test(id)) return 'firebase-ai'
           if (/node_modules\/(@firebase|firebase|re2js)\//.test(id)) return 'firebase'
           if (/node_modules\/(@mantine|@floating-ui|@tabler)\//.test(id)) return 'mantine'
           if (/node_modules\/(react|react-dom|react-router|scheduler|@tanstack)\//.test(id)) return 'react'

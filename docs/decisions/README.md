@@ -21,3 +21,4 @@ Copy [template.md](template.md) to `NNNN-short-title.md` and add it to the index
 | [0013](0013-segments-v2-ranges.md) | Segments store ranges and metric parameters (version 2) | Accepted | 2026-10-18 |
 | [0014](0014-wind-at-rider-height-and-head-component.md) | Scale wind to rider height and use the head component for drag | Accepted | 2026-10-18 |
 | [0015](0015-prerender-public-pages.md) | Prerender the public pages at build time | Accepted | 2026-10-18 |
+| [0016](0016-run-explainer-gemini-ai-logic.md) | Explain runs with Gemini through Firebase AI Logic, sending computed numbers only | Accepted (trial) | 2026-10-19 |

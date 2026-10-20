@@ -120,6 +120,18 @@ export function Analyzing () {
       </Bullets>
       <Text>Press <Ui>Use this value</Ui> to copy the result into the analysis.</Text>
 
+      <H2 id='explain'>Explain this run</H2>
+      <Text>
+        <Ui>Explain</Ui> (in beta) asks Google Gemini for a plain-language read of the run: whether it closes, what the virtual
+        elevation of each leg shows, which input moves the CdA most, and what to check next. MyCdA computes every number itself
+        and sends only those: closure and elevation errors, each leg's speeds, power and elevation changes, the parameters, and
+        how far the suggested CdA moves when an input changes by a typical error. No GPS track, names or notes are sent.
+      </Text>
+      <Text>
+        The model explains those numbers; it doesn't compute CdA. It can still be wrong, so treat it as a second opinion. After you
+        change anything, the explanation is marked out of date until you explain again.
+      </Text>
+
       <H2 id='saving'>Saving and exporting</H2>
       <Steps>
         <List.Item>Give the analysis a <b>name</b> (and notes, such as the position or equipment tested).</List.Item>
