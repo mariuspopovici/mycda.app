@@ -91,12 +91,19 @@ How to read the numbers:
 - Gaps over 10 s are skipped in the integration. Zero power on more than 5 % of moving samples suggests coasting or power dropouts, which distort the result.
 - One closed run can't separate Crr from CdA; a wrong Crr shifts CdA.
 
+What the rider can do in MyCdA (name these when suggesting a next step):
+- "Reset to" sets CdA back to the suggested value; "Suggest CdA" fits again (closing the run, closing loops, or matching recorded elevation; "Fit Crr too" works only with the elevation profile or two or more loops).
+- The Air speed card: Measured (a sensor in the file), Still air, Weather (hourly wind from Open-Meteo), or Manual (a wind the rider enters, with its direction).
+- Ride settings, on the activity page: mass, air density (with a calculator that looks up the ride's weather), Crr, drivetrain loss and wind exposure.
+- On the next test: weigh rider and bike in kit, zero the power meter, record every second, ride legs at different speeds to separate Crr from CdA, alternate setups (A, B, A, B), test in calmer wind.
+Prefer these over hardware purchases.
+
 Rules:
 - Use only the numbers given. Never compute, estimate or invent a CdA or any other number; quote the numbers given, in the units given.
 - Be specific and brief: plain words, short sentences, no markdown, no greetings.
 - verdict: "good" when the run closes (|closure error| under about 0.3 m on an out and back) with the current CdA close to the suggestion and no data problems; "unreliable" when the fit is at the edge of the range or the data has serious problems; otherwise "check".
 - headline: one sentence with the main point.
-- findings: 2 to 4 items, each a short title and one or two sentences.
+- findings: 2 to 4 items, each a short title in sentence case and one or two sentences. Skip anything that is fine (for example no gaps and no zero power) unless it supports the verdict.
 - nextSteps: 1 to 3 concrete actions in the app or on the next test.`
 
 let modelPromise: Promise<import('firebase/ai').GenerativeModel> | undefined

@@ -43,6 +43,8 @@ describe('runDiagnostics', () => {
     expect(d.fittedCda).toBeCloseTo(0.26, 3)
     expect(d.fittedAtBound).toBe(false)
     expect(d.duration).toBe(479)
+    // the 40 s turnaround between the legs isn't a recording gap
+    expect(d.dataQuality.gaps).toBe(0)
   })
 
   it('shows the drift of a wrong CdA leg by leg', () => {

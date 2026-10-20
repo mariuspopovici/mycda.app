@@ -120,8 +120,10 @@ export function runDiagnostics (
   const fitted = fitParameters(series, params, target)
   const delta = (s: typeof series, p: VirtualElevationParams) => fit(s, p) - fitted.cda
 
+  // the jump between joined legs (the turnaround) isn't a gap in the recording
+  const joins = new Set(breaks)
   let gaps = 0; let moving = 0; let zero = 0
-  for (let i = 1; i < n; i++) if (dtAt(time, i) > MAX_INTEGRATION_GAP_SECONDS) gaps++
+  for (let i = 1; i < n; i++) if (!joins.has(i) && dtAt(time, i) > MAX_INTEGRATION_GAP_SECONDS) gaps++
   for (let i = 0; i < n; i++) {
     if (speed[i] > 10) {
       moving++
