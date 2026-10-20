@@ -14,8 +14,9 @@ Architecture, design, decisions and engineering history for MyCdA.app. Code says
 
 1. [architecture/overview.md](architecture/overview.md): the system today and the target system
 2. [plans/modernization.md](plans/modernization.md): where the migration stands
-3. [decisions/README.md](decisions/README.md): the decision index
-4. [design/virtual-elevation.md](design/virtual-elevation.md): the core of the product
+3. [plans/roadmap.md](plans/roadmap.md): what's next for the product, and why in that order
+4. [decisions/README.md](decisions/README.md): the decision index
+5. [design/virtual-elevation.md](design/virtual-elevation.md): the core of the product
 
 ## Conventions
 

@@ -1,5 +1,7 @@
 # Roadmap from user feedback
 
+The wider product roadmap, including what comes after these steps, is in [roadmap.md](roadmap.md).
+
 Feedback came from two riders: one in July 2020, and an experienced field tester with a 10-test out-and-back file (see [log](../log/2026-10-18-out-and-back-runs.md)).
 
 | # | Step | Requests | Status |
