@@ -1,13 +1,19 @@
 # MyCdA.app roadmap
 
-As of 2026-10-18. The working copy for discussion and comments is the [shared roadmap doc](https://claude.ai/code/artifact/96be89f0-3c65-4ae3-b8d2-3ce4a666f9d4); update this file when the plan changes.
+As of 2026-10-19. The working copy for discussion and comments is the [shared roadmap doc](https://claude.ai/code/artifact/96be89f0-3c65-4ae3-b8d2-3ce4a666f9d4); update this file when the plan changes.
 
 ## Where we are
 
-MyCdA.app relaunched as a rebuilt React app, and the first round of rider feedback has shipped. Steps 1–3 of the [feedback roadmap](feedback-roadmap.md) are done; steps 4 and 5 are still open. Everything below merged on 2026-10-18 and is live at [mycda.app](https://mycda.app).
+MyCdA.app relaunched as a rebuilt React app, and the first round of rider feedback has shipped. Steps 1–3 of the [feedback roadmap](feedback-roadmap.md) are done; steps 4 and 5 are still open. Releases now deploy from `v*` tags; 2.0.1 is live at [mycda.app](https://mycda.app).
 
 | PR | What shipped |
 | --- | --- |
+| [#55](https://github.com/mariuspopovici/mycda.app/pull/55) | Explain this run (beta): Gemini reads the analysis's computed numbers ([ADR-0016](../decisions/0016-run-explainer-gemini-ai-logic.md)). In review |
+| [#54](https://github.com/mariuspopovici/mycda.app/pull/54) | Release 2.0.1, the first deployed from a tag |
+| [#53](https://github.com/mariuspopovici/mycda.app/pull/53) | Deploy to Firebase on `v*` tags, signing in to Google Cloud without a stored key |
+| [#52](https://github.com/mariuspopovici/mycda.app/pull/52) | Activity page: summary links, Tests / Laps / Saved analyses tabs, ride settings drawer |
+| [#50](https://github.com/mariuspopovici/mycda.app/pull/50), [#51](https://github.com/mariuspopovici/mycda.app/pull/51) | SEO basics, prerendered public pages, real 404s |
+| [#49](https://github.com/mariuspopovici/mycda.app/pull/49) | Buy me a coffee links |
 | [#48](https://github.com/mariuspopovici/mycda.app/pull/48) | Emulator tests on firebase-tools 15 (Java 21) |
 | [#44](https://github.com/mariuspopovici/mycda.app/pull/44) | Security updates: the critical Express advisory in the live API, gRPC pinned, vitest 4 |
 | [#43](https://github.com/mariuspopovici/mycda.app/pull/43) | New analyses fit CdA once when they open instead of twice |
@@ -86,6 +92,30 @@ These ideas are worth keeping but not yet scheduled; most build on the Next item
 | Sample ride for visitors | A "Try it" button that opens a demo out and back ride without signing up | S–M | Public read access to one sample activity |
 | Shareable read-only analysis | A link for a coach or bike fitter | M | Security rule changes and an ADR |
 | Test session report (PDF) | One page with the tests, the CdA mean and spread, and the setups compared | S–M | Setup library, for setup names |
+
+## AI features
+
+"Explain this run" set the pattern: MyCdA computes every number, and the model ([Gemini through Firebase AI Logic](../decisions/0016-run-explainer-gemini-ai-logic.md)) only explains, structures or plans around them. Features that would send ride notes need a line in the privacy policy first.
+
+| Feature | What riders get | Effort | Builds on | Order |
+| --- | --- | --- | --- | --- |
+| Explain this run | A verdict, findings and next steps for the run on screen | — | — | Done ([#55](https://github.com/mariuspopovici/mycda.app/pull/55), beta) |
+| Session summary | For the Tests table: which tests agree, which is an outlier and why, and whether two setups differ by more than the scatter | S–M | Explain this run, better summary stats | 1 |
+| Notes → setup tags | Ride notes turned into structured setup fields (bike, helmet, position, conditions), confirmed by the rider; fills the setup library from existing notes | M | Setup library | 2 |
+| Ask the guide | A chat panel answering from the user guide, aware of the ride on screen | M | User guide | 3 |
+| "Why is B faster?" | Two saved analyses compared: the difference in watts and seconds, whether conditions differed, and how confident to be | S–M | Explain this run | |
+| CSV column mapper | For a CSV that doesn't match the format: a proposed column mapping and unit conversion, confirmed by the rider | M | Upload pipeline | |
+| Plain-language upload errors | Data problems explained ("power reads 0 for 40 s at 12:03, likely a dropout") | S | Data quality check | |
+| Test planner | A protocol for a comparison ("two helmets on a 2 km road"), with the number of runs computed from the rider's own scatter | M | Better summary stats | |
+| Session report text | The written part of the PDF report, for a coach or bike fitter | S | Test session report | |
+| Translated guide | Model-assisted translations of the user guide, generated at build time and reviewed before shipping | S per language | User guide | |
+
+Not with a language model:
+
+- **CdA from a photo of the position.** Models can't measure frontal area reliably, and an unreliable number would undermine trust in the real ones.
+- **Wind estimated from the runs.** Fitting one wind across several out and back tests is worth building, in `core/`, as physics rather than a prompt.
+
+Before the beta label comes off "Explain this run": watch spend against the AI Studio credits, and read real explanations of loops, velodrome sessions and rides with gaps.
 
 ## Ongoing
 
