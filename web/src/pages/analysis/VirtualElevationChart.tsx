@@ -41,19 +41,20 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
   const theme = useMantineTheme()
   const metric = units === 'metric'
   const height = (m: number) => (metric ? m : mToFt(m))
+  const heightUnit = metric ? 'm' : 'ft'
 
   const x = useMemo(() => (xAxis === 'time' ? time : distance.map((d) => (metric ? d : kmToMi(d)))), [xAxis, time, distance, metric])
 
   const data = useMemo<Data[]>(() => {
     const traces: Data[] = []
     if (showElevation) {
-      traces.push({ x, y: elevation.map(height), name: 'Recorded elevation', type: 'scatter', mode: 'lines', line: { width: 2, color: theme.colors.gray[5] } })
+      traces.push({ x, y: elevation.map(height), name: 'Recorded elevation', type: 'scatter', mode: 'lines', line: { width: 2, color: theme.colors.gray[5] }, hovertemplate: `Recorded elevation: %{y:.1f} ${heightUnit}<extra></extra>` })
     }
-    traces.push({ x, y: ve.map(height), name: 'Virtual elevation', type: 'scatter', mode: 'lines', line: { width: 2, color: theme.colors.blue[6] } })
+    traces.push({ x, y: ve.map(height), name: 'Virtual elevation', type: 'scatter', mode: 'lines', line: { width: 2, color: theme.colors.blue[6] }, hovertemplate: `Virtual elevation: %{y:.1f} ${heightUnit}<extra></extra>` })
     if (airspeed) {
       traces.push({
         x, y: airspeed.map((s) => (metric ? s : kmToMi(s))), name: 'Air speed', yaxis: 'y2', type: 'scatter', mode: 'lines',
-        line: { width: 1, color: theme.colors.teal[5], dash: 'dot' }
+        line: { width: 1, color: theme.colors.teal[5], dash: 'dot' }, hovertemplate: `Air speed: %{y:.1f} ${speedUnit(units)}<extra></extra>`
       })
     }
     if (wind?.length) {
@@ -67,7 +68,7 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
         yaxis: 'y3', name: 'Wind', type: 'scatter', mode: 'markers',
         marker: { symbol: 'arrow', angle: wind.map(arrowAngle), size: wind.map(arrowSize), color: theme.colors.orange[6], line: { width: 0 } },
         hovertext: wind.map((w) => `${windKind(w.relative)} ${formatSpeed(w.speed, units)} · from ${compassPoint(w.direction)} (${Math.round(w.direction)}°) · yaw ${Math.round(Math.abs(w.yaw))}°`),
-        hoverinfo: 'text'
+        hovertemplate: '%{hovertext}<extra></extra>'
       } as Data)
     }
     return traces
@@ -106,7 +107,7 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
       annotations: bands.map((band) => ({
         x: at(band.start), y: 1, xref: 'x', yref: 'paper', text: band.label, showarrow: false, xanchor: 'left', yanchor: 'top', font: { size: 10 }
       })),
-      xaxis: { title: { text: xAxis === 'time' ? '' : `Distance (${distanceUnit(units)})` }, type: xAxis === 'time' ? 'date' : 'linear' },
+      xaxis: { title: { text: xAxis === 'time' ? '' : `Distance (${distanceUnit(units)})` }, type: xAxis === 'time' ? 'date' : 'linear', hoverformat: xAxis === 'time' ? '%H:%M:%S' : `.2f` },
       yaxis: { title: { text: `Elevation (${metric ? 'm' : 'ft'})` }, ...(wind?.length ? { range: headroom, autorange: false } : { autorange: true }) },
       ...(airspeed ? { yaxis2: { title: { text: `Air speed (${speedUnit(units)})` }, overlaying: 'y', side: 'right', showgrid: false } } : {}),
       // a fixed 0–1 band for the wind arrows, independent of elevation and zoom
