@@ -28,6 +28,14 @@ interface Props {
   onHover?: (index: number | undefined) => void
 }
 
+const CHART_HEIGHT = 420
+/** Approximate height of the plot area (the chart less its top and bottom margins), px. */
+const PLOT_HEIGHT_PX = CHART_HEIGHT - 70
+/** Plotly's arrow angle (clockwise from up) for a wind relative to the rider: travel runs left to right. */
+const arrowAngle = (w: WindArrow) => (w.relative + 270) % 360
+/** Arrow size in px: 9 for calm, up to 20 for 30 km/h and more. */
+const arrowSize = (w: WindArrow) => 9 + Math.min(w.speed, 30) / 30 * 11
+
 /** Virtual elevation against recorded elevation on one axis, so drift shows directly. */
 export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed, units, xAxis, showElevation, bands, joins = [], wind, onHover }: Props) {
   const theme = useMantineTheme()
@@ -52,11 +60,12 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
       // the chart reads left to right as the rider rides: an arrow pointing left blows into the rider
       // (headwind), right is a tailwind, up comes from the rider's right, down from the left
       traces.push({
-        x: wind.map((w) => x[w.index]), y: wind.map(() => 0.92), yaxis: 'y3', name: 'Wind', type: 'scatter', mode: 'markers',
-        marker: {
-          symbol: 'arrow', angle: wind.map((w) => (w.relative + 270) % 360),
-          size: wind.map((w) => 9 + Math.min(w.speed, 30) / 30 * 11), color: theme.colors.orange[6], line: { width: 0 }
-        },
+        // Plotly anchors an arrow at its tip: shift each point by half its length along its direction,
+        // so arrows pointing different ways sit centred on one line
+        x: wind.map((w) => x[w.index]),
+        y: wind.map((w) => 0.92 + arrowSize(w) / 2 / PLOT_HEIGHT_PX * Math.cos(arrowAngle(w) * Math.PI / 180)),
+        yaxis: 'y3', name: 'Wind', type: 'scatter', mode: 'markers',
+        marker: { symbol: 'arrow', angle: wind.map(arrowAngle), size: wind.map(arrowSize), color: theme.colors.orange[6], line: { width: 0 } },
         hovertext: wind.map((w) => `${windKind(w.relative)} ${formatSpeed(w.speed, units)} · from ${compassPoint(w.direction)} (${Math.round(w.direction)}°) · yaw ${Math.round(Math.abs(w.yaw))}°`),
         hoverinfo: 'text'
       } as Data)
@@ -106,7 +115,7 @@ export function VirtualElevationChart ({ time, distance, elevation, ve, airspeed
   }, [bands, joins, x, xAxis, units, metric, airspeed, wind, headroom, theme])
 
   return (
-    <PlotlyChart data={data} layout={layout} height={420} onHover={onHover}
+    <PlotlyChart data={data} layout={layout} height={CHART_HEIGHT} onHover={onHover}
       ariaLabel='Virtual elevation compared with recorded elevation. With the right CdA and Crr the two match, and each loop returns to its starting height.' />
   )
 }
