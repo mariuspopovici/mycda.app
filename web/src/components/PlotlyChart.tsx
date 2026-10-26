@@ -52,7 +52,12 @@ export function PlotlyChart ({ data, layout, config, height = 420, onRelayout, o
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
       font: { family: theme.fontFamily, color: text, size: 12 },
-      hoverlabel: { font: { family: theme.fontFamily } },
+      // Plotly's hover box is white by default; give it the page's colours so dark mode stays readable
+      hoverlabel: {
+        bgcolor: dark ? theme.colors.dark[6] : theme.white,
+        bordercolor: grid,
+        font: { family: theme.fontFamily, color: text }
+      },
       legend: { orientation: 'h', x: 0, y: 1.12 },
       ...layout,
       xaxis: { ...axis, ...layout?.xaxis },

@@ -58,6 +58,13 @@ test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, 
   await page.getByRole('radiogroup').filter({ hasText: 'Manual' }).getByText('Manual').click()
   await page.getByRole('textbox', { name: /Wind speed/ }).fill('12')
   await page.getByRole('textbox', { name: /^From/ }).fill('315')
+  // wind arrows along the chart, relative to the rider: the course heads north-west, so a wind from
+  // 315° meets the rider head-on going out (arrows point left, 270°) and from behind coming back (90°)
+  await expect.poll(() => page.locator('.js-plotly-plot').first().evaluate((el) => el.data.find((t) => t.name === 'Wind')?.x.length)).toBe(24)
+  const angles = await page.locator('.js-plotly-plot').first().evaluate((el) => el.data.find((t) => t.name === 'Wind').marker.angle)
+  expect(Math.abs(angles[2] - 270)).toBeLessThan(15)
+  expect(Math.abs(angles[21] - 90)).toBeLessThan(15)
+  if (process.env.SCREENSHOTS) await page.locator('.js-plotly-plot').first().screenshot({ path: 'test-results/screens/wind-arrows.png' })
   await expect(page.getByText('Air speed', { exact: true }).first()).toBeVisible()
   // a manual wind is a 10 m value, scaled by the ride's exposure, unless measured at rider height
   await expect(page.getByText(/about 7\.2 km\/h at rider height \(open exposure, ×0\.60\)/)).toBeVisible()
