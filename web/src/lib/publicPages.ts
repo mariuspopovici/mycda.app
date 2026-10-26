@@ -27,6 +27,21 @@ export const PUBLIC_PAGES = {
   terms: { path: '/terms', title: 'Terms of use', description: 'The terms for using MyCdA.' }
 } satisfies Record<string, PageMeta>
 
+/**
+ * Account pages: open to anyone but served by the app shell, so not prerendered or in the sitemap.
+ * Sign-in and sign-up stay findable in search; the others are no use to a searcher.
+ */
+export const ACCOUNT_PAGES = {
+  login: { path: '/login', title: 'Sign in', description: 'Sign in to MyCdA to upload rides and estimate your CdA and Crr.' },
+  signup: {
+    path: '/signup',
+    title: 'Create a free account',
+    description: 'Sign up for MyCdA, a free tool that estimates your cycling CdA and Crr from power meter field tests.'
+  },
+  reset: { title: 'Reset password', noindex: true },
+  authAction: { title: 'Account', noindex: true }
+} satisfies Record<string, PageMeta>
+
 /** A guide section's metadata. */
 export const guidePageMeta = (section: GuideSection): PageMeta => ({
   path: `/guide/${section.slug}`,

@@ -55,5 +55,7 @@ describe('Hosting', () => {
     expect(served('/')).toBe('prerendered')
     expect(served('/activity/abc/analysis/def')).toBe('app')
     expect(served('/guide')).toBe('redirect')
+    // the legacy app's home is a permanent redirect, not a page that redirects in the browser
+    expect(served('/home')).toBe('redirect')
   })
 })

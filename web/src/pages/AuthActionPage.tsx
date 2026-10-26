@@ -5,6 +5,8 @@ import { hasLength, matchesField, useForm } from '@mantine/form'
 import { applyActionCode, confirmPasswordReset, verifyPasswordResetCode } from 'firebase/auth'
 import { auth } from '../firebase'
 import { AuthCard } from '../auth/AuthCard'
+import { usePageMeta } from '../lib/pageMeta'
+import { ACCOUNT_PAGES } from '../lib/publicPages'
 import { authErrorMessage } from '../auth/authErrors'
 
 /**
@@ -12,6 +14,7 @@ import { authErrorMessage } from '../auth/authErrors'
  * email verification and email change confirmation or recovery.
  */
 export function AuthActionPage () {
+  usePageMeta(ACCOUNT_PAGES.authAction)
   const [params] = useSearchParams()
   const mode = params.get('mode')
   const code = params.get('oobCode')

@@ -43,6 +43,11 @@
         "source": "/guide",
         "destination": "/guide/getting-started",
         "type": 301
+      },
+      {
+        "source": "/home",
+        "destination": "/activities",
+        "type": 301
       }
     ],
     "rewrites": [
@@ -64,10 +69,6 @@
       },
       {
         "source": "/activities",
-        "destination": "/app.html"
-      },
-      {
-        "source": "/home",
         "destination": "/app.html"
       },
       {

@@ -5,9 +5,12 @@ import { hasLength, isEmail, matchesField, useForm } from '@mantine/form'
 import { createUserWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase'
 import { AuthCard } from '../auth/AuthCard'
+import { usePageMeta } from '../lib/pageMeta'
+import { ACCOUNT_PAGES } from '../lib/publicPages'
 import { authErrorMessage } from '../auth/authErrors'
 
 export function SignUpPage () {
+  usePageMeta(ACCOUNT_PAGES.signup)
   const navigate = useNavigate()
   const [error, setError] = useState<string>()
   const form = useForm({
