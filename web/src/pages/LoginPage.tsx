@@ -5,10 +5,13 @@ import { isEmail, isNotEmpty, useForm } from '@mantine/form'
 import { signInWithEmailAndPassword } from 'firebase/auth'
 import { auth } from '../firebase'
 import { AuthCard } from '../auth/AuthCard'
+import { usePageMeta } from '../lib/pageMeta'
+import { ACCOUNT_PAGES } from '../lib/publicPages'
 import { useAuth } from '../auth/AuthContext'
 import { authErrorMessage } from '../auth/authErrors'
 
 export function LoginPage () {
+  usePageMeta(ACCOUNT_PAGES.login)
   const { user } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()

@@ -5,9 +5,12 @@ import { isEmail, useForm } from '@mantine/form'
 import { sendPasswordResetEmail } from 'firebase/auth'
 import { auth } from '../firebase'
 import { AuthCard } from '../auth/AuthCard'
+import { usePageMeta } from '../lib/pageMeta'
+import { ACCOUNT_PAGES } from '../lib/publicPages'
 import { authErrorMessage } from '../auth/authErrors'
 
 export function ResetPasswordPage () {
+  usePageMeta(ACCOUNT_PAGES.reset)
   const [error, setError] = useState<string>()
   const [sentTo, setSentTo] = useState<string>()
   const form = useForm({ initialValues: { email: '' }, validate: { email: isEmail('Enter a valid email address') } })

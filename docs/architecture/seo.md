@@ -16,7 +16,7 @@ The app renders in the browser, but crawlers and link previews (Strava, Slack, W
 | `link rel=canonical`, `og:url` | `https://mycda.app` + the page's path |
 | `meta robots` | `noindex` on the not-found page |
 
-Pages without metadata of their own (sign-in, the activity pages) get the defaults back when shown. `index.html` holds the defaults, the preview image (`public/og-image.jpg`, 1200×630), the Twitter card type and a `WebApplication` structured-data block. A test checks that its defaults match `lib/pageMeta.ts`.
+Pages without metadata of their own (the activity pages) get the defaults back when shown. The account pages (`ACCOUNT_PAGES` in `lib/publicPages.ts`) set their own: sign-in and sign-up have a title, description and canonical URL so they stay findable; the password reset and email action pages are `noindex`. `index.html` holds the defaults, the preview image (`public/og-image.jpg`, 1200×630), the Twitter card type and a `WebApplication` structured-data block. A test checks that its defaults match `lib/pageMeta.ts`.
 
 **Adding a public page:** add it to `PUBLIC_PAGES`, call `usePageMeta()` in it, run `npx vitest run src/lib/seo.test.ts -u` to regenerate `public/sitemap.xml`, and commit the sitemap. The page is then prerendered too, because the prerenderer reads the sitemap.
 
@@ -45,7 +45,7 @@ In the browser, `main.tsx` mounts the app only after the router has loaded the i
 | URL | Served |
 |---|---|
 | A public page (`/`, `/faq`, `/guide/tests`, …) | its prerendered file |
-| `/guide`, `/landing` | 301 to the first guide section, or `/` |
+| `/guide`, `/landing`, `/home` | 301 to the first guide section, `/`, or `/activities` (the legacy app's home; a browser-side redirect left Google with a page it crawled but wouldn't index) |
 | An app route (`/login`, `/activities`, `/activity/**`, `/profile`, …) | `app.html` (rewrite) |
 | Anything else | `404.html`, with status 404 |
 
