@@ -56,6 +56,8 @@ npm --prefix functions test         # upload parsing (node --test)
 npm --prefix tests/emulator test    # security rules, functions end to end, browser tests (Playwright)
 ```
 
+From the repository root, `npm run dev`, `dev:emulators`, `emulators`, `build`, `lint`, `test` (web and functions) and `test:emulator` forward to the packages; each package still installs its own dependencies with `npm ci`.
+
 CI runs all of them on every push (`.github/workflows/ci.yml`).
 
 ### Releasing

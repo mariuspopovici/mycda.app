@@ -1,0 +1,14 @@
+{
+  "name": "mycda",
+  "private": true,
+  "description": "Convenience scripts for the repository root; each package keeps its own dependencies (web/, functions/, tests/emulator/).",
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "dev:emulators": "npm --prefix web run dev:emulators",
+    "emulators": "npm --prefix tests/emulator run emulators",
+    "build": "npm --prefix web run build",
+    "lint": "npm --prefix web run lint && npm --prefix functions run lint",
+    "test": "npm --prefix web test && npm --prefix functions test",
+    "test:emulator": "npm --prefix tests/emulator test"
+  }
+}
