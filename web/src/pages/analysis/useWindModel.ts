@@ -58,17 +58,20 @@ export function useAirspeed (
   windPossible: boolean
 ) {
   const model = useWindModel(series, source === 'wind' && windPossible)
+  // the wind at rider height, one per point, for the weather and manual sources
+  const wind = useMemo(() => {
+    if (!windPossible || (source !== 'wind' && source !== 'manual')) return undefined
+    const factor = riderHeightFactor(exposure)
+    if (source === 'wind') {
+      return model.data && { speed: model.data.speed.map((w) => w * factor), direction: model.data.direction }
+    }
+    const speed = manualWind.atRiderHeight ? manualWind.speed : manualWind.speed * factor
+    return { speed: series.speed.map(() => speed), direction: series.speed.map(() => manualWind.direction) }
+  }, [source, series, windPossible, exposure, model.data, manualWind])
   const airspeed = useMemo(() => {
     if (source === 'measured') return series.airspeed
     if (source === 'ground' || !windPossible) return series.speed
-    const factor = riderHeightFactor(exposure)
-    if (source === 'wind') {
-      return model.data && windModelAirSpeed(series.location, series.speed, model.data.speed.map((w) => w * factor), model.data.direction)
-        .map((p) => p.airspeed)
-    }
-    const speed = manualWind.atRiderHeight ? manualWind.speed : manualWind.speed * factor
-    return windModelAirSpeed(series.location, series.speed, series.speed.map(() => speed), series.speed.map(() => manualWind.direction))
-      .map((p) => p.airspeed)
-  }, [source, series, windPossible, exposure, model.data, manualWind])
-  return { airspeed, model }
+    return wind && windModelAirSpeed(series.location, series.speed, wind.speed, wind.direction).map((p) => p.airspeed)
+  }, [source, series, windPossible, wind])
+  return { airspeed, wind, model }
 }

@@ -89,6 +89,12 @@ export function Analyzing () {
         your ground speed: a headwind raises air speed, a tailwind lowers it. A crosswind doesn't add drag directly; its effect on
         your position's drag (yaw) is part of the CdA you measure.
       </Text>
+      <Text>
+        With <Ui>Weather</Ui> or <Ui>Manual</Ui> air speed, orange arrows along the top of the chart show the wind as the rider
+        felt it. The chart reads left to right like the ride, so an arrow pointing left blows into the rider (a headwind), right is
+        a tailwind, up comes from the rider's right and down from the left. Bigger arrows mean stronger wind; hover over one for its
+        speed at rider height, compass direction and yaw angle. On an out and back, the arrows flip at the turnaround.
+      </Text>
       <H3 id='exposure'>Wind at rider height</H3>
       <Text>
         Forecasts and weather stations report the wind 10 m above the ground. Near the ground it's slower, more so among trees and

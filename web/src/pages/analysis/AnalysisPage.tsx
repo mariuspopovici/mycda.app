@@ -31,6 +31,7 @@ import { ParametersCard, type FitOption, type FitRequest, type FitTargetKey, typ
 import { SaveCard, type SaveDetails } from './SaveCard'
 import { parseAnalysisStart, parseRanges, useAnalysisSource, type AnalysisSource, type AnalysisStart } from './useAnalysisSource'
 import { canModelWind, useAirspeed } from './useWindModel'
+import { windArrows } from '../../core/windModel'
 import { VirtualElevationChart } from './VirtualElevationChart'
 import { HelpLink } from '../../components/HelpLink'
 
@@ -119,7 +120,8 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
   // a ride setting (ADR-0014); a saved analysis keeps the exposure it was saved with
   const rideExposure = source.activity?.analysisDefaults?.windExposure ?? DEFAULT_WIND_EXPOSURE
   const [exposure, setExposure] = useState(segment?.windExposure ?? rideExposure)
-  const { airspeed: windAirspeed, model: wind } = useAirspeed(series, airspeedSource, manualWind, exposure, windPossible)
+  const { airspeed: windAirspeed, wind: riderWind, model: wind } = useAirspeed(series, airspeedSource, manualWind, exposure, windPossible)
+  const arrows = useMemo(() => (riderWind ? windArrows(series.location, series.speed, riderWind.speed, riderWind.direction) : undefined), [riderWind, series])
   // still air until the weather arrives
   const airspeed = windAirspeed ?? series.speed
 
@@ -304,7 +306,7 @@ function Analysis ({ activityId, source, start: urlStart }: { activityId: string
             <VirtualElevationChart
               time={series.time} distance={series.runDistance} elevation={series.altitude} ve={ve}
               airspeed={airspeedSource === 'ground' ? undefined : airspeed}
-              units={units} xAxis={xAxis} showElevation={showElevation} bands={bands} joins={series.breaks} onHover={setHovered}
+              units={units} xAxis={xAxis} showElevation={showElevation} bands={bands} joins={series.breaks} wind={arrows} onHover={setHovered}
             />
             <Group gap='xl' mt='xs'>
               <Text size='sm'>Difference from recorded elevation (RMS): <b>{height(elevationError).toFixed(2)} {heightUnit}</b></Text>

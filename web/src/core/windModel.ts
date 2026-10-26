@@ -121,3 +121,46 @@ export function windModelAirSpeed (
   if (!bearings) throw new Error('The wind model needs GPS data.')
   return speed.map((groundSpeed, i) => yaw(groundSpeed, windSpeed[i], windDirection[i] - bearings[i]))
 }
+
+/** The wind at one point of a run, relative to the rider. */
+export interface WindArrow {
+  /** Index of the point in the series. */
+  index: number
+  /** km/h at rider height */
+  speed: number
+  /** Degrees the wind blows from (meteorological). */
+  direction: number
+  /** Degrees the wind comes from relative to the direction of travel: 0 headwind, 90 from the right, 180 tailwind. */
+  relative: number
+  /** Yaw angle in degrees at that point's ground speed. */
+  yaw: number
+}
+
+/**
+ * The wind relative to the rider at `count` evenly spaced points, for drawing arrows along a run.
+ * Returns an empty list when the track has no usable direction of travel.
+ */
+export function windArrows (
+  track: Track,
+  speed: number[],
+  windSpeed: number[],
+  windDirection: number[],
+  count = 24
+): WindArrow[] {
+  const bearings = travelBearings(track)
+  const n = speed.length
+  if (!bearings || n === 0) return []
+  const step = n / count
+  return Array.from({ length: Math.min(count, n) }, (_, k) => {
+    const index = Math.min(n - 1, Math.floor(step * (k + 0.5)))
+    const relative = (((windDirection[index] - bearings[index]) % 360) + 360) % 360
+    return { index, speed: windSpeed[index], direction: windDirection[index], relative, yaw: yaw(speed[index], windSpeed[index], relative).yaw }
+  })
+}
+
+/** "Headwind", "Tailwind" or a crosswind side, from the wind's angle relative to the direction of travel. */
+export function windKind (relative: number): string {
+  if (relative <= 45 || relative >= 315) return 'Headwind'
+  if (relative >= 135 && relative <= 225) return 'Tailwind'
+  return relative < 180 ? 'Crosswind from the right' : 'Crosswind from the left'
+}
