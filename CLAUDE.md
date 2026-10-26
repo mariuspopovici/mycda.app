@@ -18,6 +18,8 @@ Architecture, design notes, decision records (ADRs), the modernization plan and 
 
 ## Commands
 
+The root `package.json` only forwards scripts (`npm run dev`, `dev:emulators`, `emulators`, `build`, `lint`, `test`, `test:emulator`) to the packages, which keep their own dependencies.
+
 Web app (`web/`):
 - `npm --prefix web run dev`: Vite against production Firebase, configured by `web/.env.local` (gitignored; see `web/.env.example`).
 - Against the emulators: `npm --prefix tests/emulator run emulators` in one terminal and `npm --prefix web run dev:emulators` in another (project `demo-mycda`; the header shows "emulators").
