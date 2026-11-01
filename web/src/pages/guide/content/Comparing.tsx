@@ -18,7 +18,7 @@ export function Comparing () {
         <Table.Tbody>
           {[
             ['Δ CdA', 'The difference from the baseline, in percent. Green is faster (lower CdA), red slower.'],
-            ['Watts saved', 'The power the change saves at about 48 km/h (30 mph).'],
+            ['Watts saved', 'The power the change saves at about 42 km/h (26 mph).'],
             ['s / 40 km', 'The time it saves over a 40 km time trial at that speed.']
           ].map(([name, text]) => (
             <Table.Tr key={name}><Table.Td fw={600} w={150}>{name}</Table.Td><Table.Td>{text}</Table.Td></Table.Tr>

@@ -83,7 +83,7 @@ export function SegmentsTable ({ activityId, segments, onShow, onDelete }: Props
           </Text>
         )}
         <Text size='xs' c='dimmed'>
-          {baseline ? '* Estimated at about 48 km/h (30 mph): 0.005 m² CdA ≈ 5 W ≈ 20 s per 40 km.' : 'Mark an analysis as baseline to compare the others with it.'}
+          {baseline ? '* Estimated at about 42 km/h (26 mph): 0.005 m² CdA ≈ 5 W ≈ 20 s per 40 km.' : 'Mark an analysis as baseline to compare the others with it.'}
         </Text>
       </Group>
     </>

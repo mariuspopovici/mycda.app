@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { GUIDE_SECTIONS } from '../pages/guide/sections'
-import { applyPageMeta, DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL } from './pageMeta'
+import { applyPageMeta, DEFAULT_DESCRIPTION, DEFAULT_TITLE, SITE_URL, type PageMeta } from './pageMeta'
 import { guidePageMeta, PUBLIC_PAGES } from './publicPages'
 
 const publicDir = resolve(__dirname, '../../public')
@@ -61,9 +61,9 @@ describe('page metadata', () => {
 
   it('sets the title, description, canonical URL and social tags for a page', () => {
     applyPageMeta(PUBLIC_PAGES.faq)
-    expect(document.title).toBe('Frequently asked questions · MyCdA')
+    expect(document.title).toBe('CdA and aero field testing FAQ · MyCdA')
     expect(meta('meta[name="description"]')).toBe(PUBLIC_PAGES.faq.description)
-    expect(meta('meta[property="og:title"]')).toBe('Frequently asked questions · MyCdA')
+    expect(meta('meta[property="og:title"]')).toBe('CdA and aero field testing FAQ · MyCdA')
     expect(meta('meta[property="og:url"]')).toBe('https://mycda.app/faq')
     expect(document.head.querySelector('link[rel="canonical"]')?.getAttribute('href')).toBe('https://mycda.app/faq')
     expect(meta('meta[name="robots"]')).toBeUndefined()
@@ -80,12 +80,25 @@ describe('page metadata', () => {
     expect(meta('meta[property="og:url"]')).toBeUndefined()
   })
 
-  it('describes guide sections from their summaries', () => {
-    const tests = GUIDE_SECTIONS.find((s) => s.slug === 'tests')!
-    expect(guidePageMeta(tests)).toEqual({
-      path: '/guide/tests',
-      title: 'The Tests table – user guide',
-      description: 'Every test of a ride on one screen, fitted and saved together. From the MyCdA guide to field testing cycling aerodynamics with a power meter.'
+  it('titles guide sections by their search headline, or their summary when they have none', () => {
+    const section = (slug: string) => GUIDE_SECTIONS.find((s) => s.slug === slug)!
+    expect(guidePageMeta(section('analysis'))).toEqual({
+      path: '/guide/analysis',
+      title: 'Analyzing a run: virtual elevation (Chung method)',
+      description: "Read the virtual elevation chart, fit CdA and Crr with Robert Chung's method, set air density and wind, and save the analysis."
     })
+    expect(guidePageMeta(section('uploading'))).toEqual({
+      path: '/guide/uploading',
+      title: 'Uploading activities – user guide',
+      description: 'Supported files, processing, and the activity list. From the MyCdA guide to field testing cycling aerodynamics with a power meter.'
+    })
+  })
+
+  it('keeps search titles and descriptions to lengths search engines show in full', () => {
+    const metas: PageMeta[] = [...Object.values(PUBLIC_PAGES), ...GUIDE_SECTIONS.map(guidePageMeta)]
+    for (const { path, title, description } of metas) {
+      if (title) expect(`${title} · MyCdA`.length, path).toBeLessThanOrEqual(65)
+      if (description) expect(description.length, path).toBeLessThanOrEqual(160)
+    }
   })
 })

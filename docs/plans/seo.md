@@ -53,13 +53,15 @@ Search engines rank the page that best answers a query, from sites other sites p
 ### 0. Measure (you)
 
 - [x] **Google Search Console:** property added and sitemap submitted; 17 pages indexed by 2026-10-24.
-- [ ] **Bing Webmaster Tools:** import the site from Search Console. Bing also feeds DuckDuckGo and several AI search tools.
+- [x] **Bing Webmaster Tools:** added 2026-11-01. Bing also feeds DuckDuckGo and several AI search tools.
 - [ ] **`rho` npm package:** set its `homepage` to `https://mycda.app/rho`. It ranks for "air density calculator", and today it links only to GitHub.
 - [ ] **Baseline:** from Search Console → Performance → Search results (last 28 days), note in `docs/log/` the queries with impressions, the average position of each, and which pages they land on, then review monthly. Queries at positions 8–20 are the quickest wins: retitling and extending those pages (step 1) can move them onto page one.
 
 ### 1. Match the words people search (code, 1–2 days)
 
-- [ ] **Titles and descriptions.** Keep the slugs, since URLs are linked from the app and announcements; change the page titles, H1s or subtitles, and descriptions:
+Done. Guide sections keep their short names in the contents list and add a search headline as the page heading and title, for example "Analyzing a run: virtual elevation (Chung method)". `seo.test.ts` keeps titles to 65 characters and descriptions to 160.
+
+- [x] **Titles and descriptions** ([#64](https://github.com/mariuspopovici/mycda.app/pull/64) for the home page, then the guide and FAQ). Keep the slugs, since URLs are linked from the app and announcements; change the page titles, H1s or subtitles, and descriptions:
 
   | Page | Today | Proposed title |
   |---|---|---|
@@ -70,15 +72,15 @@ Search engines rank the page that best answers a query, from sites other sites p
   | `/guide/tests` | The Tests table | **Out-and-back aero tests, fitted automatically** |
   | `/rho` | Air density calculator | **Air density calculator for cycling (rho)** |
 
-- [ ] **Landing page:** one paragraph under the hero naming what riders search for: CdA and Crr from a power meter, the Chung virtual elevation method, out-and-back and loop protocols, and "an online alternative to Golden Cheetah's Aerolab".
-- [ ] **FAQ, up from 4 questions to about 10.** Each answer is short and links to the guide:
+- [x] **Landing page** ([#64](https://github.com/mariuspopovici/mycda.app/pull/64)): one paragraph under the hero naming what riders search for: CdA and Crr from a power meter, the Chung virtual elevation method, out-and-back and loop protocols, and "an online alternative to Golden Cheetah's Aerolab".
+- [x] **FAQ, up from 4 questions to 10.** Each answer is short and links to the guide:
   - What is a good CdA? (typical ranges by position);
   - How accurate is field testing compared with a wind tunnel?;
   - Is MyCdA an alternative to Golden Cheetah's Aerolab?;
   - Do I need a speed sensor, or is GPS enough?;
   - Can I use files from Strava, Garmin Connect or Wahoo?;
   - How many watts is 0.01 m² of CdA?
-- [ ] **Internal links** from the landing page and FAQ into the guide, with descriptive link text ("CdA test protocol", not "read more").
+- [x] **Internal links** from the landing page and FAQ into the guide, with descriptive link text ("CdA test protocol", not "read more").
 
 ### 2. Original content (weeks; one article every 1–2 weeks)
 
