@@ -10,8 +10,8 @@ export const PUBLIC_PAGES = {
   home: { path: '/' },
   faq: {
     path: '/faq',
-    title: 'Frequently asked questions',
-    description: 'Answers about MyCdA: which files you can upload, the CSV format, how to collect field test data and how to estimate CdA and Crr.'
+    title: 'CdA and aero field testing FAQ',
+    description: 'What a good CdA is, how many watts 0.01 m² saves, field testing versus a wind tunnel, speed sensors, ride files, and MyCdA versus Golden Cheetah Aerolab.'
   },
   about: {
     path: '/about',
@@ -45,7 +45,7 @@ export const ACCOUNT_PAGES = {
 /** A guide section's metadata. */
 export const guidePageMeta = (section: GuideSection): PageMeta => ({
   path: `/guide/${section.slug}`,
-  title: `${section.title} – user guide`,
-  description: `${section.summary}. From the MyCdA guide to field testing cycling aerodynamics with a power meter.`
+  title: section.headline ?? `${section.title} – user guide`,
+  description: section.description ?? `${section.summary}. From the MyCdA guide to field testing cycling aerodynamics with a power meter.`
 })
 

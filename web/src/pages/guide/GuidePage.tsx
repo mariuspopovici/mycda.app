@@ -48,7 +48,7 @@ export function GuidePage () {
             onChange={(v) => v && navigate(`/guide/${v}`)} />
           <div>
             <Text size='sm' c='dimmed'>User guide · {index + 1} of {GUIDE_SECTIONS.length}</Text>
-            <Title order={1}>{section.title}</Title>
+            <Title order={1}>{section.headline ?? section.title}</Title>
           </div>
           <Content />
           <Group justify='space-between' mt='xl' pt='md' style={{ borderTop: '1px solid var(--mantine-color-default-border)' }}>

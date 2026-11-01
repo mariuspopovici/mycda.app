@@ -25,7 +25,7 @@ test('guide: contents, next and previous, deep links and the phone menu', async 
   await page.goto('/guide')
   await expect(page).toHaveURL(/\/guide\/getting-started$/)
   await expect(page.getByRole('heading', { level: 1, name: 'Getting started' })).toBeVisible()
-  await expect(page).toHaveTitle('Getting started – user guide · MyCdA')
+  await expect(page).toHaveTitle('Getting started: measure CdA and Crr with a power meter · MyCdA')
 
   const contents = page.getByRole('navigation', { name: 'User guide' })
   await expect(contents.getByRole('link')).toHaveCount(9)
@@ -73,13 +73,18 @@ test('help links open the guide at the matching heading', async ({ page }) => {
 test('public pages have their own title, description and canonical URL; robots.txt and the sitemap are served', async ({ page, request }) => {
   const canonical = page.locator('link[rel="canonical"]')
   await page.goto('/faq')
-  await expect(page).toHaveTitle('Frequently asked questions · MyCdA')
+  await expect(page).toHaveTitle('CdA and aero field testing FAQ · MyCdA')
+  // the questions riders search for are answered on the page
+  await page.getByRole('button', { name: 'What is a good CdA?' }).click()
+  await expect(page.getByRole('cell', { name: '0.20–0.25 m²' })).toBeVisible()
+  await page.getByRole('button', { name: "Is MyCdA an alternative to Golden Cheetah's Aerolab?" }).click()
+  await expect(page.getByText("Both use Robert Chung's virtual elevation method", { exact: false })).toBeVisible()
   await expect(canonical).toHaveAttribute('href', 'https://mycda.app/faq')
-  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^Answers about MyCdA/)
+  await expect(page.locator('meta[name="description"]')).toHaveAttribute('content', /^What a good CdA is/)
 
   // client-side navigation updates them, and pages without their own go back to the defaults
   await page.getByRole('link', { name: 'user guide' }).first().click()
-  await expect(page).toHaveTitle('Getting started – user guide · MyCdA')
+  await expect(page).toHaveTitle('Getting started: measure CdA and Crr with a power meter · MyCdA')
   await expect(canonical).toHaveAttribute('href', 'https://mycda.app/guide/getting-started')
   // account pages: sign-in and sign-up have their own, the password reset stays out of search
   await page.goto('/login')

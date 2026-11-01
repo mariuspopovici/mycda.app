@@ -97,6 +97,92 @@ export function FaqPage () {
             </Stack>
           </Accordion.Panel>
         </Accordion.Item>
+
+        <Accordion.Item value='good-cda' id='good-cda'>
+          <Accordion.Control>What is a good CdA?</Accordion.Control>
+          <Accordion.Panel>
+            <Stack gap='sm'>
+              <Text>
+                It depends on your position, size and equipment. Typical values:
+              </Text>
+              <Table maw={520} withRowBorders={false}>
+                <Table.Tbody>
+                  {[
+                    ['Road bike, on the hoods or in the drops', '0.30–0.40 m²'],
+                    ['Good time trial or triathlon position', '0.20–0.25 m²'],
+                    ['The best time trialists', 'below 0.20 m²']
+                  ].map(([position, cda]) => (
+                    <Table.Tr key={position}><Table.Td>{position}</Table.Td><Table.Td>{cda}</Table.Td></Table.Tr>
+                  ))}
+                </Table.Tbody>
+              </Table>
+              <Text>
+                Taller and heavier riders have more frontal area, so the useful comparison is with your own baseline: test a
+                change against your normal setup on the same day. See <Anchor component={Link} to='/guide/comparing'>comparing setups</Anchor>.
+              </Text>
+            </Stack>
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value='watts' id='watts'>
+          <Accordion.Control>How many watts is 0.01 m² of CdA?</Accordion.Control>
+          <Accordion.Panel>
+            <Text>
+              At sea-level air density, about 8 W at 40 km/h (25 mph) and about 12 W at 45 km/h (28 mph). Drag power grows with the
+              cube of your speed through the air: P = ½ · ρ · CdA · v³, so the same change in CdA saves more watts the faster you go.
+              MyCdA's comparisons use the rule of thumb that 0.005 m² is worth about 5 W, or 20 seconds over 40 km, at around
+              42 km/h (26 mph).
+            </Text>
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value='accuracy' id='accuracy'>
+          <Accordion.Control>How accurate is field testing compared with a wind tunnel?</Accordion.Control>
+          <Accordion.Panel>
+            <Text>
+              A wind tunnel controls the air; the road doesn't, so a single field run is noisier. With a calibrated power meter, a
+              wheel speed sensor, a calm day and several runs per setup, repeated runs of the same setup typically agree within
+              1–3 % of CdA, which is enough to see the differences between positions, helmets or wheels that matter on race day.
+              Absolute values also depend on your mass, Crr and air density being right, so differences between setups tested in
+              the same session are the most reliable result.
+              See <Anchor component={Link} to='/guide/comparing#noise'>telling real differences from noise</Anchor>.
+            </Text>
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value='speed-sensor' id='speed-sensor'>
+          <Accordion.Control>Do I need a speed sensor, or is GPS enough?</Accordion.Control>
+          <Accordion.Panel>
+            <Text>
+              Use a wheel or hub speed sensor if you can. GPS speed is noisy from one second to the next, and the method turns
+              speed errors into CdA errors. GPS is still useful alongside the sensor: it draws the map, finds out-and-back runs and
+              loops, and lets MyCdA model the wind. See <Anchor component={Link} to='/guide/collecting-data'>collecting test data</Anchor>.
+            </Text>
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value='sources' id='sources'>
+          <Accordion.Control>Can I use rides from Garmin Connect, Strava or Wahoo?</Accordion.Control>
+          <Accordion.Panel>
+            <Text>
+              Yes, as FIT files. Upload the .fit file your bike computer records (Garmin, Wahoo, Hammerhead and most others), a
+              download from Garmin Connect (zip or .fit), or Strava's "Export original" for a ride that was uploaded as a FIT
+              file. GPX and TCX exports don't carry enough of the data, so upload the original FIT file instead.
+            </Text>
+          </Accordion.Panel>
+        </Accordion.Item>
+
+        <Accordion.Item value='aerolab' id='aerolab'>
+          <Accordion.Control>Is MyCdA an alternative to Golden Cheetah's Aerolab?</Accordion.Control>
+          <Accordion.Panel>
+            <Text>
+              Yes. Both use Robert Chung's virtual elevation method, so with the same data and parameters the results are
+              comparable. Aerolab is part of Golden Cheetah, a free desktop app. MyCdA runs in your browser and adds an analysis
+              that opens already fitted, the Tests table that pairs out-and-back runs, a wind model from weather data, air density
+              lookups, and saved analyses compared with a baseline in watts and seconds.
+            </Text>
+          </Accordion.Panel>
+        </Accordion.Item>
       </Accordion>
     </Stack>
   )
