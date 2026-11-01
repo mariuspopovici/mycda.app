@@ -1,9 +1,9 @@
 import { useEffect } from 'react'
 
 export const SITE_URL = 'https://mycda.app'
-export const DEFAULT_TITLE = 'MyCdA – field testing for cycling aerodynamics'
+export const DEFAULT_TITLE = 'MyCdA – free CdA calculator for cycling aero field tests'
 export const DEFAULT_DESCRIPTION =
-  'Estimate your cycling drag area (CdA) and rolling resistance (Crr) from power meter field tests. Free, with a step-by-step guide to testing positions and equipment.'
+  "Free CdA calculator for cyclists: measure your drag area (CdA) and rolling resistance (Crr) from power meter field tests with Chung's virtual elevation method."
 
 export interface PageMeta {
   /** Page title, shown as "<title> · MyCdA". The default title when absent. */

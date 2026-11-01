@@ -5,6 +5,7 @@
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="content-language" content="en" />
     <!-- the reader's color scheme before first paint, as Mantine's ColorSchemeScript does (key from main.tsx) -->
     <script>
       try {
@@ -13,29 +14,54 @@
         document.documentElement.setAttribute('data-mantine-color-scheme', scheme)
       } catch (e) {}
     </script>
-    <meta name="description" content="Estimate your cycling drag area (CdA) and rolling resistance (Crr) from power meter field tests. Free, with a step-by-step guide to testing positions and equipment." />
-    <title>MyCdA – field testing for cycling aerodynamics</title>
+    <meta name="description" content="Free CdA calculator for cyclists: measure your drag area (CdA) and rolling resistance (Crr) from power meter field tests with Chung's virtual elevation method." />
+    <title>MyCdA – free CdA calculator for cycling aero field tests</title>
     <!-- social previews; pages update the title, description and URL (lib/pageMeta.ts) -->
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="MyCdA" />
-    <meta property="og:title" content="MyCdA – field testing for cycling aerodynamics" />
-    <meta property="og:description" content="Estimate your cycling drag area (CdA) and rolling resistance (Crr) from power meter field tests. Free, with a step-by-step guide to testing positions and equipment." />
+    <meta property="og:title" content="MyCdA – free CdA calculator for cycling aero field tests" />
+    <meta property="og:description" content="Free CdA calculator for cyclists: measure your drag area (CdA) and rolling resistance (Crr) from power meter field tests with Chung's virtual elevation method." />
     <meta property="og:image" content="https://mycda.app/og-image.jpg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     <meta property="og:image:alt" content="A cyclist on an open road, with the question: What&apos;s your CdA?" />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- who we are, for search engines: the site name ("MyCdA", also searched as "mycda"), the brand and the app -->
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
-        "@type": "WebApplication",
-        "name": "MyCdA",
-        "url": "https://mycda.app/",
-        "description": "Estimates a cyclist's aerodynamic drag area (CdA) and rolling resistance (Crr) from power meter field tests with the virtual elevation method.",
-        "applicationCategory": "SportsApplication",
-        "operatingSystem": "Any (web browser)",
-        "isAccessibleForFree": true,
-        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+        "@graph": [
+          {
+            "@type": "WebSite",
+            "@id": "https://mycda.app/#website",
+            "name": "MyCdA",
+            "alternateName": ["mycda", "MyCdA.app", "mycda.app"],
+            "url": "https://mycda.app/",
+            "inLanguage": "en",
+            "publisher": { "@id": "https://mycda.app/#organization" }
+          },
+          {
+            "@type": "Organization",
+            "@id": "https://mycda.app/#organization",
+            "name": "MyCdA",
+            "url": "https://mycda.app/",
+            "logo": "https://mycda.app/apple-touch-icon.png",
+            "email": "support@mycda.app",
+            "sameAs": ["https://github.com/mariuspopovici/mycda.app", "https://www.instagram.com/mycda.app/"]
+          },
+          {
+            "@type": "WebApplication",
+            "@id": "https://mycda.app/#app",
+            "name": "MyCdA",
+            "url": "https://mycda.app/",
+            "description": "A free CdA calculator: estimates a cyclist's aerodynamic drag area (CdA) and rolling resistance (Crr) from power meter field tests with the virtual elevation (Chung) method.",
+            "applicationCategory": "SportsApplication",
+            "operatingSystem": "Any (web browser)",
+            "isAccessibleForFree": true,
+            "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+            "publisher": { "@id": "https://mycda.app/#organization" }
+          }
+        ]
       }
     </script>
   </head>
