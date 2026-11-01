@@ -4,9 +4,9 @@ As of 2026-11-01. How MyCdA compares with what ranks for the searches riders mak
 
 ## Where we stand
 
-**We don't rank yet, because we aren't indexed yet.** Until 2026-10-19 every URL returned an empty shell, so crawlers that don't run JavaScript saw nothing. In web searches on 2026-11-01 for the queries below, no page on mycda.app appeared. MyCdA showed up only through its GitHub repo, a mirror of it, and forum posts recommending it. That makes the first problem indexing, not position, and it should improve within weeks of submitting the sitemap.
+**Google has indexed the site; it doesn't rank for these searches yet.** Until 2026-10-19 every URL returned an empty shell. After the prerendering deploy and sitemap submission, Search Console lists **17 indexed pages** by 2026-10-24: all 15 sitemap pages plus `/login` and `/signup`. In web searches on 2026-11-01 for the queries below, no page on mycda.app appeared. MyCdA showed up only through its GitHub repo, a mirror of it, and forum posts recommending it. Being indexed only lets a page be shown. From here, position depends on relevance, content and links (steps 1–3).
 
-**How this was measured:** a general web search API (US results), not Google, and without positions. Treat the tables as "who shows up", not as rankings. Search Console (step 0) will give real queries, impressions and positions.
+**How this was measured:** a general web search API (US results), not Google, and without positions. Treat the tables as "who shows up", not as rankings. Search Console's Performance report gives the real queries, impressions and positions.
 
 ## Who ranks, by search intent
 
@@ -50,12 +50,12 @@ Search engines rank the page that best answers a query, from sites other sites p
 
 ## The plan
 
-### 0. Measure (you, about 1 hour, now)
+### 0. Measure (you)
 
-- [ ] **Google Search Console:** add mycda.app as a domain property, submit `sitemap.xml`, and use URL inspection → "Request indexing" for `/`, `/guide/getting-started`, `/guide/collecting-data`, `/guide/analysis` and `/rho`.
+- [x] **Google Search Console:** property added and sitemap submitted; 17 pages indexed by 2026-10-24.
 - [ ] **Bing Webmaster Tools:** import the site from Search Console. Bing also feeds DuckDuckGo and several AI search tools.
 - [ ] **`rho` npm package:** set its `homepage` to `https://mycda.app/rho`. It ranks for "air density calculator", and today it links only to GitHub.
-- [ ] **Baseline:** after 4 weeks, note impressions, clicks and positions for the query clusters above in `docs/log/`, then review monthly.
+- [ ] **Baseline:** from Search Console → Performance → Search results (last 28 days), note in `docs/log/` the queries with impressions, the average position of each, and which pages they land on, then review monthly. Queries at positions 8–20 are the quickest wins: retitling and extending those pages (step 1) can move them onto page one.
 
 ### 1. Match the words people search (code, 1–2 days)
 
@@ -102,7 +102,7 @@ A small **Learn** section of prerendered, evergreen articles. They go in `PUBLIC
 
 ## What to expect
 
-- **Within 2–6 weeks of submitting the sitemap:** branded and niche searches ("mycda", "Chung method tool", "virtual elevation online").
+- **Within 2–6 weeks of indexing (from late October 2026):** branded and niche searches ("mycda", "Chung method tool", "virtual elevation online").
 - **Within 2–4 months, as articles 1, 2 and 4 publish and mentions accumulate:** the method and protocol clusters.
 - **6 months or more, needing links:** "CdA calculator" and "aero testing app", where myWindsock and the press roundups are entrenched.
 
