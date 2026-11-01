@@ -38,6 +38,25 @@ describe('page metadata', () => {
     expect(html).toContain(`<title>${DEFAULT_TITLE}</title>`)
     expect(html).toContain(`<meta name="description" content="${DEFAULT_DESCRIPTION}" />`)
     expect(html).toContain(`<meta property="og:description" content="${DEFAULT_DESCRIPTION}" />`)
+    expect(html).toContain(`<meta property="og:title" content="${DEFAULT_TITLE}" />`)
+    expect(html).toContain('<meta http-equiv="content-language" content="en" />')
+  })
+
+  it('names the site, the brand and the app in structured data', () => {
+    const html = readFileSync(resolve(__dirname, '../../index.html'), 'utf8')
+    const json = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)![1]
+    const graph: Array<Record<string, unknown>> = JSON.parse(json)['@graph']
+    const byType = (type: string) => graph.find((node) => node['@type'] === type)!
+    // Google picks the site name from WebSite: it should read "MyCdA", also for searches for "mycda"
+    expect(byType('WebSite')).toMatchObject({ name: 'MyCdA', url: `${SITE_URL}/` })
+    expect(byType('WebSite').alternateName).toContain('mycda')
+    const organization = byType('Organization')
+    expect(organization.name).toBe('MyCdA')
+    // the logo is served from public/
+    const logo = String(organization.logo).replace(SITE_URL, '')
+    expect(readFileSync(resolve(publicDir, `.${logo}`)).length).toBeGreaterThan(0)
+    expect(organization.sameAs).toContain('https://github.com/mariuspopovici/mycda.app')
+    expect(byType('WebApplication')).toMatchObject({ name: 'MyCdA', isAccessibleForFree: true })
   })
 
   it('sets the title, description, canonical URL and social tags for a page', () => {
