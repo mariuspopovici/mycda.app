@@ -56,6 +56,14 @@ export const routes: RouteObject[] = [{
         return { element: <GuidePage /> }
       }
     },
+    // unlisted test page for the wind sensor
+    {
+      path: 'lab/weathermeter',
+      lazy: async () => {
+        const { WeatherMeterPage } = await import('./pages/lab/WeatherMeterPage')
+        return { element: <WeatherMeterPage /> }
+      }
+    },
     { path: 'about', element: <AboutPage /> },
     { path: 'terms', element: <LegalPage document='terms' /> },
     { path: 'privacy', element: <LegalPage document='privacy' /> },
