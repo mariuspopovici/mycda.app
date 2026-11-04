@@ -17,7 +17,8 @@ export const app = initializeApp({
   storageBucket: useEmulators ? `${projectId}.appspot.com` : env.VITE_FIREBASE_STORAGE_BUCKET,
   messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   // the registered web app; Firebase AI Logic and App Check need it
-  appId: useEmulators ? '1:000000000000:web:0000000000000000' : env.VITE_FIREBASE_APP_ID
+  appId: useEmulators ? '1:000000000000:web:0000000000000000' : env.VITE_FIREBASE_APP_ID,
+  measurementId: env.VITE_FIREBASE_MEASUREMENT_ID
 })
 
 export const auth = getAuth(app)
