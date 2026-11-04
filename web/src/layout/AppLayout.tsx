@@ -1,4 +1,5 @@
-import { Link, NavLink as RouterNavLink, Outlet, useNavigate } from 'react-router'
+import { useEffect, useState } from 'react'
+import { Link, NavLink as RouterNavLink, Outlet, useLocation, useNavigate } from 'react-router'
 import {
   ActionIcon, Anchor, AppShell, Box, Burger, Button, Container, Divider, Group, Image, Menu, NavLink,
   Stack, Text, Tooltip, useComputedColorScheme, useMantineColorScheme, VisuallyHidden
@@ -8,8 +9,10 @@ import { signOut } from 'firebase/auth'
 import { IconCoffee, IconLogout, IconMoon, IconSun, IconUser, IconUserCircle } from '@tabler/icons-react'
 import logo from '../assets/logo.svg'
 import { useAuth } from '../auth/AuthContext'
+import { CookieBanner } from '../components/CookieBanner'
 import { auth, useEmulators } from '../firebase'
 import { SUPPORT_URL } from '../lib/links'
+import { analyticsOffered, trackPageView } from '../services/analytics'
 
 const COMMUNITY_URL = 'https://groups.google.com/forum/#!forum/mycda'
 
@@ -59,7 +62,7 @@ function UserMenu () {
   )
 }
 
-function Footer () {
+function Footer ({ onCookieSettings }: { onCookieSettings: () => void }) {
   return (
     <Box component='footer' py='lg' mt='xl'>
       <Divider mb='md' />
@@ -69,6 +72,7 @@ function Footer () {
           <Anchor href='mailto:support@mycda.app' size='sm' c='dimmed'>Contact</Anchor>
           <Anchor component={Link} to='/privacy' size='sm' c='dimmed'>Privacy</Anchor>
           <Anchor component={Link} to='/terms' size='sm' c='dimmed'>Terms</Anchor>
+          {analyticsOffered() && <Anchor component='button' type='button' onClick={onCookieSettings} size='sm' c='dimmed'>Cookie settings</Anchor>}
           <Anchor href={SUPPORT_URL} target='_blank' rel='noopener' size='sm' c='dimmed'
             style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
             <IconCoffee size={14} aria-hidden /> Buy me a coffee
@@ -83,7 +87,12 @@ function Footer () {
 export function AppLayout () {
   const { user } = useAuth()
   const [opened, { toggle, close }] = useDisclosure()
+  const [cookieSettingsOpen, setCookieSettingsOpen] = useState(false)
   const links = NAV.filter((item) => !item.auth || user)
+
+  // after the page's own effects, so the page view carries its title
+  const { pathname } = useLocation()
+  useEffect(() => trackPageView(pathname), [pathname])
 
   return (
     <AppShell header={{ height: 60 }} navbar={{ width: 240, breakpoint: 'sm', collapsed: { desktop: true, mobile: !opened } }} padding='md'>
@@ -130,9 +139,10 @@ export function AppLayout () {
       <AppShell.Main>
         <Container size='xl'>
           <Outlet />
-          <Footer />
+          <Footer onCookieSettings={() => setCookieSettingsOpen(true)} />
         </Container>
       </AppShell.Main>
+      <CookieBanner settingsOpen={cookieSettingsOpen} onClose={() => setCookieSettingsOpen(false)} />
     </AppShell>
   )
 }

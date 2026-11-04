@@ -20,6 +20,8 @@ export default defineConfig({
         manualChunks (id) {
           // the run explainer's SDKs load only when it's used (services/assistant.ts)
           if (/node_modules\/(@firebase\/(ai|app-check)|firebase\/(ai|app-check))\//.test(id)) return 'firebase-ai'
+          // Analytics loads only on the live site, after the visitor accepts (services/analytics.ts)
+          if (/node_modules\/(@firebase\/(analytics|installations)|firebase\/analytics)\//.test(id)) return 'firebase-analytics'
           if (/node_modules\/(@firebase|firebase|re2js)\//.test(id)) return 'firebase'
           if (/node_modules\/(@mantine|@floating-ui|@tabler)\//.test(id)) return 'mantine'
           if (/node_modules\/(react|react-dom|react-router|scheduler|@tanstack)\//.test(id)) return 'react'
