@@ -1,6 +1,6 @@
 import { Link } from 'react-router'
-import { Anchor, BackgroundImage, Box, Button, Card, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core'
-import { IconChartArea, IconClipboardCheck, IconCloudUpload } from '@tabler/icons-react'
+import { Alert, Anchor, BackgroundImage, Box, Button, Card, Group, SimpleGrid, Stack, Text, ThemeIcon, Title } from '@mantine/core'
+import { IconChartArea, IconClipboardCheck, IconCloudUpload, IconInfoCircle } from '@tabler/icons-react'
 import { useAuth } from '../auth/AuthContext'
 import { usePageMeta } from '../lib/pageMeta'
 import { PUBLIC_PAGES } from '../lib/publicPages'
@@ -47,6 +47,11 @@ export function LandingPage () {
           </Stack>
         </Box>
       </BackgroundImage>
+      {/* the privacy policy promises a prominent notice of changes; take this down once it's old news */}
+      <Alert role='note' variant='light' color='blue' icon={<IconInfoCircle size={18} />}>
+        We updated our <Anchor component={Link} to='/privacy' inherit>privacy policy</Anchor> on November 3, 2026. If you accept
+        cookies, Google Analytics shows us which pages get used. Your rides are never included.
+      </Alert>
       <Box component='section' aria-labelledby='what-is-mycda' maw={860}>
         <Title order={2} id='what-is-mycda' mb='xs'>Measure your CdA without a wind tunnel</Title>
         <Text>

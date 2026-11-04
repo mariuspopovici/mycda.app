@@ -20,6 +20,13 @@ test('the landing page announces the relaunch and links into the guide', async (
   }
 })
 
+test('the landing page gives notice of the privacy policy change', async ({ page }) => {
+  await page.goto('/')
+  await page.getByRole('note').getByRole('link', { name: 'privacy policy' }).click()
+  await expect(page).toHaveURL(/\/privacy$/)
+  await expect(page.getByText('Effective date: November 3, 2026')).toBeVisible()
+})
+
 test('guide: contents, next and previous, deep links and the phone menu', async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 })
   await page.goto('/guide')
