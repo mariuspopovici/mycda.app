@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { verificationCode } from './account.js'
 
 const require = createRequire(import.meta.url)
 const { buildFit, ride } = require(resolve(import.meta.dirname, '../../../functions/test/fit-builder.js'))
@@ -32,6 +33,18 @@ test('sign up, set preferences, upload, rename, open and delete an activity', as
   await expect(page.getByText('Accept the terms and conditions to continue')).toBeVisible()
   await page.getByRole('checkbox', { name: /I accept the/ }).check()
   await page.getByRole('button', { name: 'Create account' }).click()
+
+  // signed-in pages wait until the emailed link is opened
+  await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible()
+  await expect(page.getByText(email)).toBeVisible()
+  await page.getByRole('button', { name: "I've verified my email" }).click()
+  await expect(page.getByText("Your email address isn't verified yet")).toBeVisible()
+  const inbox = await page.context().newPage()
+  await inbox.goto(`/auth/action?mode=verifyEmail&oobCode=${await verificationCode(email)}`)
+  await expect(inbox.getByText('Your email address is verified.')).toBeVisible()
+  await expect(inbox.getByRole('link', { name: 'Continue to MyCdA' })).toBeVisible()
+  await inbox.close()
+  await page.getByRole('button', { name: "I've verified my email" }).click()
 
   // new accounts land on the profile with suggested values
   await expect(page.getByText('Welcome to MyCdA')).toBeVisible()

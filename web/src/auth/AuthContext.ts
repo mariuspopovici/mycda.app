@@ -4,9 +4,11 @@ import type { User } from 'firebase/auth'
 export interface AuthState {
   /** undefined while Firebase restores the session, null when signed out. */
   user: User | null | undefined
+  /** Fetches the signed-in user's profile again (e.g. after the email was verified elsewhere) and re-renders. */
+  reload: () => Promise<void>
 }
 
-export const AuthContext = createContext<AuthState>({ user: undefined })
+export const AuthContext = createContext<AuthState>({ user: undefined, reload: async () => {} })
 
 export const useAuth = () => useContext(AuthContext)
 

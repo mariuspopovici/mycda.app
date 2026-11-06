@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { signUp } from './account.js'
 
 const require = createRequire(import.meta.url)
 const { initializeApp, getApps } = require('firebase-admin/app')
@@ -13,12 +14,7 @@ if (!getApps().length) initializeApp({ projectId: 'demo-mycda', storageBucket: '
 
 test('stalled uploads and legacy errors can be retried', async ({ page }) => {
   const email = `retry-${Date.now()}@example.com`
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(email)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await signUp(page, email)
   await expect(page.getByText('Welcome to MyCdA')).toBeVisible()
 
   const { uid } = await getAuth().getUserByEmail(email)

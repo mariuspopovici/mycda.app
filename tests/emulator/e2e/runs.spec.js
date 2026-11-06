@@ -1,14 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { signUp } from './account.js'
 import { outAndBackRide } from './rides.js'
 
 test('ride settings, an out-and-back run opened at its fitted CdA, manual wind, and save', async ({ page }) => {
   test.setTimeout(120_000)
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`runs-${Date.now()}@example.com`)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await signUp(page, `runs-${Date.now()}@example.com`)
   // profile: 83 kg, but a Crr (0.004) that is wrong for this ride
   await page.getByRole('textbox', { name: 'Crr', exact: true }).fill('0.004')
   await page.getByRole('textbox', { name: 'Drivetrain loss (%)', exact: true }).fill('0')
@@ -107,13 +103,7 @@ test('air density from humidity and station pressure', async ({ page }) => {
 
 test('tests table: pairs the out and back legs, fits, saves and opens the test', async ({ page }) => {
   test.setTimeout(120_000)
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`tests-${Date.now()}@example.com`)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
-  await expect(page.getByRole('button', { name: 'Save preferences' })).toBeVisible()
+  await signUp(page, `tests-${Date.now()}@example.com`)
 
   await page.goto('/activities')
   await page.locator('input[type=file]').setInputFiles({ name: 'Out and back.fit', mimeType: 'application/octet-stream', buffer: outAndBackRide() })

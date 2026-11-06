@@ -3,6 +3,7 @@ import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { gzipSync } from 'node:zlib'
 import { expect, test } from '@playwright/test'
+import { fillSignUp, verifyEmail } from './account.js'
 import { circuitRide } from './rides.js'
 
 const require = createRequire(import.meta.url)
@@ -34,12 +35,10 @@ test('screens', async ({ page }) => {
   await readme('landing')
   await page.goto('/login'); await shoot('login', 'dark')
 
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`screens-${Date.now()}@example.com`)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
+  const email = `screens-${Date.now()}@example.com`
+  await fillSignUp(page, email)
+  await shoot('verify-email')
+  await verifyEmail(page, email)
   await expect(page.getByText('Welcome to MyCdA')).toBeVisible()
   await expect(page.getByRole('button', { name: 'Save preferences' })).toBeVisible()
   await page.screenshot({ path: out('profile-dark'), fullPage: true })

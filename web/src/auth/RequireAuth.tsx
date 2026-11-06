@@ -2,8 +2,13 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router'
 import { Center, Loader } from '@mantine/core'
 import { useAuth } from './AuthContext'
+import { needsEmailVerification } from './verification'
+import { VerifyEmail } from './VerifyEmail'
 
-/** Renders children for signed-in users; sends everyone else to /login and back afterwards. */
+/**
+ * Renders children for signed-in users; sends everyone else to /login and back afterwards.
+ * New accounts see VerifyEmail in place of the page until their address is verified.
+ */
 export function RequireAuth ({ children }: { children: ReactNode }) {
   const { user } = useAuth()
   const location = useLocation()
@@ -13,6 +18,9 @@ export function RequireAuth ({ children }: { children: ReactNode }) {
   }
   if (!user) {
     return <Navigate to='/login' replace state={{ from: location.pathname + location.search }} />
+  }
+  if (needsEmailVerification(user)) {
+    return <VerifyEmail />
   }
   return children
 }
