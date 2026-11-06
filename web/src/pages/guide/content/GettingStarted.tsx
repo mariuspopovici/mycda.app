@@ -49,7 +49,8 @@ export function GettingStarted () {
 
       <H2 id='account'>Creating an account</H2>
       <Text>
-        <AppLink to='/signup'>Sign up</AppLink> with an email address and a password. Your rides and analyses are private to your
+        <AppLink to='/signup'>Sign up</AppLink> with an email address and a password, then open the link we email you to verify
+        the address; <Ui>Send a new link</Ui> sends another if it doesn't arrive. Your rides and analyses are private to your
         account. You can try the <AppLink to='/rho'>air density calculator</AppLink> without one.
       </Text>
 

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import { Alert, Anchor, Button, Checkbox, PasswordInput, Stack, Text, TextInput } from '@mantine/core'
 import { hasLength, isEmail, matchesField, useForm } from '@mantine/form'
-import { createUserWithEmailAndPassword } from 'firebase/auth'
+import { createUserWithEmailAndPassword, sendEmailVerification } from 'firebase/auth'
 import { auth } from '../firebase'
 import { AuthCard } from '../auth/AuthCard'
 import { usePageMeta } from '../lib/pageMeta'
@@ -26,7 +26,10 @@ export function SignUpPage () {
   const submit = form.onSubmit(async ({ email, password }) => {
     setError(undefined)
     try {
-      await createUserWithEmailAndPassword(auth, email.trim(), password)
+      const { user } = await createUserWithEmailAndPassword(auth, email.trim(), password)
+      // if this fails, the verification page offers to send the link again
+      await sendEmailVerification(user).catch(() => {})
+      // RequireAuth shows the verification page until the link is opened, then the profile
       navigate('/profile', { replace: true, state: { welcome: true } })
     } catch (e) {
       setError(authErrorMessage(e))

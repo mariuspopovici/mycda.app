@@ -1,6 +1,7 @@
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { expect, test } from '@playwright/test'
+import { signUp } from './account.js'
 
 const require = createRequire(import.meta.url)
 const { buildFit, ride } = require(resolve(import.meta.dirname, '../../../functions/test/fit-builder.js'))
@@ -13,12 +14,7 @@ const names = async (page) => (await page.getByRole('row').filter({ has: page.ge
   .map((t) => t.split('\n')[0].trim())
 
 test('new uploads appear at the top; sort by ride date; search', async ({ page }) => {
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`list-${Date.now()}@example.com`)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await signUp(page, `list-${Date.now()}@example.com`)
   await expect(page.getByText('Welcome to MyCdA')).toBeVisible()
 
   await page.goto('/activities')

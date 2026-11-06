@@ -1,14 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { signUp } from './account.js'
 import { circuitRide } from './rides.js'
 
 test('select a lap, analyze it, suggest CdA, save as baseline, reopen and delete', async ({ page }) => {
   test.setTimeout(120_000)
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`analyst-${Date.now()}@example.com`)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
+  await signUp(page, `analyst-${Date.now()}@example.com`)
   // match the synthetic rider: 75 + 8 kg
   await page.getByRole('textbox', { name: 'Rider weight (kg)', exact: true }).fill('75')
   await page.getByRole('textbox', { name: 'Bike weight (kg)', exact: true }).fill('8')

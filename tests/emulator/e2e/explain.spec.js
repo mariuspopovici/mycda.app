@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test'
+import { signUp } from './account.js'
 import { outAndBackRide } from './rides.js'
 
 const ANSWER = {
@@ -23,13 +24,7 @@ test('explain this run: sends computed numbers only and shows the answer', async
     })
   })
 
-  await page.goto('/signup')
-  await page.getByRole('textbox', { name: 'Email', exact: true }).fill(`explain-${Date.now()}@example.com`)
-  await page.getByRole('textbox', { name: 'Password', exact: true }).fill('secret123')
-  await page.getByRole('textbox', { name: 'Repeat password', exact: true }).fill('secret123')
-  await page.getByRole('checkbox', { name: /I accept/ }).check()
-  await page.getByRole('button', { name: 'Create account' }).click()
-  await expect(page.getByRole('button', { name: 'Save preferences' })).toBeVisible()
+  await signUp(page, `explain-${Date.now()}@example.com`)
 
   await page.goto('/activities')
   await page.locator('input[type=file]').setInputFiles({ name: 'Out and back.fit', mimeType: 'application/octet-stream', buffer: outAndBackRide() })
