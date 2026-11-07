@@ -49,8 +49,9 @@ export function LandingPage () {
       </BackgroundImage>
       {/* the privacy policy promises a prominent notice of changes; take this down once it's old news */}
       <Alert role='note' variant='light' color='blue' icon={<IconInfoCircle size={18} />}>
-        We updated our <Anchor component={Link} to='/privacy' inherit>privacy policy</Anchor> on November 3, 2026. If you accept
-        cookies, Google Analytics shows us which pages get used. Your rides are never included.
+        We updated our <Anchor component={Link} to='/privacy' inherit>privacy policy</Anchor> on November 7, 2026. Sign-in and
+        sign-up now use Google reCAPTCHA to keep out automated accounts, and if you accept cookies, Google Analytics shows us
+        which pages get used. Your rides are never included.
       </Alert>
       <Box component='section' aria-labelledby='what-is-mycda' maw={860}>
         <Title order={2} id='what-is-mycda' mb='xs'>Measure your CdA without a wind tunnel</Title>

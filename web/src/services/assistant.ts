@@ -3,12 +3,13 @@
  * Check. Only numbers computed by core/runDiagnostics are sent, never GPS tracks, names or notes, and
  * the model never computes CdA: it explains the numbers it is given.
  *
- * Firebase AI Logic and App Check (with its reCAPTCHA script) load on first use, so pages that never
- * ask for an explanation don't download them.
+ * Firebase AI Logic loads on first use, so pages that never ask for an explanation don't download it.
+ * App Check is already running for signed-in users (services/appCheck.ts).
  */
 import type { RunDiagnostics } from '../core/runDiagnostics'
 import { kgToLbs, kmToMi, mToFt, type Units } from '../core/units'
 import { app, useEmulators } from '../firebase'
+import { startAppCheck } from './appCheck'
 
 const env = import.meta.env
 const SITE_KEY: string | undefined = env.VITE_RECAPTCHA_ENTERPRISE_SITE_KEY
@@ -110,12 +111,8 @@ let modelPromise: Promise<import('firebase/ai').GenerativeModel> | undefined
 
 async function getModel () {
   modelPromise ??= (async () => {
-    if (!useEmulators && SITE_KEY) {
-      const { initializeAppCheck, ReCaptchaEnterpriseProvider } = await import('firebase/app-check')
-      // local development registers a debug token instead (Firebase console → App Check → Manage debug tokens)
-      if (env.DEV) (self as { FIREBASE_APPCHECK_DEBUG_TOKEN?: string | boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = env.VITE_APPCHECK_DEBUG_TOKEN || true
-      initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(SITE_KEY), isTokenAutoRefreshEnabled: true })
-    }
+    // already running for signed-in users; AI Logic enforces it
+    startAppCheck()
     const { getAI, getGenerativeModel, GoogleAIBackend, Schema } = await import('firebase/ai')
     const ai = getAI(app, { backend: new GoogleAIBackend() })
     return getGenerativeModel(ai, {

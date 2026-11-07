@@ -13,7 +13,7 @@ Riders struggle to read a virtual elevation chart: whether a run closes, what a 
 ## Decision
 
 - **Firebase AI Logic** calls Gemini from the browser through Firebase's proxy, with the **Gemini Developer API** backend. The project is on Blaze, so the API runs on its paid tier, billed from prepaid credits in AI Studio ($20 to start); the free tier isn't available to billed projects. The model is `gemini-3.5-flash` by default, overridable with `VITE_GEMINI_MODEL`.
-- **App Check** with reCAPTCHA Enterprise protects the endpoint; AI Logic enforces it. App Check and the AI SDK load lazily, on the first explanation, in their own chunk.
+- **App Check** with reCAPTCHA Enterprise protects the endpoint; AI Logic enforces it. App Check and the AI SDK load lazily, on the first explanation, in their own chunk. (Since [ADR-0018](0018-app-check-for-auth.md), App Check starts earlier, for Auth.)
 - **Only computed numbers are sent** (`core/runDiagnostics.ts` → `services/assistant.ts`'s `explainRunPrompt`): run and leg durations, distances, speeds, power, elevation and VE changes, closure and RMS errors, the parameters, CdA sensitivities and data-quality counts. No GPS track, activity name, notes or account details. Nothing is sent until the rider presses Explain.
 - **The model explains, never computes.** The system instruction forbids new numbers, and the answer is a JSON schema (verdict, headline, findings, next steps) that the app validates before showing.
 

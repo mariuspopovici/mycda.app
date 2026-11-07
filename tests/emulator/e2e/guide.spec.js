@@ -24,7 +24,7 @@ test('the landing page gives notice of the privacy policy change', async ({ page
   await page.goto('/')
   await page.getByRole('note').getByRole('link', { name: 'privacy policy' }).click()
   await expect(page).toHaveURL(/\/privacy$/)
-  await expect(page.getByText('Effective date: November 3, 2026')).toBeVisible()
+  await expect(page.getByText('Effective date: November 7, 2026')).toBeVisible()
 })
 
 test('guide: contents, next and previous, deep links and the phone menu', async ({ page }) => {
