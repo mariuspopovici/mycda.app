@@ -15,7 +15,8 @@
         ".git",
         "firebase-debug.log",
         "firebase-debug.*.log",
-        "*.local"
+        "*.local",
+        "scripts"
       ],
       "predeploy": [
         "npm --prefix \"$RESOURCE_DIR\" run lint"

@@ -60,6 +60,7 @@ The data model is in `docs/architecture/data-model.md`. Collection and Storage s
 
 ### functions
 - `activity.js` holds the Firebase-free parsing, imported by tests in `web/` as well. `parseActivityFile` detects the format from file *contents*, because uploads are named `.fit` unless the name ends in `csv`. It unwraps gzip and zip, parses FIT in list mode, assembles sessions and laps itself, and throws `ActivityFileError` with user-facing messages.
+- `scripts/junk-accounts.js` lists accounts made by sign-up scripts (`list --since`, writes a CSV of email addresses, gitignored) and deletes a reviewed list (`delete file.csv`), re-checking each; it runs with Application Default Credentials and isn't deployed.
 - `index.js` wires the trigger and the Express `api` (ID-token auth, owner checks returning 404 for foreign activities). Bump `PIPELINE_VERSION` when parsing changes in a way that should make old errors retryable.
 
 ## Gotchas
