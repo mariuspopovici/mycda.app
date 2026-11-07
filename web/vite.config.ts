@@ -12,14 +12,15 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(version)
   },
   build: {
-    // the Firebase SDK alone is ~740 kB minified (~185 kB gzipped)
+    // the Firebase SDK alone is ~770 kB minified (~190 kB gzipped)
     chunkSizeWarningLimit: 800,
     rollupOptions: {
       output: {
         // large, rarely changing libraries get their own cacheable chunks
         manualChunks (id) {
-          // the run explainer's SDKs load only when it's used (services/assistant.ts)
-          if (/node_modules\/(@firebase\/(ai|app-check)|firebase\/(ai|app-check))\//.test(id)) return 'firebase-ai'
+          // the run explainer's SDK loads only when it's used (services/assistant.ts). App Check stays in the
+          // main firebase chunk: the entry imports it to start it before Auth (services/appCheck.ts, ADR-0018)
+          if (/node_modules\/(@firebase\/ai|firebase\/ai)\//.test(id)) return 'firebase-ai'
           // Analytics loads only on the live site, after the visitor accepts (services/analytics.ts)
           if (/node_modules\/(@firebase\/(analytics|installations)|firebase\/analytics)\//.test(id)) return 'firebase-analytics'
           if (/node_modules\/(@firebase|firebase|re2js)\//.test(id)) return 'firebase'

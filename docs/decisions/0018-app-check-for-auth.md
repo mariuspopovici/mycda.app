@@ -5,9 +5,9 @@
 
 ## Context
 
-From early November 2026, scripts created accounts in bulk and then requested password resets for them. The addresses included Gmail dot variants (`j.u.stin…@gmail.com`), which reach one inbox but count as separate accounts. This is the pattern of email bombing: Firebase's emails come from a trusted sender, and a victim's inbox floods with them. The scripts call the Auth REST API with the public browser API key, so the email verification gate added in 2.4.0, which only guards the app's pages, can't stop them.
+Scripts have been creating accounts in bulk and then requesting password resets for them; the accounts drew attention in early November 2026. The addresses included Gmail dot variants (`j.u.stin…@gmail.com`), which reach one inbox but count as separate accounts. This is the pattern of email bombing: Firebase's emails come from a trusted sender, and a victim's inbox floods with them. The scripts call the Auth REST API with the public browser API key, so the email verification gate added in 2.4.0, which only guards the app's pages, can't stop them.
 
-App Check's metrics for Authentication over 7 days to Nov 8 showed about 1.3k requests: 95% "unknown origin" (not from the Firebase SDK, so scripted) and 5% "outdated client" (the real app, sending no token). None were verified, because App Check started only with the run explainer (ADR-0016). Enforcing then would have locked every real user out.
+App Check's metrics for Authentication over 7 days to Nov 8 showed about 1.3k requests: 95% "unknown origin" (not from the Firebase SDK, so scripted) and 5% "outdated client" (the real app, sending no token). The scripted traffic goes back to about Oct 19, as far as the metrics go (App Check was registered for the explainer then), so the abuse may be older. None were verified, because App Check started only with the run explainer (ADR-0016). Enforcing then would have locked every real user out.
 
 It isn't documented whether enforcement for Authentication also covers token refresh for sessions that are already signed in.
 
@@ -28,8 +28,9 @@ It isn't documented whether enforcement for Authentication also covers token ref
 
 ## Consequences
 
-- The App Check SDK is in the main bundle (it has to run before Auth restores a session); the reCAPTCHA script itself loads only when App Check starts.
+- The App Check SDK is in the main `firebase` chunk (it has to run before Auth restores a session), about 5 kB gzipped; the reCAPTCHA script itself loads only when App Check starts. 2.4.1 left it in the explainer's `firebase-ai` chunk, so every page preloaded that chunk until 2.4.2 moved it.
 - reCAPTCHA runs on `/auth/action`, whose URL holds a single-use code that is consumed seconds later. Analytics stays off that page (ADR-0017).
 - A browser signed in before this release has no flag on its first visit to a public page, so App Check starts only once Auth reports the user. Waiting a few days before enforcing lets the flag get set.
 - Local development against production needs a registered App Check debug token (`VITE_APPCHECK_DEBUG_TOKEN`) once enforcement is on. Preview channels need their domain on the reCAPTCHA key.
 - The privacy policy (effective November 7, 2026) describes reCAPTCHA, and the landing page notice mentions the change.
+- Enforcement for Authentication was switched on on 2026-11-07, the day 2.4.1 shipped, after a real browser's token exchange on mycda.app returned 200; signing out and back in afterwards showed as verified requests.
