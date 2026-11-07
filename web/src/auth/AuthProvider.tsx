@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { onAuthStateChanged, type User } from 'firebase/auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { auth } from '../firebase'
+import { rememberSession, startAppCheck } from '../services/appCheck'
 import { AuthContext } from './AuthContext'
 
 export function AuthProvider ({ children }: { children: ReactNode }) {
@@ -13,6 +14,8 @@ export function AuthProvider ({ children }: { children: ReactNode }) {
   useEffect(() => onAuthStateChanged(auth, (next) => {
     // cached data belongs to the previous user
     if (!next) queryClient.clear()
+    rememberSession(!!next)
+    if (next) startAppCheck()
     setUser(next)
   }), [queryClient])
 

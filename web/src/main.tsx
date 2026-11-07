@@ -11,10 +11,15 @@ import { Notifications } from '@mantine/notifications'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { AuthProvider } from './auth/AuthProvider'
 import { router } from './router'
+import { startAppCheckFor } from './services/appCheck'
 import { theme } from './theme'
 
 const queryClient = new QueryClient({ defaultOptions: { queries: { retry: 1, refetchOnWindowFocus: false } } })
 const colorSchemeManager = localStorageColorSchemeManager({ key: 'mycda-color-scheme' })
+
+// before Auth's first request, which can come as soon as it restores a session
+startAppCheckFor(router.state.location.pathname)
+router.subscribe((state) => startAppCheckFor(state.location.pathname))
 
 const render = () => createRoot(document.getElementById('root')!).render(
   <StrictMode>

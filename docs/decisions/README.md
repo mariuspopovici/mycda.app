@@ -23,3 +23,4 @@ Copy [template.md](template.md) to `NNNN-short-title.md` and add it to the index
 | [0015](0015-prerender-public-pages.md) | Prerender the public pages at build time | Accepted | 2026-10-18 |
 | [0016](0016-run-explainer-gemini-ai-logic.md) | Explain runs with Gemini through Firebase AI Logic, sending computed numbers only | Accepted (trial) | 2026-10-19 |
 | [0017](0017-google-analytics-route-patterns.md) | Report Google Analytics page views as route patterns, from the live site, with consent | Accepted | 2026-11-03 |
+| [0018](0018-app-check-for-auth.md) | Start App Check wherever Auth is used, then enforce it for Authentication | Accepted | 2026-11-07 |
