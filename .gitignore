@@ -29,3 +29,6 @@ tests/emulator/playwright-report/
 .DS_Store
 .vscode/launch.json
 TODO.txt
+
+# junk-accounts.js reports: email addresses of real people
+junk-accounts*.csv
